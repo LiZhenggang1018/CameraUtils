@@ -1,16 +1,57 @@
+# .clang-format
 ---
-  BasedOnStyle: Google
-  AccessModifierOffset: '-2'
-  AlignTrailingComments: 'true'
-  AllowAllParametersOfDeclarationOnNextLine: 'false'
-  AlwaysBreakTemplateDeclarations: 'No'
-  BreakBeforeBraces: Attach
-  ColumnLimit: '100'
-  ConstructorInitializerAllOnOneLineOrOnePerLine: 'true'
-  IncludeBlocks: Regroup
-  IndentPPDirectives: AfterHash
-  IndentWidth: '2'
-  NamespaceIndentation: All
-  BreakBeforeBinaryOperators: All
-  BreakBeforeTernaryOperators: 'true'
-...
+Language:        Cpp
+BasedOnStyle:    LLVM
+
+# 缩进
+IndentWidth:     4
+TabWidth:        4
+UseTab:          Never
+ContinuationIndentWidth: 4
+AccessModifierOffset: -4
+
+# 行宽
+ColumnLimit:     100
+
+# 括号与换行
+BreakBeforeBraces: Allman
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AlwaysBreakTemplateDeclarations: Yes
+BinPackArguments: false
+BinPackParameters: false
+BreakConstructorInitializers: BeforeColon
+
+# 指针与引用
+PointerAlignment: Left
+ReferenceAlignment: Left
+DerivePointerAlignment: false
+
+# 空格
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyParentheses: false
+SpacesInAngles: false
+SpacesInContainerLiterals: false
+SpaceBeforeAssignmentOperators: true
+
+# 排序与包含
+SortIncludes: CaseSensitive
+IncludeBlocks: Preserve
+IncludeCategories:
+  - Regex:           '^<.*\.h>'
+    Priority:        1
+  - Regex:           '^<.*>'
+    Priority:        2
+  - Regex:           '^".*"'
+    Priority:        3
+
+# 其他
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Left
+AlignOperands: true
+AlignTrailingComments: true
+ReflowComments: true
