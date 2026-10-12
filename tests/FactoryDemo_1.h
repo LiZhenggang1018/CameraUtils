@@ -1,5 +1,5 @@
-#ifndef FACTORY_DEMO_H
-#define FACTORY_DEMO_H
+#ifndef FACTORY_DEMO_1_H
+#define FACTORY_DEMO_1_H
 
 #include "AllUsedHeadFiles.h"
 
@@ -10,9 +10,14 @@
 #include <string>
 #include <vector>
 
-#ifdef TEST_FACTORY_DEMO
+// FactoryDemo_1.h跟 FactoryDemo.h几乎一样，展示了不将注册键传递给构造函数的用法（PassName =
+// false）。 在这种情况下，Circle 和 Square
+// 的构造函数不接受std::string类型的名称参数，而是直接接受构造参数（如double类型的 radius 或
+// side）。工厂创建对象时只传递构造参数，而不传递注册键。
 
-// 1. 定义接口 Shape
+#ifndef TEST_FACTORY_DEMO
+
+// 接口 Shape
 class Shape
 {
 public:
@@ -20,30 +25,30 @@ public:
     virtual ~Shape() = default;
 };
 
-// 2. 具体类：Circle（构造函数按值接收 name radius）
+// 具体类：Circle（构造函数只接受 radius）
 class Circle : public Shape
 {
     std::string m_name;
     double m_radius;
 
 public:
-    Circle(std::string name, double radius) : m_name(std::move(name)), m_radius(radius)
+    explicit Circle(double radius) : m_name("Circle"), m_radius(radius)
     {
-    }
+    } // 构造函数不接受名称参数
     void draw() const override
     {
         std::cout << "Circle[" << m_name << "] with radius " << m_radius << std::endl;
     }
 };
 
-// 具体类：Square（按值接收 name）
+// 具体类：Square（构造函数只接受 side）
 class Square : public Shape
 {
     std::string m_name;
     double m_side;
 
 public:
-    Square(std::string name, double side) : m_name(std::move(name)), m_side(side)
+    explicit Square(double side) : m_name("Square"), m_side(side)
     {
     }
     void draw() const override
@@ -52,26 +57,27 @@ public:
     }
 };
 
-// 定义工厂类型（接口 Shape，键类型 string，传递名称，额外参数 double）
-using ShapeFactory = detail::GeneralFactory<Shape, std::string, true, double>;
+// 需要额外增加的宏定义：
+//  1、定义工厂类型：不将注册键传递给构造函数（PassName = false），额外参数 double
+using ShapeFactory = detail::GeneralFactory<Shape, std::string, false, double>;
 
-// 定义自动注册宏
+// 2、定义自动注册宏（保留以字符串键注册映射）
 #define REGISTER_SHAPE_BY_NAME(_clsName, _cls) \
     static int g_shape_##_clsName##_cls = ShapeFactory::Instance().RegisterCreator<_cls>(#_clsName)
 #define REGISTER_SHAPE(_cls) REGISTER_SHAPE_BY_NAME(_cls, _cls)
 
-// 使用宏自动注册 Circle 和 Square（在全局作用域）
-REGISTER_SHAPE(Circle); // 等价于 RegisterCreator<Circle>("Circle")
-REGISTER_SHAPE(Square); // 等价于 RegisterCreator<Square>("Square")
+// 3、使用宏自动注册 Circle 和 Square（在全局作用域）
+REGISTER_SHAPE(Circle); // 注册键："Circle"
+REGISTER_SHAPE(Square); // 注册键："Square"
 
 inline void FactoryTest()
 {
     auto& factory = ShapeFactory::Instance();
 
-    // 创建对象（使用注册时的名称）
+    // 创建对象（使用注册时的名称作为键，构造参数只传 double）
     auto shape1 = factory.Create("Circle", 5.0);
     auto shape2 = factory.Create("Square", 3.0);
-    auto shape3 = factory.Create("Triangle", 2.0); // 未注册,打印报错
+    auto shape3 = factory.Create("Triangle", 2.0); // 未注册
 
     if (shape1)
     {
@@ -95,6 +101,7 @@ inline void FactoryTest()
 
     return;
 }
-#endif
 
-#endif // FACTORY_DEMO_H
+#endif // TEST_FACTORY_DEMO
+
+#endif // FACTORY_DEMO_1_H
