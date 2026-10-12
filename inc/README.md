@@ -80,15 +80,21 @@ ReqMgrMap::ForEachMgr([&](auto& mgr) { mgr.MethodInA(); });
 
 TimeoutMonitor - 超时监控
 功能：异步执行函数并监控超时，超时执行回调。
+
+````cpp
 // 基本用法
 auto timeoutCb = [](){ PV("Timeout happened!"); };
 int result = TimeoutMonitor("MyFunction", 1000, myFunc, timeoutCb, arg1);
 
 // 超时后直接终止进程（用于 HIDL IPC 场景）
 TimeoutAbortMonitor("HidlCall", 3000, hidlFunc, arg1);
+```
+````
 
 InstanceCounter - 实例计数器
 功能：CRTP 模式实现实例计数，调试内存泄漏。
+
+```cpp
 class MyClass : public Counter<MyClass> {
 public:
 MyClass() = default;
@@ -98,9 +104,12 @@ virtual ~MyClass() = default;
 // 使用
 MyClass a, b, c;
 int count = MyClass::GetInstanceCount();  // 返回 3
+```
 
 CircularQueue - 循环队列
 功能：线程安全的环形缓冲区，支持覆盖模式。
+
+```cpp
 // 非阻塞循环队列
 NonBlockingCircularQueue<int> queue(3);
 
@@ -113,9 +122,12 @@ queue.Push(4);  // 覆盖 1
 queue.Push(5);  // 覆盖 2
 
 // 队列内容: 3, 4, 5
+```
 
 DoubleEndedBlockingQueue - 双端阻塞队列
 功能：支持从队首/队尾 Push/Pop，可配置阻塞/非阻塞。
+
+```cpp
 // 阻塞式双端队列
 BlockingDeque<int> deque(5);
 deque.Start();
@@ -128,6 +140,7 @@ deque.PushFront(0);   // 队首插入
 int val;
 deque.PopFront(val);  // 从队首取出
 deque.PopBack(val);   // 从队尾取出
+```
 
 事件系统 (Event)
 概述
@@ -152,6 +165,8 @@ deque.PopBack(val);   // 从队尾取出
 消息队列/线程池 (ThreadPool)
 概述
 提供轻量级线程池实现，支持任务异步执行、同步等待。
+
+```cpp
 使用示例
 ThreadPool queue(4);  // 创建 4 个工作线程
 
@@ -166,10 +181,13 @@ int result = future.get();
 
 // 等待所有任务完成
 queue.WaitAll();
+```
 
 同步机制 (SyncAgency)
 概述
 提供跨模块的同步机制，支持一个模块等待另一个模块完成特定操作。
+
+```cpp
 使用示例
 // 模块 A：通知完成
 auto notifier = SyncAgency::GetInstance().Register(SyncId::CUSTOM_SIGNAL);
@@ -178,5 +196,6 @@ notifier->SetState(SyncState::DONE);
 
 // 模块 B：等待完成
 SyncAgency::GetInstance().WaitSync(SyncId::CUSTOM_SIGNAL, 5000);  // 等待 5 秒
+```
 
 Overload：防止隐式转换的Variant-Visitor静态多态模式的overload实现
