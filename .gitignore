@@ -1,4 +1,124 @@
-/build*
-/.vscode
-/cpm_modules
+# .gitignore
+
+# ---------- 构建目录 ----------
+build/
+out/
+cmake-build-*/
+[Bb]uild/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+Win32/
+*.dir/
+
+# ---------- CMake ----------
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+CTestTestfile.cmake
+install_manifest.txt
+compile_commands.json
+*.cmake.stamp/
+_deps/
+FetchContent/
+
+# ---------- 编译产物 ----------
+*.exe
+*.dll
+*.lib
+*.so
+*.dylib
+*.a
+*.o
+*.obj
+*.lo
+*.slo
+*.ko
+*.pdb
+*.idb
+*.ilk
+*.exp
+*.map
+*.gcno
+*.gcda
+*.gcov
+
+# ---------- Visual Studio ----------
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.VC.opendb
+*.opendb
+*.aps
+*.ncb
+*.sdf
+*.opensdf
+*.cachefile
+*.ipch
+*.psess
+*.vsp
+*.vspx
+*.sap
+*.log
+
+# ---------- Visual Studio Code ----------
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# ---------- CLion / JetBrains ----------
+.idea/
+*.iml
+
+# ---------- vcpkg ----------
+vcpkg_installed/
+vcpkg-manifest-install.log
+
+# ---------- Conan ----------
+conan-build/
+conaninfo.txt
+conan.lock
+graph_info.json
+
+# ---------- 测试与覆盖率 ----------
+Testing/
+*.test
+*.out
+*.xml
+coverage/
+*.profraw
+*.profdata
+
+# ---------- 文档生成 ----------
+docs/html/
+docs/latex/
+docs/xml/
+Doxyfile.bak
+
+# ---------- 系统文件 ----------
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 编辑器备份 ----------
+*~
+*.swp
+*.swo
+*.bak
+*.orig
+*.rej
+
+# ---------- 日志与临时文件 ----------
+*.log
+*.tmp
+*.temp
+*.pid
+*.seed
+*.pid.lock
