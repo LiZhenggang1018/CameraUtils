@@ -29,6 +29,16 @@ endif()
 # 开启测试功能
 enable_testing()
 
+# 引入 nlohmann_json，之前项目中没有此FetchContent
+include(FetchContent)
+FetchContent_Declare(
+    nlohmann_json
+    URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+    DOWNLOAD_EXTRACT_TIMESTAMP ON
+)
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+FetchContent_MakeAvailable(nlohmann_json)
+
 
 # 先添加 src，因为 tests 中会引用 src 生成的可执行目标
 add_subdirectory(src)
