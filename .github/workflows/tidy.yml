@@ -1,0 +1,33 @@
+name: Tidy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  clang-tidy:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure with compile commands
+        run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Locate clang-tidy
+        shell: pwsh
+        run: |
+          $clangTidy = Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -Recurse -Filter clang-tidy.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $clangTidy) {
+            Write-Error "clang-tidy not found"
+            exit 1
+          }
+          echo "CLANG_TIDY=$($clangTidy.FullName)" >> $env:GITHUB_ENV
+
+      - name: Run clang-tidy
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path src -Recurse -Include *.cpp
+          & $env:CLANG_TIDY -p build $files.FullName
