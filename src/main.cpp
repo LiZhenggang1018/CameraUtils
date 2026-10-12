@@ -7,5 +7,5 @@ int main()
 {
     RunAllTests();
     int ch = getchar();
-    return -1;
+    return 0;
 }
