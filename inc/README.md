@@ -1,6 +1,8 @@
 // 各模块使用示例见/tests/路径下各测试用例
 
-CustomLog - 可变参数日志打印
+CustomLog
+
+可变参数日志打印
 功能：简化可变参数日志打印，自动添加空格分隔。
 
 ```cpp
@@ -9,9 +11,9 @@ PV("Hello", "world", 42, "!");
 // 输出: Hello world 42 !
 ```
 
+Singleton
 
-
-Singleton（CRTP单例接口）
+CRTP单例接口
 
 ScopedUtils - 作用域工具
 功能：自动记录函数入口/退出、耗时统计、资源释放(ON_SCOPE_EXIT作用域退出后自动清理宏等功能)。
@@ -41,7 +43,9 @@ buf = nullptr;
 }
 ```
 
-CheckUtils - 校验工具
+CheckUtils
+
+校验工具
 功能：常用校验宏和模板函数。
 
 ```cpp
@@ -60,7 +64,9 @@ bool hasPrefix = StartsWith(str, "prefix");
 bool hasSuffix = EndsWith(str, "suffix");
 ```
 
-Type2InstMap - 类型到实例映射
+Type2InstMap
+
+类型到实例映射
 功能：将单例扩展为单例池，支持按类型获取不同实例。
 
 ```cpp
@@ -78,7 +84,9 @@ ReqMgrMap::GetMgr(IVEReqType::CAP).RemoveRequestData();
 ReqMgrMap::ForEachMgr([&](auto& mgr) { mgr.MethodInA(); });
 ```
 
-TimeoutMonitor - 超时监控
+TimeoutMonitor
+
+超时监控
 功能：异步执行函数并监控超时，超时执行回调。
 
 ````cpp
@@ -91,7 +99,9 @@ TimeoutAbortMonitor("HidlCall", 3000, hidlFunc, arg1);
 ```
 ````
 
-InstanceCounter - 实例计数器
+InstanceCounter
+
+实例计数器
 功能：CRTP 模式实现实例计数，调试内存泄漏。
 
 ```cpp
@@ -106,7 +116,9 @@ MyClass a, b, c;
 int count = MyClass::GetInstanceCount();  // 返回 3
 ```
 
-CircularQueue - 循环队列
+CircularQueue
+
+循环队列
 功能：线程安全的环形缓冲区，支持覆盖模式。
 
 ```cpp
@@ -124,7 +136,9 @@ queue.Push(5);  // 覆盖 2
 // 队列内容: 3, 4, 5
 ```
 
-DoubleEndedBlockingQueue - 双端阻塞队列
+DoubleEndedBlockingQueue
+
+双端阻塞队列
 功能：支持从队首/队尾 Push/Pop，可配置阻塞/非阻塞。
 
 ```cpp
@@ -142,8 +156,10 @@ deque.PopFront(val);  // 从队首取出
 deque.PopBack(val);   // 从队尾取出
 ```
 
-事件系统 (Event)
-概述
+Event
+
+事件系统
+概述：
 事件系统允许两个独立的 C++ 模块通过事件进行通信，发送者发送事件，接收者注册监听并接收事件。
 实现单进程内跨线程、跨编译单元、极低时延、使用简单、替代metadata不能支撑的场景（如：跨RealtimePipe、后端发送到前端、无依赖注入关系的独立模块通信）的支持任意C++模块通信的事件订阅机制
 
@@ -165,7 +181,9 @@ deque.PopBack(val);   // 从队尾取出
 
 ```
 
-消息队列/线程池 (ThreadPool)
+ThreadPool
+
+消息队列/线程池 
 概述
 提供轻量级线程池实现，支持任务异步执行、同步等待。
 
@@ -186,7 +204,9 @@ int result = future.get();
 queue.WaitAll();
 ```
 
-同步机制 (SyncAgency)
+SyncAgency
+
+同步机制 
 概述
 提供跨模块的同步机制，支持一个模块等待另一个模块完成特定操作。
 
@@ -201,4 +221,6 @@ notifier->SetState(SyncState::DONE);
 SyncAgency::GetInstance().WaitSync(SyncId::CUSTOM_SIGNAL, 5000);  // 等待 5 秒
 ```
 
-Overload：防止隐式转换的Variant-Visitor静态多态模式的overload实现
+Overload
+
+防止隐式转换的Variant-Visitor静态多态模式的overload实现
