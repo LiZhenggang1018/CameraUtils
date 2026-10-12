@@ -2,34 +2,34 @@ name: Style
 
 on:
   push:
-    branches:
-      - master
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - master
-      - main
-
-env:
-  CPM_SOURCE_CACHE: ${{ github.workspace }}/cpm_modules
+    branches: [ main ]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  clang-format:
+    runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/cache@v3
-        with:
-          path: "**/cpm_modules"
-          key: ${{ github.workflow }}-cpm-modules-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+      - name: Locate clang-format
+        shell: pwsh
+        run: |
+          $clangFormat = Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -Recurse -Filter clang-format.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $clangFormat) {
+            Write-Error "clang-format not found"
+            exit 1
+          }
+          echo "CLANG_FORMAT=$($clangFormat.FullName)" >> $env:GITHUB_ENV
 
-      - name: Install format dependencies
-        run: pip3 install clang-format==14.0.6 cmake_format==0.6.11 pyyaml
-
-      - name: configure
-        run: cmake -Stest -Bbuild
-
-      - name: check style
-        run: cmake --build build --target check-format
+      - name: Check formatting
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path inc, src, tests -Recurse -Include *.h, *.cpp -ErrorAction SilentlyContinue
+          $failed = $false
+          foreach ($f in $files) {
+            & $env:CLANG_FORMAT --dry-run --Werror $f.FullName
+            if ($LASTEXITCODE -ne 0) { $failed = $true }
+          }
+          if ($failed) { exit 1 }
