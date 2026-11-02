@@ -27,5 +27,6 @@
 
 #include "InstanceCounterTest.h"
 #include "OpenCVCommon.h"
+#include "FFMpegCommon.h"
 
 #endif // UTILS_H
