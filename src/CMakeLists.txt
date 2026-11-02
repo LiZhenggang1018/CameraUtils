@@ -5,6 +5,11 @@ target_include_directories(CameraUtils PRIVATE
     ${CMAKE_SOURCE_DIR}/inc
     ${CMAKE_SOURCE_DIR}/tests
     ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
+    ${OpenCV_INCLUDE_DIRS}
+)
+
+target_link_libraries(CameraUtils PRIVATE
+    ${OpenCV_LIBS}
 )
 
 # 编译选项：区分编译器和构建类型
@@ -29,4 +34,8 @@ set_target_properties(CameraUtils PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
+)
+
+target_compile_definitions(CameraUtils PRIVATE
+    PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
 )
