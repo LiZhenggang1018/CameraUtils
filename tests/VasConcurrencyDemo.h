@@ -96,3 +96,43 @@ auto CbFrameToVcf(int value)
                                       });
 }
 
+inline void VasConcurrencyTest()
+{
+    auto main_start = std::chrono::steady_clock::now();
+
+    // 1. 创建对象并存入 nodes 。对应VAS创建特定Pipeline，挂载各个对应Node（Node1->Node2->Node3）
+    std::vector<std::shared_ptr<NodeBase>> nodes;
+    nodes.push_back(std::make_shared<Node1>());
+    nodes.push_back(std::make_shared<Node2>());
+    nodes.push_back(std::make_shared<Node3>());
+
+    // 2. 创建线程池和调度器
+    exec::static_thread_pool pool(
+        8); // 创建一个包含8个线程的线程池，exec::static_thread_pool是work_stealing线程池的一种实现。
+    auto sched = pool.get_scheduler();
+
+    // 辅助 lambda：根据初始值生成 processOneFrameTask sender（对应一次Node1→Node2→Node3的处理流）
+    auto processOneFrameTask = [&](int init)
+    {
+        return stdexec::just(init) |
+               stdexec::let_value(
+                   [&nodes, sched](int val)
+                   {
+                       return stdexec::on(sched, stdexec::just(val)) |
+                              stdexec::then([&nodes](int v) { return nodes[0]->ProcessFrame(v); });
+                   }) |
+               stdexec::let_value(
+                   [&nodes, sched](int val)
+                   {
+                       return stdexec::on(sched, stdexec::just(val)) |
+                              stdexec::then([&nodes](int v) { return nodes[1]->ProcessFrame(v); });
+                   }) |
+               stdexec::let_value(
+                   [&nodes, sched](int val)
+                   {
+                       return stdexec::on(sched, stdexec::just(val)) |
+                              stdexec::then([&nodes](int v) { return nodes[2]->ProcessFrame(v); });
+                   });
+    };
+
+  
