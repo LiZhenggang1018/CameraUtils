@@ -27,6 +27,39 @@ objdetect
 message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV_LIBS         = ${OpenCV_LIBS}")
 
+# ---------- FFmpeg ----------
+# FFMPEG_ROOT 由 CMakePresets.json 注入；若未注入则给默认值
+if(NOT DEFINED FFMPEG_ROOT)
+    set(FFMPEG_ROOT "D:/ThirdPartyLib/ffmpeg/ffmpeg_windows/ffmpeg-master-latest-win64-gpl-shared")
+endif()
+
+set(FFMPEG_INCLUDE_DIR "${FFMPEG_ROOT}/include")
+set(FFMPEG_LIB_DIR     "${FFMPEG_ROOT}/lib")
+
+# 需要的 FFmpeg 模块（按实际使用增减）
+set(FFMPEG_LIBS
+    avcodec
+    avformat
+    avutil
+    swscale
+    swresample
+    avfilter
+    avdevice
+)
+
+# 检查头文件和库目录是否存在，避免配置阶段静默失败
+if(NOT EXISTS "${FFMPEG_INCLUDE_DIR}/libavcodec/avcodec.h")
+    message(FATAL_ERROR "FFmpeg include not found: ${FFMPEG_INCLUDE_DIR}")
+endif()
+if(NOT EXISTS "${FFMPEG_LIB_DIR}")
+    message(FATAL_ERROR "FFmpeg lib dir not found: ${FFMPEG_LIB_DIR}")
+endif()
+
+message(STATUS "FFMPEG_ROOT        = ${FFMPEG_ROOT}")
+message(STATUS "FFMPEG_INCLUDE_DIR = ${FFMPEG_INCLUDE_DIR}")
+message(STATUS "FFMPEG_LIB_DIR     = ${FFMPEG_LIB_DIR}")
+# -----------------------------
+
 # ---------- clang-tidy（可选） ----------
 option(ENABLE_CLANG_TIDY "Enable clang-tidy checks" OFF)
 if(ENABLE_CLANG_TIDY)
