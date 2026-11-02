@@ -11,6 +11,7 @@
 #include "VasConcurrencyDemo.h"
 #include "ThreadPoolTest.h"
 #include "OpenCVTest.h"
+#include "FFMpegTest.h"
 
 // All Testcases
 
@@ -565,6 +566,8 @@ inline void RunAllTests()
         VasConcurrencyTest();
     #endif
     ThreadPoolTest();
+    OpenCVTest();
+    TestFFMpeg();
     return;
 }
 #endif // !TESTCASE_H
