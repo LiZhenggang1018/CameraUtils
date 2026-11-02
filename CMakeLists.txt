@@ -13,6 +13,20 @@ project(CameraUtilsProject LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_package(OpenCV REQUIRED COMPONENTS
+core 
+imgproc 
+highgui
+features2d
+calib3d
+flann
+video
+imgcodecs
+objdetect
+)
+message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
+message(STATUS "OpenCV_LIBS         = ${OpenCV_LIBS}")
+
 # ---------- clang-tidy（可选） ----------
 option(ENABLE_CLANG_TIDY "Enable clang-tidy checks" OFF)
 if(ENABLE_CLANG_TIDY)
