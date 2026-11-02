@@ -9,6 +9,7 @@
 #include "FactoryDemo_1.h"
 #include "SyncAgencyTest.h"
 #include "VasConcurrencyDemo.h"
+#include "ThreadPoolTest.h"
 
 // All Testcases
 
@@ -562,6 +563,7 @@ inline void RunAllTests()
     #if VAS_HAS_STDEXEC
         VasConcurrencyTest();
     #endif
+    ThreadPoolTest();
     return;
 }
 #endif // !TESTCASE_H
