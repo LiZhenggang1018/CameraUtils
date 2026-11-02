@@ -26,5 +26,6 @@
 #include "Type2InstMap.h"
 
 #include "InstanceCounterTest.h"
+#include "OpenCVCommon.h"
 
 #endif // UTILS_H
