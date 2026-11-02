@@ -6,10 +6,16 @@ target_include_directories(CameraUtils PRIVATE
     ${CMAKE_SOURCE_DIR}/tests
     ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
     ${OpenCV_INCLUDE_DIRS}
+    ${FFMPEG_INCLUDE_DIR}
+)
+
+target_link_directories(CameraUtils PRIVATE
+    ${FFMPEG_LIB_DIR}              # ← FFmpeg 导入库所在目录
 )
 
 target_link_libraries(CameraUtils PRIVATE
     ${OpenCV_LIBS}
+    ${FFMPEG_LIBS}
 )
 
 # 编译选项：区分编译器和构建类型
