@@ -8,6 +8,7 @@
 #include "FactoryDemo.h"
 #include "FactoryDemo_1.h"
 #include "SyncAgencyTest.h"
+#include "VasConcurrencyDemo.h"
 
 // All Testcases
 
@@ -558,7 +559,9 @@ inline void RunAllTests()
     TestEvent();
     FactoryJsonTest();
     TestSyncAgency();
-
+    #if VAS_HAS_STDEXEC
+        VasConcurrencyTest();
+    #endif
     return;
 }
 #endif // !TESTCASE_H
