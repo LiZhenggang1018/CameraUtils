@@ -10,6 +10,7 @@
 #include "SyncAgencyTest.h"
 #include "VasConcurrencyDemo.h"
 #include "ThreadPoolTest.h"
+#include "OpenCVTest.h"
 
 // All Testcases
 
