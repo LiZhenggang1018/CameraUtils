@@ -1,12 +1,12 @@
 #include "CommonHead.h"
-#include "TestCase.h"
+#include "RunTestCase.h"
 
 using namespace std;
 
 int main()
 {
     SetConsoleOutputCP(65001); // 控制台输出切换为 UTF-8
-    RunAllTests();
+    RunTest();
     int ch = getchar();
     return 0;
 }
