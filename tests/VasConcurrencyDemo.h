@@ -140,4 +140,46 @@ inline void VasConcurrencyTest()
     stdexec::start_detached(split2); // 帧2
     stdexec::start_detached(split3); // 帧3
 
- 
+    // ===== 构造顺序回调链 =====
+    // 依次等待帧结果，并执行回调，回调之间严格顺序（CbFrame1 -> CbFrame2 ->CbFrame3）
+    auto orderedCallbacks =
+        stdexec::just()
+        // mutable保证lambda的operator() 变为非
+        // const，从而允许修改（包括移动）捕获的变量。否则默认捕获的变量在lambda内部是不可修改的（const），无法实现移动语义std::move(s1)。
+        |
+        stdexec::let_value(
+            [s1 = std::move(split1)]() mutable
+            {
+                // 等待帧1结果，执行回调1
+                return std::move(s1) | stdexec::let_value([](int r1) { return CbFrameToVcf(r1); });
+            }) |
+        stdexec::let_value(
+            [s2 = std::move(split2)](auto) mutable
+            {
+                // 此时回调1已完成，再等待帧2结果，执行回调2
+                return std::move(s2) | stdexec::let_value([](int r2) { return CbFrameToVcf(r2); });
+            }) |
+        stdexec::let_value(
+            [s3 = std::move(split3)](auto) mutable
+            {
+                // 回调2已完成，再等待帧3结果，执行回调3
+                return std::move(s3) | stdexec::let_value([](int r3) { return CbFrameToVcf(r3); });
+            });
+
+    // 同步等待整个回调链完成
+    std::cout << "Waiting for ordered callbacks to complete...\n";
+    auto result = stdexec::sync_wait(std::move(orderedCallbacks));
+    if (result)
+    {
+        std::cout << "Final result after sync_wait: " << std::get<0>(*result) << std::endl;
+    }
+
+    auto main_end = std::chrono::steady_clock::now();
+    auto main_duration =
+        std::chrono::duration_cast<std::chrono::milliseconds>(main_end - main_start).count();
+    std::cout << "main() execution time: " << main_duration << " ms" << std::endl;
+
+    return;
+}
+#endif // VAS_HAS_STDEXEC
+#endif // NEWTEMP_H
