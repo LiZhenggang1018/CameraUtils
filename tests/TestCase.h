@@ -13,6 +13,8 @@
 #include "OpenCVTest.h"
 #include "FFMpegTest.h"
 
+#include "LivePhotoSmoothPlay\LivePhotoSmoothPlayTest.h"
+
 // All Testcases
 
 // 测试BlockingDeque阻塞模式
@@ -548,26 +550,4 @@ inline void MsgQueueTest()
     return;
 }
 
-inline void RunAllTests()
-{
-    TestInBlockingMode();
-    TestInNonBlockingMode();
-    TestFindAndThenOrElse();
-    TestOverloadRef();
-    TimeoutMonitorTest();
-    MiscTest();
-    MsgQueueTest();
-    TestCircularQueue();
-    TestOverwriteFunction();
-    TestEvent();
-    FactoryJsonTest();
-    TestSyncAgency();
-    #if VAS_HAS_STDEXEC
-        VasConcurrencyTest();
-    #endif
-    ThreadPoolTest();
-    OpenCVTest();
-    TestFFMpeg();
-    return;
-}
 #endif // !TESTCASE_H
