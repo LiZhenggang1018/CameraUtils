@@ -1,8 +1,14 @@
 # 生成可执行程序 CameraUtils
 add_executable(CameraUtils main.cpp)
 
+target_sources(CameraUtils PRIVATE
+    LivePhotoSmoothPlay/ImageRegistrator.cpp
+    LivePhotoSmoothPlay/YUVImageReader.cpp
+)
+
 target_include_directories(CameraUtils PRIVATE
     ${CMAKE_SOURCE_DIR}/inc
+    ${CMAKE_SOURCE_DIR}/inc/LivePhotoSmoothPlay
     ${CMAKE_SOURCE_DIR}/tests
     ${CMAKE_SOURCE_DIR}/third_party/nlohmann_json
     ${OpenCV_INCLUDE_DIRS}
@@ -27,6 +33,7 @@ target_compile_options(CameraUtils PRIVATE
     # MSVC 通用警告
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
     $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    $<$<CXX_COMPILER_ID:MSVC>:/utf-8>        # <-- 新增这一行
 
     # 强制 Release 下用 -O3（若想覆盖默认的 -O3，其实默认已是 -O3）
     $<$<AND:$<CXX_COMPILER_ID:GNU,Clang>,$<CONFIG:Release>>:-O3>
