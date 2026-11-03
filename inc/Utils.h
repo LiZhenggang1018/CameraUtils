@@ -28,5 +28,7 @@
 #include "InstanceCounterTest.h"
 #include "OpenCVCommon.h"
 #include "FFMpegCommon.h"
+#include "SplitCppFilesInDir.h"
+#include "ConcatCppFilesInDir.h"
 
 #endif // UTILS_H
