@@ -22,6 +22,7 @@ target_link_directories(CameraUtils PRIVATE
 target_link_libraries(CameraUtils PRIVATE
     ${OpenCV_LIBS}
     ${FFMPEG_LIBS}
+    STDEXEC::stdexec  # 添加这一行
 )
 
 # 编译选项：区分编译器和构建类型
@@ -44,7 +45,7 @@ target_compile_options(CameraUtils PRIVATE
 
 # C++ 标准
 set_target_properties(CameraUtils PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
 )
