@@ -1,6 +1,0 @@
-# third_party/.clang-tidy
----
-Checks: '-*'
-WarningsAsErrors: ''
-HeaderFilterRegex: ''
-FormatStyle: none
