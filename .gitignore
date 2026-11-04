@@ -23,6 +23,7 @@ compile_commands.json
 *.cmake.stamp/
 _deps/
 FetchContent/
+data/
 
 # 第三方公共头文件（本地手动管理，不入库）
 third_party/
