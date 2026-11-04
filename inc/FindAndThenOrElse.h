@@ -1,4 +1,4 @@
-#ifndef FIND_AND_THEN_OR_ELSE_H
+﻿#ifndef FIND_AND_THEN_OR_ELSE_H
 #define FIND_AND_THEN_OR_ELSE_H
 
 #include <algorithm>

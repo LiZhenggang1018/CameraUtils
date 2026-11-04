@@ -1,4 +1,4 @@
-//@Description: Event Dispatcher Singleton used to dispatch events
+﻿//@Description: Event Dispatcher Singleton used to dispatch events
 // EventDispatcher Sinlgeton impl should ensure only one instance(same addr) in different so files
 
 #ifndef EVENTDISPATCHER_H

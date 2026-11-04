@@ -1,4 +1,4 @@
-// @Description: ThreadPool Impl support EnqueMsg() and WaitSync()
+﻿// @Description: ThreadPool Impl support EnqueMsg() and WaitSync()
 
 #ifndef THREADPOOL_H
 #define THREADPOOL_H

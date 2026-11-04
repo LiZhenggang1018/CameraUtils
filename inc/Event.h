@@ -1,4 +1,4 @@
-// @Description: event mechanism that allows two independent C++ modules to communicate through
+﻿// @Description: event mechanism that allows two independent C++ modules to communicate through
 // events. sender sends events, and receiver registers to listen for and receive events.
 
 #ifndef EVENT_H

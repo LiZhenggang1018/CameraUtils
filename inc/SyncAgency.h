@@ -1,4 +1,4 @@
-/*
+﻿/*
  * @Description: SyncAgency mechanism allows independent C++ module to have happens-before/busy wait
  * time dependence
  */

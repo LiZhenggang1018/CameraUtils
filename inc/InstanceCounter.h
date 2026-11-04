@@ -1,4 +1,4 @@
-/*
+﻿/*
  * @Description: CRTP pattern Counter impl which gets Instance count
  */
 

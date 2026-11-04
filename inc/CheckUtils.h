@@ -1,4 +1,4 @@
-/*
+﻿/*
  * @Description: check utils header
  */
 
