@@ -10,12 +10,33 @@ if (POLICY CMP0141)
 endif()
 
 project(CameraUtilsProject LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(MSVC)
     add_compile_options(/utf-8)
 endif()
+
+# 包含 FetchContent 模块
+include(FetchContent)
+
+set(FETCHCONTENT_SOURCE_DIR_RAPIDS-CMAKE "D:/ThirdPartyLib/rapids-cmake")
+
+
+# 声明 stdexec 依赖项
+FetchContent_Declare(
+    stdexec
+    GIT_REPOSITORY https://github.com/NVIDIA/stdexec.git
+    GIT_TAG        main  # 建议固定到具体的 commit 或 tag 以保证构建稳定性
+    GIT_SHALLOW    TRUE  # 浅克隆，加速下载
+)
+
+# 可选：关闭 stdexec 自带的示例和测试，加速配置过程
+set(STDEXEC_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(STDEXEC_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
+
+# 使 stdexec 可用
+FetchContent_MakeAvailable(stdexec)
 
 find_package(OpenCV REQUIRED COMPONENTS
 core 
