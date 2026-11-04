@@ -18,8 +18,9 @@
 #include "ScopedUtils.h"
 #include "Singleton.h"
 
-#if __has_include(<json.hpp>)
-#include <json.hpp>
+#if __has_include(<nlohmann/json.hpp>)
+#include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 #define HAS_NLOHMANN_JSON_H 1
 #else
 #define HAS_NLOHMANN_JSON_H 0
