@@ -82,7 +82,7 @@ message(STATUS "OpenCV_LIBS         = ${OpenCV_LIBS}")
 #   A) System233/ffmpeg-msvc-prebuilt（版本新，结构较规整）
 #   B) BtbN/FFmpeg-Builds（你之前手动用的就是这一家）
 set(FFMPEG_PREBUILT_URL
-    "https://github.com/System233/ffmpeg-msvc-prebuilt/releases/download/8.1.1-r2/ffmpeg-8.1.1-r2_x64-windows-shared-gpl.zip"
+    "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip"
 )
 # 备选：
 # set(FFMPEG_PREBUILT_URL
