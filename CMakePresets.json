@@ -26,10 +26,10 @@
                 "value": "x64",
                 "strategy": "external"
             },
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-                "FFMPEG_ROOT": "D:/ThirdPartyLib/ffmpeg/ffmpeg_windows/ffmpeg-master-latest-win64-gpl-shared"
-            }
+          "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Debug",
+            "FFMPEG_ROOT": "D:/ThirdPartyLib/ffmpeg/ffmpeg_windows/ffmpeg-master-latest-win64-gpl-shared"
+          }
         },
         {
             "name": "x64-release",
