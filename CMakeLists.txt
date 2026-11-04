@@ -17,6 +17,17 @@ if(MSVC)
     add_compile_options(/utf-8)
 endif()
 
+# 如果 cmake/CPM.cmake 不存在，则自动下载
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake")
+    set(CPM_DOWNLOAD_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake")
+    file(DOWNLOAD
+        https://github.com/cpm-cmake/CPM.cmake/releases/latest/download/CPM.cmake
+        ${CPM_DOWNLOAD_LOCATION}
+    )
+endif()
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)
+
 # 包含 FetchContent 模块
 include(FetchContent)
 

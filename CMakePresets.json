@@ -28,7 +28,6 @@
         },
         "cacheVariables": {
           "CMAKE_BUILD_TYPE": "Debug",
-          "FFMPEG_ROOT": "D:/ThirdPartyLib/ffmpeg/ffmpeg_windows/ffmpeg-master-latest-win64-gpl-shared"
         },
         "environment": {
           "CMAKE_TLS_VERIFY": "0"
