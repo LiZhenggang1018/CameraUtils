@@ -12,4 +12,6 @@ D:\ThirdPartyLib\opencv\opencv_windows\install\OpenCVConfig.cmake
 手动下载rapids-cmake，解压到如下路径，解决内网CMake 在下载 rapids-cmake 时 SSL 验证失败问题：
 D:/ThirdPartyLib/rapids-cmake
 
+通过cmake + FetchContent的模式自动下载三方库到如下路径
+out\build\x64-debug\_deps\
 Todo
