@@ -25,7 +25,7 @@ if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake")
         ${CPM_DOWNLOAD_LOCATION}
     )
 endif()
-
+set(CPM_SOURCE_CACHE "$ENV{USERPROFILE}/.cpm-cache" CACHE PATH "CPM source cache")
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)
 
 # 包含 FetchContent 模块
@@ -77,16 +77,42 @@ objdetect
 message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV_LIBS         = ${OpenCV_LIBS}")
 
-# ---------- FFmpeg ----------
-# FFMPEG_ROOT 由 CMakePresets.json 注入；若未注入则给默认值
-if(NOT DEFINED FFMPEG_ROOT)
-    set(FFMPEG_ROOT "D:/ThirdPartyLib/ffmpeg/ffmpeg_windows/ffmpeg-master-latest-win64-gpl-shared")
+# ---------- FFmpeg（CPM 自动下载预编译包） ----------
+# 预编译包来源二选一：
+#   A) System233/ffmpeg-msvc-prebuilt（版本新，结构较规整）
+#   B) BtbN/FFmpeg-Builds（你之前手动用的就是这一家）
+set(FFMPEG_PREBUILT_URL
+    "https://github.com/System233/ffmpeg-msvc-prebuilt/releases/download/8.1.1-r2/ffmpeg-8.1.1-r2_x64-windows-shared-gpl.zip"
+)
+# 备选：
+# set(FFMPEG_PREBUILT_URL
+#     "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip"
+# )
+
+CPMAddPackage(
+    NAME ffmpeg_prebuilt
+    URL  "${FFMPEG_PREBUILT_URL}"
+    DOWNLOAD_ONLY YES          # 关键：只下载解压，不执行 add_subdirectory
+    # URL_HASH SHA256=xxxxxxxx # 可选，跑通后再补
+)
+
+set(FFMPEG_ROOT "${ffmpeg_prebuilt_SOURCE_DIR}")
+
+# 健壮性：有些 zip 解压后多一层顶层目录，自动下探一层找 include/
+if(NOT EXISTS "${FFMPEG_ROOT}/include")
+    file(GLOB _ffmpeg_candidates LIST_DIRECTORIES true "${FFMPEG_ROOT}/*")
+    foreach(_cand IN LISTS _ffmpeg_candidates)
+        if(IS_DIRECTORY "${_cand}" AND EXISTS "${_cand}/include")
+            set(FFMPEG_ROOT "${_cand}")
+            break()
+        endif()
+    endforeach()
 endif()
 
 set(FFMPEG_INCLUDE_DIR "${FFMPEG_ROOT}/include")
 set(FFMPEG_LIB_DIR     "${FFMPEG_ROOT}/lib")
 
-# 需要的 FFmpeg 模块（按实际使用增减）
+# 需要的 FFmpeg 模块（与你现有列表一致）
 set(FFMPEG_LIBS
     avcodec
     avformat
@@ -97,9 +123,14 @@ set(FFMPEG_LIBS
     avdevice
 )
 
-# 检查头文件和库目录是否存在，避免配置阶段静默失败
+# 存在性检查：失败时把实际路径打印出来，方便排查包结构
 if(NOT EXISTS "${FFMPEG_INCLUDE_DIR}/libavcodec/avcodec.h")
-    message(FATAL_ERROR "FFmpeg include not found: ${FFMPEG_INCLUDE_DIR}")
+    message(FATAL_ERROR
+        "FFmpeg include not found.\n"
+        "  FFMPEG_ROOT        = ${FFMPEG_ROOT}\n"
+        "  FFMPEG_INCLUDE_DIR = ${FFMPEG_INCLUDE_DIR}\n"
+        "  ffmpeg_prebuilt_SOURCE_DIR = ${ffmpeg_prebuilt_SOURCE_DIR}\n"
+        "请检查 _deps/ffmpeg_prebuilt-src 或缓存目录下的实际解压结构。")
 endif()
 if(NOT EXISTS "${FFMPEG_LIB_DIR}")
     message(FATAL_ERROR "FFmpeg lib dir not found: ${FFMPEG_LIB_DIR}")
@@ -108,28 +139,8 @@ endif()
 message(STATUS "FFMPEG_ROOT        = ${FFMPEG_ROOT}")
 message(STATUS "FFMPEG_INCLUDE_DIR = ${FFMPEG_INCLUDE_DIR}")
 message(STATUS "FFMPEG_LIB_DIR     = ${FFMPEG_LIB_DIR}")
-# -----------------------------
+# ---------------------------------------------------
 
-# ---------- clang-tidy（可选） ----------
-option(ENABLE_CLANG_TIDY "Enable clang-tidy checks" OFF)
-if(ENABLE_CLANG_TIDY)
-    find_program(CLANG_TIDY_EXE NAMES clang-tidy)
-    if(CLANG_TIDY_EXE)
-        set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXE}")
-    else()
-        message(WARNING "ENABLE_CLANG_TIDY 已开启，但未找到 clang-tidy")
-    endif()
-endif()
-# -------------------------------------------
-
-
-# 开启测试功能
 enable_testing()
-
-
-# 先添加 src，因为 tests 中会引用 src 生成的可执行目标
 add_subdirectory(src)
-
-# 再添加 tests
 add_subdirectory(tests)
-# TODO: 如有需要，请添加测试并安装目标。
