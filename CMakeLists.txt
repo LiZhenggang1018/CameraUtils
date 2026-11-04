@@ -22,6 +22,20 @@ include(FetchContent)
 
 set(FETCHCONTENT_SOURCE_DIR_RAPIDS-CMAKE "D:/ThirdPartyLib/rapids-cmake")
 
+# nlohmann_json (FetchContent 方案)
+# 推荐使用 tar.xz 压缩包，比 git clone 更快，且内容更纯净
+FetchContent_Declare(
+    json
+    URL      https://hf-mirror.com/csukuangfj/sherpa-ncnn-cmake-deps/resolve/main/json-3.12.0.tar.gz
+    URL_HASH SHA256=4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187 # 从该镜像源获取的哈希值[reference:2]
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+
+# 可选：关闭 json 库自身的测试，加快配置速度
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+
+FetchContent_MakeAvailable(json)
+
 
 # 声明 stdexec 依赖项
 FetchContent_Declare(
@@ -39,8 +53,8 @@ set(STDEXEC_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(stdexec)
 
 find_package(OpenCV REQUIRED COMPONENTS
-core 
-imgproc 
+core
+imgproc
 highgui
 features2d
 calib3d

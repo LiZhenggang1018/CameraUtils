@@ -24,6 +24,9 @@ compile_commands.json
 _deps/
 FetchContent/
 
+# 第三方公共头文件（本地手动管理，不入库）
+third_party/
+
 # ---------- 编译产物 ----------
 *.exe
 *.dll
