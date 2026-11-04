@@ -12,7 +12,7 @@
 #include <vector>
 
 #if defined(__has_include)
-#if __has_include(<exec/static_thread_pool.hpp>) && __has_include(<stdexec/execution.hpp>)
+#if __has_include(<exec/static_thread_pool.hpp>) && __has_include(<stdexec/execution.hpp>) && false
 #define VAS_HAS_STDEXEC 1
 #else
 #define VAS_HAS_STDEXEC 0
@@ -22,6 +22,9 @@
 #endif
 
 #if VAS_HAS_STDEXEC
+#include <stdexec/execution.hpp>
+#include <exec/static_thread_pool.hpp>
+// constexpr std::chrono::seconds SLEEP_DURATION{ 1 }; // 1s睡眠时间，每个Node处理一帧的模拟耗时1s
 
 struct NodeBase
 {
