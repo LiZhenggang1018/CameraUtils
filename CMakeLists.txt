@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.15)
 
-# 如果支持，请为 MSVC 编译器启用热重载。
+# 如果支持，请为 MSVC 编译器启用热重载
 if (POLICY CMP0141)
   cmake_policy(SET CMP0141 NEW)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
@@ -37,8 +37,6 @@ FetchContent_Declare(
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 FetchContent_MakeAvailable(json)
 
-
-# 声明 stdexec 依赖项
 FetchContent_Declare(
     stdexec
     GIT_REPOSITORY https://github.com/NVIDIA/stdexec.git
@@ -46,11 +44,9 @@ FetchContent_Declare(
     GIT_SHALLOW    TRUE  # 浅克隆，加速下载
 )
 
-# 可选：关闭 stdexec 自带的示例和测试，加速配置过程
 set(STDEXEC_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(STDEXEC_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
 
-# 使 stdexec 可用
 FetchContent_MakeAvailable(stdexec)
 
 CPMAddPackage(
@@ -95,17 +91,9 @@ find_package(OpenCV REQUIRED COMPONENTS
 message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV_LIBS         = ${OpenCV_LIBS}")
 
-# ---------- FFmpeg（CPM 自动下载预编译包） ----------
-# 预编译包来源二选一：
-#   A) System233/ffmpeg-msvc-prebuilt（版本新，结构较规整）
-#   B) BtbN/FFmpeg-Builds（你之前手动用的就是这一家）
 set(FFMPEG_PREBUILT_URL
     "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip"
 )
-# 备选：
-# set(FFMPEG_PREBUILT_URL
-#     "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip"
-# )
 
 CPMAddPackage(
     NAME ffmpeg_prebuilt
@@ -116,7 +104,6 @@ CPMAddPackage(
 
 set(FFMPEG_ROOT "${ffmpeg_prebuilt_SOURCE_DIR}")
 
-# 健壮性：有些 zip 解压后多一层顶层目录，自动下探一层找 include/
 if(NOT EXISTS "${FFMPEG_ROOT}/include")
     file(GLOB _ffmpeg_candidates LIST_DIRECTORIES true "${FFMPEG_ROOT}/*")
     foreach(_cand IN LISTS _ffmpeg_candidates)
@@ -130,7 +117,6 @@ endif()
 set(FFMPEG_INCLUDE_DIR "${FFMPEG_ROOT}/include")
 set(FFMPEG_LIB_DIR     "${FFMPEG_ROOT}/lib")
 
-# 需要的 FFmpeg 模块（与你现有列表一致）
 set(FFMPEG_LIBS
     avcodec
     avformat
@@ -141,7 +127,6 @@ set(FFMPEG_LIBS
     avdevice
 )
 
-# 存在性检查：失败时把实际路径打印出来，方便排查包结构
 if(NOT EXISTS "${FFMPEG_INCLUDE_DIR}/libavcodec/avcodec.h")
     message(FATAL_ERROR
         "FFmpeg include not found.\n"
