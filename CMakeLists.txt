@@ -53,14 +53,10 @@ set(STDEXEC_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
 # 使 stdexec 可用
 FetchContent_MakeAvailable(stdexec)
 
-set(OPENCV_PREBUILT_URL
-    "https://github.com/opencv/opencv/releases/download/4.10.0/opencv-4.10.0-windows.exe"
-)
 CPMAddPackage(
     NAME opencv_prebuilt
-    URL  "${OPENCV_PREBUILT_URL}"
-    DOWNLOAD_ONLY YES          # 关键：只下载解压，不执行 add_subdirectory
-    # URL_HASH SHA256=xxxxxxxx # 可选，跑通后再补
+    SOURCE_DIR "D:/ThirdPartyLib/opencv/opencv_windows/install"
+    DOWNLOAD_ONLY YES
 )
 set(_opencv_candidates
     "${opencv_prebuilt_SOURCE_DIR}/build"
