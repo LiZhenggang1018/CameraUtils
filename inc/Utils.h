@@ -3,6 +3,7 @@
 
 // 常用C++头文件
 #include "AllUsedHeadFiles.h"
+#include "CommonEnv.h"
 
 #include "CheckUtils.h"
 #include "CircularQueue.h"
