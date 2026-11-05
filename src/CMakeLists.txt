@@ -53,3 +53,11 @@ set_target_properties(CameraUtils PROPERTIES
 target_compile_definitions(CameraUtils PRIVATE
     PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}"
 )
+
+# 构建后把 FFmpeg 的 DLL 复制到 CameraUtils.exe 所在目录,否则运行时报错：找不到avcodec-63.dll
+add_custom_command(TARGET CameraUtils POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${FFMPEG_ROOT}/bin"
+        "$<TARGET_FILE_DIR:CameraUtils>"
+    COMMENT "Copying FFmpeg DLLs to $<TARGET_FILE_DIR:CameraUtils>"
+)
