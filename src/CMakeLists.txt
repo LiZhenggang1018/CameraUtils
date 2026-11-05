@@ -61,3 +61,24 @@ add_custom_command(TARGET CameraUtils POST_BUILD
         "$<TARGET_FILE_DIR:CameraUtils>"
     COMMENT "Copying FFmpeg DLLs to $<TARGET_FILE_DIR:CameraUtils>"
 )
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(_opencv_dll_suffix "d")
+else()
+    set(_opencv_dll_suffix "")
+endif()
+
+file(GLOB_RECURSE _opencv_dlls
+    "${opencv_prebuilt_SOURCE_DIR}/opencv_world*${_opencv_dll_suffix}.dll"
+    "${opencv_prebuilt_SOURCE_DIR}/opencv_core*${_opencv_dll_suffix}.dll"
+)
+if(_opencv_dlls)
+    list(GET _opencv_dlls 0 _first_dll)
+    get_filename_component(_opencv_bin_dir "${_first_dll}" DIRECTORY)
+    add_custom_command(TARGET CameraUtils POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${_opencv_bin_dir}"
+            "$<TARGET_FILE_DIR:CameraUtils>"
+        COMMENT "Copying OpenCV DLLs from ${_opencv_bin_dir}"
+    )
+endif()
