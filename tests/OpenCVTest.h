@@ -15,6 +15,14 @@ inline void OpenCVTest()
     imshow("test", test); // 运行时窗口有几行报错，可忽视。
     waitKey(); // 这个wait key是必须的，不然窗口图像显示不出来，哪怕system("pause")都不行
     cv::destroyAllWindows();
+
+    {
+        HMODULE h = GetModuleHandleA("opencv_world4140d.dll");
+        if (h) {
+            char buf[MAX_PATH] = {};
+            GetModuleFileNameA(h, buf, MAX_PATH);
+            std::cout << "Loaded OpenCV DLL: " << buf << std::endl;
+    }
 }
 
 #endif // !OPENCVTEST_H
