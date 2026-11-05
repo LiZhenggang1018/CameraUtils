@@ -1,6 +1,3 @@
-# CMakeList.txt: CommonHeads 的 CMake 项目，在此处包括源代码并定义
-# 项目特定的逻辑。
-#
 cmake_minimum_required (VERSION 3.15)
 
 # 如果支持，请为 MSVC 编译器启用热重载。
@@ -17,7 +14,6 @@ if(MSVC)
     add_compile_options(/utf-8)
 endif()
 
-# 如果 cmake/CPM.cmake 不存在，则自动下载
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake")
     set(CPM_DOWNLOAD_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake")
     file(DOWNLOAD
@@ -28,23 +24,17 @@ endif()
 set(CPM_SOURCE_CACHE "$ENV{USERPROFILE}/.cpm-cache" CACHE PATH "CPM source cache")
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)
 
-# 包含 FetchContent 模块
 include(FetchContent)
 
 set(FETCHCONTENT_SOURCE_DIR_RAPIDS-CMAKE "D:/ThirdPartyLib/rapids-cmake")
 
-# nlohmann_json (FetchContent 方案)
-# 推荐使用 tar.xz 压缩包，比 git clone 更快，且内容更纯净
 FetchContent_Declare(
     json
     URL      https://hf-mirror.com/csukuangfj/sherpa-ncnn-cmake-deps/resolve/main/json-3.12.0.tar.gz
     URL_HASH SHA256=4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187 # 从该镜像源获取的哈希值[reference:2]
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
-
-# 可选：关闭 json 库自身的测试，加快配置速度
 set(JSON_BuildTests OFF CACHE INTERNAL "")
-
 FetchContent_MakeAvailable(json)
 
 
@@ -63,16 +53,48 @@ set(STDEXEC_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
 # 使 stdexec 可用
 FetchContent_MakeAvailable(stdexec)
 
+set(OPENCV_PREBUILT_URL
+    "https://github.com/opencv/opencv/releases/download/4.10.0/opencv-4.10.0-windows.exe"
+)
+CPMAddPackage(
+    NAME opencv_prebuilt
+    URL  "${OPENCV_PREBUILT_URL}"
+    DOWNLOAD_ONLY YES          # 关键：只下载解压，不执行 add_subdirectory
+    # URL_HASH SHA256=xxxxxxxx # 可选，跑通后再补
+)
+set(_opencv_candidates
+    "${opencv_prebuilt_SOURCE_DIR}/build"
+    "${opencv_prebuilt_SOURCE_DIR}/build/install"
+    "${opencv_prebuilt_SOURCE_DIR}"
+)
+set(OpenCV_DIR "" CACHE PATH "Path to OpenCVConfig.cmake" FORCE)
+
+foreach(_cand IN LISTS _opencv_candidates)
+    if(EXISTS "${_cand}")
+        file(GLOB_RECURSE _config_files "${_cand}/OpenCVConfig.cmake")
+        if(_config_files)
+            list(GET _config_files 0 _first_config)
+            get_filename_component(OpenCV_DIR "${_first_config}" DIRECTORY)
+            break()
+        endif()
+    endif()
+endforeach()
+if(NOT OpenCV_DIR OR NOT EXISTS "${OpenCV_DIR}/OpenCVConfig.cmake")
+    message(FATAL_ERROR
+        "OpenCVConfig.cmake not found under ${opencv_prebuilt_SOURCE_DIR}.\n"
+        "请检查预编译包解压后的实际目录结构，或改用包含 CMake 配置的 zip 包。")
+endif()
+message(STATUS "OpenCV_DIR = ${OpenCV_DIR}")
 find_package(OpenCV REQUIRED COMPONENTS
-core
-imgproc
-highgui
-features2d
-calib3d
-flann
-video
-imgcodecs
-objdetect
+    core
+    imgproc
+    highgui
+    features2d
+    calib3d
+    flann
+    video
+    imgcodecs
+    objdetect
 )
 message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV_LIBS         = ${OpenCV_LIBS}")
