@@ -50,6 +50,17 @@ CPMAddPackage(
         "STDEXEC_BUILD_TESTS OFF"
 )
 
+# ---------- GoogleTest（CPM 管理） ----------
+CPMAddPackage(
+    NAME googletest
+    GITHUB_REPOSITORY google/googletest
+    GIT_TAG        v1.16.0          # 固定版本，保证可复现
+    GIT_SHALLOW    TRUE
+    OPTIONS
+        "INSTALL_GTEST OFF"         # 不安装到系统，仅本项目使用
+        "gtest_force_shared_crt ON" # MSVC 下避免 CRT 冲突
+)
+
 # opencv
 CPMAddPackage(
     NAME opencv_prebuilt
