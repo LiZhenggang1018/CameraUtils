@@ -18,10 +18,12 @@ inline void OpenCVTest()
 
     {
         HMODULE h = GetModuleHandleA("opencv_world4140d.dll");
-        if (h) {
+        if (h)
+        {
             char buf[MAX_PATH] = {};
             GetModuleFileNameA(h, buf, MAX_PATH);
             std::cout << "Loaded OpenCV DLL: " << buf << std::endl;
+        }
     }
 }
 
