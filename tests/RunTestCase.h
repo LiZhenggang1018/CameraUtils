@@ -2,6 +2,7 @@
 #define RUNTESTCASE_H
 
 #include "TestCase.h"
+#include "Type2InstMapTest.h"
 
 inline void RunTest()
 {
@@ -26,8 +27,8 @@ inline void RunTest()
     // TestFFMpeg();
     // SplitCppFilesInDirTest();
     // ConcatCppFilesInDirTest();
-    RunLivePhotoSmoothPlayTest();
-    return;
+    // RunLivePhotoSmoothPlayTest();
+    Type2InstMapTest();
 }
 
 #endif
