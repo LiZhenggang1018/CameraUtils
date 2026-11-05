@@ -17,6 +17,7 @@
 #include "NoCopyableMacro.h"
 #include "ScopedUtils.h"
 #include "Singleton.h"
+#include "CommonEnv.h"
 
 #if __has_include(<nlohmann/json.hpp>)
 #include <nlohmann/json.hpp>
@@ -32,7 +33,7 @@
 namespace
 {
 constexpr int DEFAULT_INDENT{4}; // json 文件缩进空格数
-const std::string CONFIG_PARAM_PATH{R"(configs\JsonConfig.json)"};
+const std::string CONFIG_PARAM_PATH = ENV_ROOT_PATH + "/configs/JsonConfig.json";
 // 用于配置 json 序列化/反序列化参数的 json 文件路径，
 // enableDump默认为0，表示禁用json dump功能（在log中打印序列化的json文件的每一项），配置为1表示启用
 } // namespace
