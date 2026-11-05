@@ -5,7 +5,7 @@
 
 #include "FactoryDemo_1.h"
 
-inline const std::string JsonPath = R"(configs\Shapes.json)";
+inline const std::string JsonPath = ENV_ROOT_PATH + "/configs/Shapes.json";
 
 // 用于生成json文件，无用
 inline void GenJson()
