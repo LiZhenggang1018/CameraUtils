@@ -28,14 +28,15 @@ include(FetchContent)
 
 set(FETCHCONTENT_SOURCE_DIR_RAPIDS-CMAKE "D:/ThirdPartyLib/rapids-cmake")
 
-FetchContent_Declare(
-    json
+# nlohmann_json（CPM 方案）
+CPMAddPackage(
+    NAME json
     URL      https://hf-mirror.com/csukuangfj/sherpa-ncnn-cmake-deps/resolve/main/json-3.12.0.tar.gz
-    URL_HASH SHA256=4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187 # 从该镜像源获取的哈希值[reference:2]
+    URL_HASH SHA256=4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    OPTIONS
+        "JSON_BuildTests OFF"
 )
-set(JSON_BuildTests OFF CACHE INTERNAL "")
-FetchContent_MakeAvailable(json)
 
 FetchContent_Declare(
     stdexec
