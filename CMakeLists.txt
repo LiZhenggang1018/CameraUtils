@@ -24,11 +24,9 @@ endif()
 set(CPM_SOURCE_CACHE "$ENV{USERPROFILE}/.cpm-cache" CACHE PATH "CPM source cache")
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)
 
-include(FetchContent)
-
 set(FETCHCONTENT_SOURCE_DIR_RAPIDS-CMAKE "D:/ThirdPartyLib/rapids-cmake")
 
-# nlohmann_json（CPM 方案）
+# nlohmann_json
 CPMAddPackage(
     NAME json
     URL      https://hf-mirror.com/csukuangfj/sherpa-ncnn-cmake-deps/resolve/main/json-3.12.0.tar.gz
@@ -38,18 +36,21 @@ CPMAddPackage(
         "JSON_BuildTests OFF"
 )
 
-FetchContent_Declare(
-    stdexec
+# stdexec
+# 注意：stdexec 的 CMake 构建依赖 rapids-cmake，提前指定本地路径避免下载
+set(FETCHCONTENT_SOURCE_DIR_RAPIDS-CMAKE "D:/ThirdPartyLib/rapids-cmake")
+
+CPMAddPackage(
+    NAME stdexec
     GIT_REPOSITORY https://github.com/NVIDIA/stdexec.git
-    GIT_TAG        main  # 建议固定到具体的 commit 或 tag 以保证构建稳定性
-    GIT_SHALLOW    TRUE  # 浅克隆，加速下载
+    GIT_TAG        main
+    GIT_SHALLOW    TRUE
+    OPTIONS
+        "STDEXEC_BUILD_EXAMPLES OFF"
+        "STDEXEC_BUILD_TESTS OFF"
 )
 
-set(STDEXEC_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(STDEXEC_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
-
-FetchContent_MakeAvailable(stdexec)
-
+# opencv
 CPMAddPackage(
     NAME opencv_prebuilt
     SOURCE_DIR "D:/ThirdPartyLib/opencv/opencv_windows/install"
@@ -72,11 +73,13 @@ foreach(_cand IN LISTS _opencv_candidates)
         endif()
     endif()
 endforeach()
+
 if(NOT OpenCV_DIR OR NOT EXISTS "${OpenCV_DIR}/OpenCVConfig.cmake")
     message(FATAL_ERROR
         "OpenCVConfig.cmake not found under ${opencv_prebuilt_SOURCE_DIR}.\n"
         "请检查预编译包解压后的实际目录结构，或改用包含 CMake 配置的 zip 包。")
 endif()
+
 message(STATUS "OpenCV_DIR = ${OpenCV_DIR}")
 find_package(OpenCV REQUIRED COMPONENTS
     core
@@ -92,17 +95,16 @@ find_package(OpenCV REQUIRED COMPONENTS
 message(STATUS "OpenCV_INCLUDE_DIRS = ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "OpenCV_LIBS         = ${OpenCV_LIBS}")
 
+# ffmpeg
 set(FFMPEG_PREBUILT_URL
     "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip"
 )
-
 CPMAddPackage(
     NAME ffmpeg_prebuilt
     URL  "${FFMPEG_PREBUILT_URL}"
     DOWNLOAD_ONLY YES          # 关键：只下载解压，不执行 add_subdirectory
     # URL_HASH SHA256=xxxxxxxx # 可选，跑通后再补
 )
-
 set(FFMPEG_ROOT "${ffmpeg_prebuilt_SOURCE_DIR}")
 
 if(NOT EXISTS "${FFMPEG_ROOT}/include")
@@ -143,7 +145,6 @@ endif()
 message(STATUS "FFMPEG_ROOT        = ${FFMPEG_ROOT}")
 message(STATUS "FFMPEG_INCLUDE_DIR = ${FFMPEG_INCLUDE_DIR}")
 message(STATUS "FFMPEG_LIB_DIR     = ${FFMPEG_LIB_DIR}")
-# ---------------------------------------------------
 
 enable_testing()
 add_subdirectory(src)
