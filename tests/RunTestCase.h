@@ -24,9 +24,9 @@ inline void RunTest()
 
     // OpenCVTest();
     // TestFFMpeg();
-    SplitCppFilesInDirTest();
+    // SplitCppFilesInDirTest();
     // ConcatCppFilesInDirTest();
-    //  RunLivePhotoSmoothPlayTest();
+    RunLivePhotoSmoothPlayTest();
     return;
 }
 
