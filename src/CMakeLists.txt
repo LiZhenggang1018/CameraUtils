@@ -68,7 +68,7 @@ else()
     set(_opencv_dll_suffix "")
 endif()
 
-file(GLOB_RECURSE _opencv_dlls
+file(GLOB_RECURSE _opencv_dlls CONFIGURE_DEPENDS
     "${opencv_prebuilt_SOURCE_DIR}/opencv_world*${_opencv_dll_suffix}.dll"
     "${opencv_prebuilt_SOURCE_DIR}/opencv_core*${_opencv_dll_suffix}.dll"
 )
