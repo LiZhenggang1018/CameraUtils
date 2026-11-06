@@ -15,6 +15,9 @@ if(MSVC)
 endif()
 
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake")
+    message(FATAL_ERROR
+        "cmake/CPM.cmake not found. It should be committed to the repo.\n"
+        "Run: git add cmake/CPM.cmake && git commit")
     set(CPM_DOWNLOAD_LOCATION "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake")
     file(DOWNLOAD
         https://github.com/cpm-cmake/CPM.cmake/releases/latest/download/CPM.cmake
