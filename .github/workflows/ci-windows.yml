@@ -18,18 +18,17 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref || github.ref }}
 
-      # 👇 新增：激活 MSVC 开发环境，使 cl.exe 等工具进入 PATH
       - name: Set up MSVC environment
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: TheMrMilchmann/setup-msvc-dev@v4
         with:
           arch: x64
 
       - name: Cache CPM packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cpm-cache
           key: ${{ runner.os }}-cpm-${{ hashFiles('**/CMakePresets.json', '**/CMakeLists.txt') }}
