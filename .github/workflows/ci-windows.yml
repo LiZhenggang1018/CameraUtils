@@ -84,6 +84,8 @@ jobs:
             Write-Error "OpenCVConfig.cmake not found under C:\opencv"
             exit 1
           }
+          # 关键修复：把反斜杠转成正斜杠再写入环境变量
+          $found = $found -replace '\\', '/'
           Write-Host "OPENCV_ROOT=$found"
           echo "OPENCV_ROOT=$found" >> $env:GITHUB_ENV
 
