@@ -31,5 +31,7 @@
 #include "FFMpegCommon.h"
 #include "SplitCppFilesInDir.h"
 #include "ConcatCppFilesInDir.h"
+#include "HarrisDetect.h"
+
 
 #endif // UTILS_H

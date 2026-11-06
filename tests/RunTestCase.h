@@ -30,7 +30,8 @@ inline void RunTest()
     // ConcatCppFilesInDirTest();
     // RunLivePhotoSmoothPlayTest();
     // Type2InstMapTest();
-    MagicEnumTest::TestMagicEnum();
+    // MagicEnumTest::TestMagicEnum();
+    HarrisTest();
 }
 
 #endif
