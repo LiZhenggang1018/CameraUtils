@@ -24,7 +24,15 @@ endif()
 set(CPM_SOURCE_CACHE "$ENV{USERPROFILE}/.cpm-cache" CACHE PATH "CPM source cache")
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/CPM.cmake)
 
-set(FETCHCONTENT_SOURCE_DIR_RAPIDS-CMAKE "D:/ThirdPartyLib/rapids-cmake")
+if(EXISTS "D:/ThirdPartyLib/rapids-cmake")
+    set(FETCHCONTENT_SOURCE_DIR_RAPIDS-CMAKE "D:/ThirdPartyLib/rapids-cmake")
+    message(STATUS "Local rapids-cmake found, using: D:/ThirdPartyLib/rapids-cmake")
+# 2. CI/GitHub Actions 环境：本地路径不存在，取消变量设置，让 stdexec 自动从网络下载
+else()
+    message(STATUS "Local rapids-cmake not found, will download automatically.")
+    # 确保变量未定义或为空，这样 FetchContent 才会从网络拉取
+    unset(FETCHCONTENT_SOURCE_DIR_RAPIDS-CMAKE CACHE)
+endif()
 
 # nlohmann_json
 CPMAddPackage(
