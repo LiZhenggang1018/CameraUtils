@@ -3,6 +3,7 @@
 
 #include "TestCase.h"
 #include "Type2InstMapTest.h"
+#include "MagicEnumTest.h"
 
 inline void RunTest()
 {
@@ -28,7 +29,8 @@ inline void RunTest()
     // SplitCppFilesInDirTest();
     // ConcatCppFilesInDirTest();
     // RunLivePhotoSmoothPlayTest();
-    Type2InstMapTest();
+    // Type2InstMapTest();
+    TestMagicEnum();
 }
 
 #endif

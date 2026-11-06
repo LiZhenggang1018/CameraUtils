@@ -6,6 +6,8 @@
 #include <iostream>
 #include <string>
 
+namespace MagicEnumTest
+{
 // 定义一个测试用枚举
 enum class Color : int
 {
@@ -50,5 +52,6 @@ inline void TestMagicEnum()
 
     std::cout << "===== magic_enum test passed =====" << std::endl;
 }
+} // namespace MagicEnumTest
 
 #endif // TESTS_MAGICENUMTEST_H_
