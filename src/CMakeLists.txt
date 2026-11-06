@@ -23,6 +23,7 @@ target_link_libraries(CameraUtils PRIVATE
     ${FFMPEG_LIBS}
     STDEXEC::stdexec  # 添加这一行
     nlohmann_json::nlohmann_json
+    magic_enum::magic_enum
 )
 
 # 编译选项：区分编译器和构建类型
