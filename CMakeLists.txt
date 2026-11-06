@@ -45,9 +45,6 @@ CPMAddPackage(
 )
 
 # stdexec
-# 注意：stdexec 的 CMake 构建依赖 rapids-cmake，提前指定本地路径避免下载
-set(FETCHCONTENT_SOURCE_DIR_RAPIDS-CMAKE "D:/ThirdPartyLib/rapids-cmake")
-
 CPMAddPackage(
     NAME stdexec
     GIT_REPOSITORY https://github.com/NVIDIA/stdexec.git
@@ -58,16 +55,6 @@ CPMAddPackage(
         "STDEXEC_BUILD_TESTS OFF"
 )
 
-# ---------- GoogleTest（CPM 管理） ----------
-CPMAddPackage(
-    NAME googletest
-    GITHUB_REPOSITORY google/googletest
-    GIT_TAG        v1.16.0          # 固定版本，保证可复现
-    GIT_SHALLOW    TRUE
-    OPTIONS
-        "INSTALL_GTEST OFF"         # 不安装到系统，仅本项目使用
-        "gtest_force_shared_crt ON" # MSVC 下避免 CRT 冲突
-)
 # ---------- magic_enum（CPM 管理） ----------
 CPMAddPackage(
     NAME magic_enum
@@ -76,12 +63,27 @@ CPMAddPackage(
     OPTIONS
         "MAGIC_ENUM_OPT_INSTALL YES"   # 生成 CMake 导出目标
 )
+
 # opencv
+if(DEFINED ENV{OPENCV_ROOT} AND EXISTS "$ENV{OPENCV_ROOT}")
+    set(OPENCV_PREBUILT_DIR "$ENV{OPENCV_ROOT}")
+    message(STATUS "OpenCV: using env OPENCV_ROOT = ${OPENCV_PREBUILT_DIR}")
+elseif(EXISTS "D:/ThirdPartyLib/opencv/opencv_windows/install")
+    set(OPENCV_PREBUILT_DIR "D:/ThirdPartyLib/opencv/opencv_windows/install")
+    message(STATUS "OpenCV: using local path = ${OPENCV_PREBUILT_DIR}")
+else()
+    message(FATAL_ERROR
+        "OpenCV not found.\n"
+        "  本地：确认 D:/ThirdPartyLib/opencv/opencv_windows/install 存在\n"
+        "  CI：确认 workflow 设置了 OPENCV_ROOT 环境变量，且路径下有 OpenCVConfig.cmake")
+endif()
+
 CPMAddPackage(
     NAME opencv_prebuilt
-    SOURCE_DIR "D:/ThirdPartyLib/opencv/opencv_windows/install"
+    SOURCE_DIR "${OPENCV_PREBUILT_DIR}"
     DOWNLOAD_ONLY YES
 )
+
 set(_opencv_candidates
     "${opencv_prebuilt_SOURCE_DIR}/build"
     "${opencv_prebuilt_SOURCE_DIR}/build/install"
