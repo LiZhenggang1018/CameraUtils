@@ -60,7 +60,14 @@ CPMAddPackage(
         "INSTALL_GTEST OFF"         # 不安装到系统，仅本项目使用
         "gtest_force_shared_crt ON" # MSVC 下避免 CRT 冲突
 )
-
+# ---------- magic_enum（CPM 管理） ----------
+CPMAddPackage(
+    NAME magic_enum
+    VERSION 0.9.8
+    GITHUB_REPOSITORY Neargye/magic_enum
+    OPTIONS
+        "MAGIC_ENUM_OPT_INSTALL YES"   # 生成 CMake 导出目标
+)
 # opencv
 CPMAddPackage(
     NAME opencv_prebuilt
