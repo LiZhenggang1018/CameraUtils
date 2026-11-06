@@ -68,8 +68,10 @@ CPMAddPackage(
 )
 
 # opencv
+# opencv
 if(DEFINED ENV{OPENCV_ROOT} AND EXISTS "$ENV{OPENCV_ROOT}")
-    set(OPENCV_PREBUILT_DIR "$ENV{OPENCV_ROOT}")
+    # 关键修复：把 Windows 反斜杠路径转成 CMake 正斜杠路径
+    file(TO_CMAKE_PATH "$ENV{OPENCV_ROOT}" OPENCV_PREBUILT_DIR)
     message(STATUS "OpenCV: using env OPENCV_ROOT = ${OPENCV_PREBUILT_DIR}")
 elseif(EXISTS "D:/ThirdPartyLib/opencv/opencv_windows/install")
     set(OPENCV_PREBUILT_DIR "D:/ThirdPartyLib/opencv/opencv_windows/install")
