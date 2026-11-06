@@ -27,7 +27,7 @@ inline void DecodeLpMp4ToYuvs()
 inline void DecodeOptLpMp4ToYuvs()
 {
 	const char *input_filename = LP_OPT_FILE.c_str();
-    const std::string outDir = DATA_PATH + "LpOptJpg";
+    const std::string outDir = LP_SMOOTH_PLAY_DATA_PATH + "LpOptJpg";
 	DecodeMp4ToYuvFrames(input_filename, outDir);
 }
 
@@ -78,7 +78,7 @@ inline void ReplaceAlhpaMergeToFovSmoothAndAlpaMergedLp()
 	const char* output_filename = LP_OPT_FILE.c_str(); //
 
 	std::vector<std::string> replaceYuvFiles{};
-	size_t length = TransFrameNum; 
+	size_t length = TransFrameNum;
 	for (size_t i = length; i > 0; --i)
 	{
 		// crop1.yuv cropTransFrameNum.yuv

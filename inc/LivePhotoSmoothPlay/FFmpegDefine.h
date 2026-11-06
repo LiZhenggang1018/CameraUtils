@@ -17,29 +17,28 @@
 #include "NoCopyableMacro.h"
 #include "Singleton.h"
 #include "ScopedUtils.h"
+#include "CommonEnv.h"
 
-const std::string root = PROJECT_ROOT_DIR; // 必须使用此宏来获取项目根目录，确保在不同环境下路径正确
+inline const std::string LP_SMOOTH_PLAY_DATA_PATH = std::string(PROJECT_ROOT_DIR) + "/data/LivePhotoSmoothPlay/";
 
-inline const std::string DATA_PATH = root + "/data/LivePhotoSmoothPlay/";
+inline const std::string IN_FILE = LP_SMOOTH_PLAY_DATA_PATH + "input.mp4";
+inline const std::string OUT_FILE = LP_SMOOTH_PLAY_DATA_PATH + "output.mp4";
+inline const std::string OUT2_FILE = LP_SMOOTH_PLAY_DATA_PATH + "output2.mp4";
 
-inline const std::string IN_FILE = DATA_PATH + "input.mp4";
-inline const std::string OUT_FILE = DATA_PATH + "output.mp4";
-inline const std::string OUT2_FILE = DATA_PATH + "output2.mp4";
+inline const std::string S_LYF_FILE = LP_SMOOTH_PLAY_DATA_PATH + "smallLyf.mp4"; // 小FOV，作为视频帧
+inline const std::string B_LYF_FILE = LP_SMOOTH_PLAY_DATA_PATH + "bigLyf.mp4";	  // 大FOV，用于产生拍照帧 跟平滑过渡帧
 
-inline const std::string S_LYF_FILE = DATA_PATH + "smallLyf.mp4"; // 小FOV，作为视频帧
-inline const std::string B_LYF_FILE = DATA_PATH + "bigLyf.mp4";	  // 大FOV，用于产生拍照帧 跟平滑过渡帧
+inline const std::string ORI_FILE = LP_SMOOTH_PLAY_DATA_PATH + "ori.mp4"; // 原始LP文件
+inline const std::string OPT_FILE = LP_SMOOTH_PLAY_DATA_PATH + "opt.mp4"; // 优化后LP文件
 
-inline const std::string ORI_FILE = DATA_PATH + "ori.mp4"; // 原始LP文件
-inline const std::string OPT_FILE = DATA_PATH + "opt.mp4"; // 优化后LP文件
-
-inline const std::string LP_INIT_FILE = DATA_PATH + "Lp.mp4"; // 随手拍的原始LP
-inline const std::string LP_OPT_FILE = DATA_PATH + "LpOpt.mp4"; // 优化后的LP
-inline const std::string LP_CROP_FILE = DATA_PATH + "LpCrop.mp4"; // 随手拍的原始LP
+inline const std::string LP_INIT_FILE = LP_SMOOTH_PLAY_DATA_PATH + "Lp.mp4"; // 随手拍的原始LP
+inline const std::string LP_OPT_FILE = LP_SMOOTH_PLAY_DATA_PATH + "LpOpt.mp4"; // 优化后的LP
+inline const std::string LP_CROP_FILE = LP_SMOOTH_PLAY_DATA_PATH + "LpCrop.mp4"; // 随手拍的原始LP
 
 
 inline const std::string LP_DECODE_YUV_DIR =
-    DATA_PATH + "LpJpg"; // 原始LP文件逐帧解码生成的yuv&jpg文件路径
-inline const std::string CROP_COVER_DIR = DATA_PATH + "/CropCover";
+    LP_SMOOTH_PLAY_DATA_PATH + "LpJpg"; // 原始LP文件逐帧解码生成的yuv&jpg文件路径
+inline const std::string CROP_COVER_DIR = LP_SMOOTH_PLAY_DATA_PATH + "/CropCover";
 
 // 当前仅用于记录用
 inline const std::unordered_map<std::string, int> VID_FILE_TO_LAST_VID_FRAME_IDX = {
@@ -73,13 +72,13 @@ inline const std::string LAST_VID_FRAME_YUV = LP_DECODE_YUV_DIR + std::string("/
 inline const std::string COVER_FRAME_YUV = LP_DECODE_YUV_DIR + std::string("/") + std::to_string(COVER_FRAME_IDX) + ".yuv"; // 275+21
 
 inline const std::string REG_RESULT_DIR =
-    DATA_PATH + "coverToVidRegResult"; // 封面帧与最后的视频帧的图像配准结果
-inline const std::string vidToCoverScaleRatioFile = DATA_PATH + "vidToCoverScaleRatio.txt";
+    LP_SMOOTH_PLAY_DATA_PATH + "coverToVidRegResult"; // 封面帧与最后的视频帧的图像配准结果
+inline const std::string vidToCoverScaleRatioFile = LP_SMOOTH_PLAY_DATA_PATH + "vidToCoverScaleRatio.txt";
 
 inline const std::string CROP_REG_RESULT_DIR =
-    DATA_PATH + "cropReg/cropReg"; // 过渡帧（封面帧剪裁不同FOV）与最后的视频帧的图像配准结果
+    LP_SMOOTH_PLAY_DATA_PATH + "cropReg/cropReg"; // 过渡帧（封面帧剪裁不同FOV）与最后的视频帧的图像配准结果
 
-inline const std::string YUV_WH_FILE = DATA_PATH + "yuvWidthHeight.txt";
+inline const std::string YUV_WH_FILE = LP_SMOOTH_PLAY_DATA_PATH + "yuvWidthHeight.txt";
 
 // 自定义删除器
 struct AVFormatContextDeleter
