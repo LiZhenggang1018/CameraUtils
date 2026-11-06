@@ -5,8 +5,8 @@
 #include "CommonEnv.h"
 #include <iostream>
 
-inline const std::string DATA_PATH = PROJECT_ROOT_DIR + "/data/ImageReg/";
-inline const std::string IN_FILE = DATA_PATH + "lhc.jpg";
+inline const std::string IMAGE_REG_DATA_PATH = std::string(PROJECT_ROOT_DIR) + "/data/ImageReg/";
+inline const std::string IMAGE_REG_IN_FILE = IMAGE_REG_DATA_PATH + "lhc.jpg";
 
 // 辅助函数：如果图像尺寸超过 maxSize，则等比例缩放并返回，否则返回原图
 inline cv::Mat fitToScreen(const cv::Mat& img, int maxSize = 800) {
@@ -20,8 +20,8 @@ inline cv::Mat fitToScreen(const cv::Mat& img, int maxSize = 800) {
 }
 
 inline void HarrisTest() {
-    cv::Mat gray = cv::imread(IN_FILE, cv::IMREAD_GRAYSCALE);
-    if (gray.empty()) return -1;
+    cv::Mat gray = cv::imread(IMAGE_REG_IN_FILE, cv::IMREAD_GRAYSCALE);
+    if (gray.empty()) return;
 
     cv::Mat eigen;
     // cornerEigenValsAndVecs计算图像每个像素邻域内 结构张量（structure tensor） 的特征值与特征向量
