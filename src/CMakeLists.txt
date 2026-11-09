@@ -4,12 +4,16 @@ add_executable(CameraUtils main.cpp)
 target_sources(CameraUtils PRIVATE
     LivePhotoSmoothPlay/ImageRegistrator.cpp
     LivePhotoSmoothPlay/YUVImageReader.cpp
+    OpticalFlow/LkTracker.cpp
+    OpticalFlow/MiddleburyColor.cpp
+    OpticalFlow/Visualization.cpp
 )
 
 target_include_directories(CameraUtils PRIVATE
     ${CMAKE_SOURCE_DIR}/inc
     ${CMAKE_SOURCE_DIR}/inc/LivePhotoSmoothPlay
     ${CMAKE_SOURCE_DIR}/inc/ImageReg
+    ${CMAKE_SOURCE_DIR}/inc/OpticalFlow
     ${CMAKE_SOURCE_DIR}/tests
 )
 target_include_directories(CameraUtils SYSTEM PRIVATE
