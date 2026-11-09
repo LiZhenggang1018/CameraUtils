@@ -145,8 +145,8 @@ if(_opencv_local_has_contrib)
         message(FATAL_ERROR "OpenCVConfig.cmake not found under ${_opencv_candidate}")
     endif()
     message(STATUS "OpenCV_DIR = ${OpenCV_DIR}")
-    find_package(OpenCV REQUIRED COMPONENTS
-        core imgproc highgui features2d calib3d flann video imgcodecs objdetect optflow)
+find_package(OpenCV REQUIRED COMPONENTS
+    core imgproc highgui features2d calib3d flann video imgcodecs objdetect optflow photo stitching xfeatures2d xphoto ximgproc stereo)
     # ${OpenCV_LIBS} 和 ${OpenCV_INCLUDE_DIRS} 由 find_package 提供
 else()
     # ---------- 分支 B：从源码构建 ----------

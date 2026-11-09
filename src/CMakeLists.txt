@@ -32,7 +32,6 @@ target_link_directories(CameraUtils PRIVATE
 
 target_link_libraries(CameraUtils PRIVATE
     ${OpenCV_LIBS}
-    opencv_optflow
     ${FFMPEG_LIBS}
     STDEXEC::stdexec
     nlohmann_json::nlohmann_json
