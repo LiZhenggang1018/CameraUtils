@@ -169,7 +169,7 @@ else()
         GIT_SHALLOW    TRUE
         OPTIONS
             "OPENCV_EXTRA_MODULES_PATH=${opencv_contrib_SOURCE_DIR}/modules"
-            "BUILD_LIST=core,imgproc,highgui,features2d,calib3d,flann,video,imgcodecs,objdetect,optflow"
+            "BUILD_LIST=core,imgproc,highgui,features2d,calib3d,flann,video,imgcodecs,objdetect,optflow,photo,stitching,xfeatures2d,xphoto,ximgproc,stereo"
             "BUILD_TESTS=OFF"
             "BUILD_PERF_TESTS=OFF"
             "BUILD_EXAMPLES=OFF"
