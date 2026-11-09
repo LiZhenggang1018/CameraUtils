@@ -13,5 +13,6 @@ C++20
 构建依赖：\
 cmake 构建,通过CPM下载3方依赖库：opencv ffmpeg stdexec nlohmann_json MagicEnum
 
-备注：\
+个人备注：\
 手动下载rapids-cmake，解压到如下路径D:/ThirdPartyLib/rapids-cmake，解决内网CMake 在下载 rapids-cmake 时 SSL 验证失败问题：
+为了节省opencv-contrib每次
