@@ -1,7 +1,7 @@
 #ifndef VISUALIZATION_H
 #define VISUALIZATION_H
 
-#include <opencv2/opencv.hpp>
+#include "OpenCVCommon.h"
 #include <vector>
 
 void DrawLkTrails(
