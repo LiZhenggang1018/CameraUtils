@@ -37,5 +37,7 @@
 #include "MiddleburyColor.h"
 #include "Visualization.h"
 #include "DenseFlow.h"
+#include "BiDirectionalLkFilter.h"
+
 
 #endif // UTILS_H
