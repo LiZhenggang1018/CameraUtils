@@ -4,6 +4,8 @@
 #include "TestCase.h"
 #include "Type2InstMapTest.h"
 #include "MagicEnumTest.h"
+#include "OpticalFlowTest.h"
+
 
 inline void RunTest()
 {
@@ -31,7 +33,8 @@ inline void RunTest()
     // RunLivePhotoSmoothPlayTest();
     // Type2InstMapTest();
     // MagicEnumTest::TestMagicEnum();
-    HarrisTest();
+    // HarrisTest();
+     OpticalFlowTest();
 }
 
 #endif
