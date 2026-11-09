@@ -1,7 +1,7 @@
 #ifndef TESTS_OPTICALFLOWTEST_H_
 #define TESTS_OPTICALFLOWTEST_H_
 
-#include <opencv2/opencv.hpp>
+#include "OpenCVCommon.h"
 
 #include <algorithm>
 #include <cstdio>
