@@ -2,6 +2,8 @@
 #define INC_OPTICALFLOW_LKTRACKER_H_
 
 #include "OpenCVCommon.h"
+#include "BiDirectionalLkFilter.h"
+
 #include <vector>
 
 class LkTracker {
