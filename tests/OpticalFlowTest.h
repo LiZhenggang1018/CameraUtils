@@ -58,7 +58,7 @@ inline void OnMouse(int event, int x, int y, int /*flags*/, void* userdata) {
 }
 
 inline int OpticalFlowTest() {
-    std::string videoPath = "data/video.mp4";
+    std::string videoPath = OPTICAL_FLOW_DATA_PATH;
     cv::VideoCapture capture(videoPath);
     if (!capture.isOpened()) {
         std::cerr << "Cannot open video: " << videoPath << std::endl;
