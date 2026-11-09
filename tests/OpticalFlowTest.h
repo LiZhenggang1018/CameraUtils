@@ -38,7 +38,7 @@ struct AppState {
     cv::Mat m_currentFrame;
 };
 
-void OnMouse(int event, int x, int y, int /*flags*/, void* userdata) {
+inline void OnMouse(int event, int x, int y, int /*flags*/, void* userdata) {
     auto* state = static_cast<AppState*>(userdata);
     if (state == nullptr || state->m_tracker == nullptr) {
         return;
@@ -54,16 +54,8 @@ void OnMouse(int event, int x, int y, int /*flags*/, void* userdata) {
     }
 }
 
-int main(int argc, char** argv) {
+inline int OpticalFlowTest() {
     std::string videoPath = "data/video.mp4";
-
-    for (int i = 1; i < argc; ++i) {
-        const std::string arg = argv[i];
-        if ((arg == "--video" || arg == "-v") && i + 1 < argc) {
-            videoPath = argv[++i];
-        }
-    }
-
     cv::VideoCapture capture(videoPath);
     if (!capture.isOpened()) {
         std::cerr << "Cannot open video: " << videoPath << std::endl;
