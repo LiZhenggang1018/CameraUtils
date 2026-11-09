@@ -41,7 +41,7 @@ struct AppState {
     cv::Mat m_currentFrame;
 };
 
-inline void OnMouse(int event, int x, int y, int /*flags*/, void* userdata) {
+void OnMouse(int event, int x, int y, int /*flags*/, void* userdata) {
     auto* state = static_cast<AppState*>(userdata);
     if (state == nullptr || state->m_tracker == nullptr) {
         return;
@@ -59,6 +59,7 @@ inline void OnMouse(int event, int x, int y, int /*flags*/, void* userdata) {
 
 inline int OpticalFlowTest() {
     std::string videoPath = OPTICAL_FLOW_DATA_PATH;
+
     cv::VideoCapture capture(videoPath);
     if (!capture.isOpened()) {
         std::cerr << "Cannot open video: " << videoPath << std::endl;
@@ -135,15 +136,28 @@ inline int OpticalFlowTest() {
                 tracker.Points());
         }
 
-        char statusBuffer[192];
+        char fbInfo[96];
+        if (tracker.IsFbFilterEnabled()) {
+            std::snprintf(
+                fbInfo,
+                sizeof(fbInfo),
+                "FB:ON  thr=%.2f  avg=%.2f",
+                tracker.FbThreshold(),
+                tracker.AverageFbError());
+        } else {
+            std::snprintf(fbInfo, sizeof(fbInfo), "FB:OFF");
+        }
+
+        char statusBuffer[256];
         std::snprintf(
             statusBuffer,
             sizeof(statusBuffer),
-            "Mode=%s [m]  maxLevel=%d [+/-]  winsize=%d [w/W]  tracked=%d  %s",
+            "Mode=%s [m]  maxLevel=%d [+/-]  winsize=%d [w/W]  tracked=%d  %s  %s",
             ModeName(state.m_mode),
             tracker.MaxLevel(),
             denseFlow.Winsize(),
             tracker.TrackedCount(),
+            fbInfo,
             state.m_paused ? "PAUSED" : "PLAYING");
 
         cv::putText(
@@ -158,7 +172,7 @@ inline int OpticalFlowTest() {
 
         cv::putText(
             display,
-            "space=pause  r=reset  q=quit",
+            "f=fbToggle  b/B=fbThr  space=pause  r=reset  q=quit",
             cv::Point(10, display.rows - 10),
             cv::FONT_HERSHEY_SIMPLEX,
             0.5,
@@ -190,6 +204,14 @@ inline int OpticalFlowTest() {
         } else if (key == 'W') {
             denseFlow.SetWinsize(
                 std::max(denseFlow.Winsize() - 2, 5));
+        } else if (key == 'b') {
+            tracker.SetFbThreshold(
+                std::min(tracker.FbThreshold() + 0.25, 5.0));
+        } else if (key == 'B') {
+            tracker.SetFbThreshold(
+                std::max(tracker.FbThreshold() - 0.25, 0.1));
+        } else if (key == 'f') {
+            tracker.SetEnableFbFilter(!tracker.IsFbFilterEnabled());
         } else if (key == 'r') {
             tracker.Reset();
             firstFrame = true;

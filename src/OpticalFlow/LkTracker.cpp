@@ -2,9 +2,23 @@
 
 #include <utility>
 
+LkTracker::LkTracker(const Params& params)
+    : m_params(params),
+      m_fbFilter(MakeFbParams(params)) {}
+
+BiDirectionalLkFilter::Params LkTracker::MakeFbParams(const Params& params) {
+    BiDirectionalLkFilter::Params fbParams;
+    fbParams.winSize = params.winSize;
+    fbParams.maxLevel = params.maxLevel;
+    fbParams.criteria = params.criteria;
+    fbParams.fbThreshold = params.fbThreshold;
+    return fbParams;
+}
+
 void LkTracker::Reset() {
     m_prevPts.clear();
     m_currPts.clear();
+    m_lastFbErrors.clear();
 }
 
 void LkTracker::Detect(const cv::Mat& gray) {
@@ -13,13 +27,13 @@ void LkTracker::Detect(const cv::Mat& gray) {
     cv::goodFeaturesToTrack(
         gray,
         m_currPts,
-        m_params.m_maxCorners,
-        m_params.m_qualityLevel,
-        m_params.m_minDistance,
+        m_params.maxCorners,
+        m_params.qualityLevel,
+        m_params.minDistance,
         cv::noArray(),
-        m_params.m_blockSize,
-        m_params.m_useHarrisDetector,
-        m_params.m_k);
+        m_params.blockSize,
+        m_params.useHarrisDetector,
+        m_params.k);
 
     m_prevPts = m_currPts;
 }
@@ -30,31 +44,39 @@ void LkTracker::Track(const cv::Mat& prevGray, const cv::Mat& gray) {
         return;
     }
 
-    std::vector<cv::Point2f> nextPts;
-    std::vector<uchar> status;
-    std::vector<float> err;
-
-    cv::calcOpticalFlowPyrLK(
-        prevGray,
-        gray,
-        m_currPts,
-        nextPts,
-        status,
-        err,
-        m_params.m_winSize,
-        m_params.m_maxLevel,
-        m_params.m_criteria);
-
     std::vector<cv::Point2f> goodPrev;
     std::vector<cv::Point2f> goodCurr;
-    goodPrev.reserve(m_currPts.size());
-    goodCurr.reserve(m_currPts.size());
 
-    for (std::size_t i = 0; i < m_currPts.size(); ++i) {
-        if (status[i] != 0) {
-            goodPrev.push_back(m_currPts[i]);
-            goodCurr.push_back(nextPts[i]);
+    if (m_params.enableFbFilter) {
+        m_lastFbErrors.clear();
+        m_fbFilter.Filter(prevGray, gray, m_currPts,
+                          goodPrev, goodCurr, m_lastFbErrors);
+    } else {
+        std::vector<cv::Point2f> nextPts;
+        std::vector<uchar> status;
+        std::vector<float> err;
+
+        cv::calcOpticalFlowPyrLK(
+            prevGray,
+            gray,
+            m_currPts,
+            nextPts,
+            status,
+            err,
+            m_params.winSize,
+            m_params.maxLevel,
+            m_params.criteria);
+
+        goodPrev.reserve(m_currPts.size());
+        goodCurr.reserve(m_currPts.size());
+        for (std::size_t i = 0; i < m_currPts.size(); ++i) {
+            if (status[i] != 0) {
+                goodPrev.push_back(m_currPts[i]);
+                goodCurr.push_back(nextPts[i]);
+            }
         }
+
+        m_lastFbErrors.clear();
     }
 
     m_prevPts = std::move(goodPrev);
@@ -62,8 +84,8 @@ void LkTracker::Track(const cv::Mat& prevGray, const cv::Mat& gray) {
 
     if (m_currPts.size() <
         static_cast<std::size_t>(
-            static_cast<double>(m_params.m_maxCorners) *
-            m_params.m_replenishRatio)) {
+            static_cast<double>(m_params.maxCorners) *
+            m_params.replenishRatio)) {
         Replenish(gray);
     }
 }
@@ -73,18 +95,18 @@ void LkTracker::Replenish(const cv::Mat& gray) {
     cv::goodFeaturesToTrack(
         gray,
         candidates,
-        m_params.m_maxCorners,
-        m_params.m_qualityLevel,
-        m_params.m_minDistance,
+        m_params.maxCorners,
+        m_params.qualityLevel,
+        m_params.minDistance,
         cv::noArray(),
-        m_params.m_blockSize,
-        m_params.m_useHarrisDetector,
-        m_params.m_k);
+        m_params.blockSize,
+        m_params.useHarrisDetector,
+        m_params.k);
 
     for (const auto& point : candidates) {
         bool tooClose = false;
         for (const auto& trackedPoint : m_currPts) {
-            if (cv::norm(point - trackedPoint) < m_params.m_minDistance) {
+            if (cv::norm(point - trackedPoint) < m_params.minDistance) {
                 tooClose = true;
                 break;
             }
@@ -118,4 +140,27 @@ bool LkTracker::RemovePoint(const cv::Point2f& point, double radius) {
     }
 
     return removed;
+}
+
+void LkTracker::SetMaxLevel(int level) {
+    m_params.maxLevel = level;
+    m_fbFilter.SetMaxLevel(level);
+}
+
+void LkTracker::SetFbThreshold(double threshold) {
+    m_params.fbThreshold = threshold;
+    m_fbFilter.SetFbThreshold(threshold);
+}
+
+double LkTracker::AverageFbError() const {
+    if (m_lastFbErrors.empty()) {
+        return 0.0;
+    }
+
+    double sum = 0.0;
+    for (const float error : m_lastFbErrors) {
+        sum += static_cast<double>(error);
+    }
+
+    return sum / static_cast<double>(m_lastFbErrors.size());
 }
