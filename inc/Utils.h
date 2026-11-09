@@ -36,6 +36,6 @@
 #include "LkTracker.h"
 #include "MiddleburyColor.h"
 #include "Visualization.h"
-
+#include "DenseFlow.h"
 
 #endif // UTILS_H
