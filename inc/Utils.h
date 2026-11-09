@@ -33,5 +33,9 @@
 #include "ConcatCppFilesInDir.h"
 #include "HarrisDetect.h"
 
+#include "LkTracker.h"
+#include "MiddleburyColor.h"
+#include "Visualization.h"
+
 
 #endif // UTILS_H
