@@ -1,14 +1,17 @@
 # 生成可执行程序 CameraUtils
 add_executable(CameraUtils main.cpp)
 
+# 自动扫描两个模块目录下的 .cpp（不递归子目录）
+file(GLOB LIVE_PHOTO_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/LivePhotoSmoothPlay/*.cpp"
+)
+file(GLOB OPTICAL_FLOW_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/OpticalFlow/*.cpp"
+)
+
 target_sources(CameraUtils PRIVATE
-    LivePhotoSmoothPlay/ImageRegistrator.cpp
-    LivePhotoSmoothPlay/YUVImageReader.cpp
-    OpticalFlow/LkTracker.cpp
-    OpticalFlow/MiddleburyColor.cpp
-    OpticalFlow/Visualization.cpp
-    OpticalFlow/BiDirectionalLkFilter.cpp
-    OpticalFlow/OpticalFlowTest.cpp
+    ${LIVE_PHOTO_SOURCES}
+    ${OPTICAL_FLOW_SOURCES}
 )
 
 target_include_directories(CameraUtils PRIVATE
