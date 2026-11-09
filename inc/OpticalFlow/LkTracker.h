@@ -7,23 +7,26 @@
 class LkTracker {
 public:
     struct Params {
-        int m_maxCorners = 500;
-        double m_qualityLevel = 0.01;
-        double m_minDistance = 10.0;
-        int m_blockSize = 3;
-        bool m_useHarrisDetector = false;
-        double m_k = 0.04;
+        int maxCorners = 500;
+        double qualityLevel = 0.01;
+        double minDistance = 10.0;
+        int blockSize = 3;
+        bool useHarrisDetector = false;
+        double k = 0.04;
 
-        cv::Size m_winSize = cv::Size(21, 21);
-        int m_maxLevel = 3;
-        cv::TermCriteria m_criteria = cv::TermCriteria(
+        cv::Size winSize = cv::Size(21, 21);
+        int maxLevel = 3;
+        cv::TermCriteria criteria = cv::TermCriteria(
             cv::TermCriteria::COUNT | cv::TermCriteria::EPS, 30, 0.01);
 
-        double m_replenishRatio = 0.5;
+        double replenishRatio = 0.5;
+
+        // 双向 LK 参数
+        bool enableFbFilter = true;
+        double fbThreshold = 1.5;
     };
 
-    explicit LkTracker(const Params& params = Params())
-        : m_params(params) {}
+    explicit LkTracker(const Params& params = Params());
 
     void Reset();
 
@@ -47,20 +50,38 @@ public:
         return static_cast<int>(m_currPts.size());
     }
 
-    void SetMaxLevel(int level) {
-        m_params.m_maxLevel = level;
-    }
+    void SetMaxLevel(int level);
 
     [[nodiscard]] int MaxLevel() const {
-        return m_params.m_maxLevel;
+        return m_params.maxLevel;
     }
 
+    void SetFbThreshold(double threshold);
+
+    [[nodiscard]] double FbThreshold() const {
+        return m_params.fbThreshold;
+    }
+
+    void SetEnableFbFilter(bool enable) {
+        m_params.enableFbFilter = enable;
+    }
+
+    [[nodiscard]] bool IsFbFilterEnabled() const {
+        return m_params.enableFbFilter;
+    }
+
+    [[nodiscard]] double AverageFbError() const;
+
 private:
+    static BiDirectionalLkFilter::Params MakeFbParams(const Params& params);
+
     void Replenish(const cv::Mat& gray);
 
     Params m_params;
     std::vector<cv::Point2f> m_prevPts;
     std::vector<cv::Point2f> m_currPts;
+    std::vector<float> m_lastFbErrors;
+    BiDirectionalLkFilter m_fbFilter;
 };
 
 #endif // INC_OPTICALFLOW_LKTRACKER_H_
