@@ -102,42 +102,107 @@ CPMAddPackage(
 )
 
 # ============================================================
-# OpenCV（本地/CI 双路径）
+# OpenCV + contrib（optflow）
+# - 本地已有带 contrib 的安装 → 快速加载
+# - 否则从源码构建（CI 必经）
 # ============================================================
-camera_utils_resolve_lib_root(OpenCV OPENCV_ROOT
-    "D:/ThirdPartyLib/opencv/opencv_windows/install")
-
-CPMAddPackage(
-    NAME opencv_prebuilt
-    SOURCE_DIR "${OPENCV_ROOT}"
-    DOWNLOAD_ONLY YES
-)
-
-set(_opencv_candidates
-    "${opencv_prebuilt_SOURCE_DIR}/build"
-    "${opencv_prebuilt_SOURCE_DIR}/build/install"
-    "${opencv_prebuilt_SOURCE_DIR}"
-)
-set(OpenCV_DIR "" CACHE PATH "Path to OpenCVConfig.cmake" FORCE)
-foreach(_cand IN LISTS _opencv_candidates)
-    if(EXISTS "${_cand}")
-        file(GLOB_RECURSE _config_files "${_cand}/OpenCVConfig.cmake")
-        if(_config_files)
-            list(GET _config_files 0 _first_config)
-            get_filename_component(OpenCV_DIR "${_first_config}" DIRECTORY)
-            break()
-        endif()
-    endif()
-endforeach()
-
-if(NOT OpenCV_DIR OR NOT EXISTS "${OpenCV_DIR}/OpenCVConfig.cmake")
-    message(FATAL_ERROR
-        "OpenCVConfig.cmake not found under ${opencv_prebuilt_SOURCE_DIR}.")
+# 软检测候选路径（不 FATAL_ERROR，找不到就走源码构建）
+if(DEFINED ENV{OPENCV_ROOT} AND EXISTS "$ENV{OPENCV_ROOT}")
+    file(TO_CMAKE_PATH "$ENV{OPENCV_ROOT}" _opencv_candidate)
+    message(STATUS "OpenCV: 候选路径来自环境变量 OPENCV_ROOT = ${_opencv_candidate}")
+elseif(EXISTS "D:/ThirdPartyLib/opencv/opencv-contrib/install")
+    set(_opencv_candidate "D:/ThirdPartyLib/opencv/opencv-contrib/install")
+    message(STATUS "OpenCV: 候选路径为本地 install = ${_opencv_candidate}")
+else()
+    set(_opencv_candidate "")
+    message(STATUS "OpenCV: 无本地候选路径")
 endif()
 
-message(STATUS "OpenCV_DIR = ${OpenCV_DIR}")
-find_package(OpenCV REQUIRED COMPONENTS
-    core imgproc highgui features2d calib3d flann video imgcodecs objdetect)
+# 检测候选路径下是否有 optflow 头文件
+set(_opencv_local_has_contrib FALSE)
+if(_opencv_candidate AND EXISTS "${_opencv_candidate}")
+    file(GLOB_RECURSE _optflow_headers "${_opencv_candidate}/include/opencv2/optflow.hpp")
+    if(_optflow_headers)
+        set(_opencv_local_has_contrib TRUE)
+    endif()
+endif()
+
+if(_opencv_local_has_contrib)
+    # ---------- 分支 A：本地已安装带 contrib 的 OpenCV ----------
+    message(STATUS "OpenCV: 使用本地带 contrib 的安装: ${_opencv_candidate}")
+    CPMAddPackage(
+        NAME opencv_prebuilt
+        SOURCE_DIR "${_opencv_candidate}"
+        DOWNLOAD_ONLY YES
+    )
+    set(OpenCV_DIR "" CACHE PATH "Path to OpenCVConfig.cmake" FORCE)
+    file(GLOB_RECURSE _config_files "${_opencv_candidate}/OpenCVConfig.cmake")
+    if(_config_files)
+        list(GET _config_files 0 _first)
+        get_filename_component(OpenCV_DIR "${_first}" DIRECTORY)
+    endif()
+    if(NOT OpenCV_DIR OR NOT EXISTS "${OpenCV_DIR}/OpenCVConfig.cmake")
+        message(FATAL_ERROR "OpenCVConfig.cmake not found under ${_opencv_candidate}")
+    endif()
+    message(STATUS "OpenCV_DIR = ${OpenCV_DIR}")
+    find_package(OpenCV REQUIRED COMPONENTS
+        core imgproc highgui features2d calib3d flann video imgcodecs objdetect optflow)
+    # ${OpenCV_LIBS} 和 ${OpenCV_INCLUDE_DIRS} 由 find_package 提供
+else()
+    # ---------- 分支 B：从源码构建 ----------
+    message(STATUS "OpenCV: 本地无带 contrib 的安装，从源码构建（包含 optflow）")
+
+    # 1) 先下载 contrib 源码（只下载不构建）
+    CPMAddPackage(
+        NAME opencv_contrib
+        GITHUB_REPOSITORY opencv/opencv_contrib
+        GIT_TAG        4.10.0
+        GIT_SHALLOW    TRUE
+        DOWNLOAD_ONLY  YES
+    )
+
+    # 2) 构建 OpenCV，挂上 contrib 的 modules 目录
+    CPMAddPackage(
+        NAME opencv
+        GITHUB_REPOSITORY opencv/opencv
+        GIT_TAG        4.10.0
+        GIT_SHALLOW    TRUE
+        OPTIONS
+            "OPENCV_EXTRA_MODULES_PATH=${opencv_contrib_SOURCE_DIR}/modules"
+            "BUILD_LIST=core,imgproc,highgui,features2d,calib3d,flann,video,imgcodecs,objdetect,optflow"
+            "BUILD_TESTS=OFF"
+            "BUILD_PERF_TESTS=OFF"
+            "BUILD_EXAMPLES=OFF"
+            "BUILD_opencv_apps=OFF"
+            "BUILD_opencv_python2=OFF"
+            "BUILD_opencv_python3=OFF"
+            "BUILD_opencv_js=OFF"
+            "BUILD_JAVA=OFF"
+            "WITH_CUDA=OFF"
+            "WITH_IPP=OFF"
+            "BUILD_SHARED_LIBS=ON"
+    )
+
+    # 统一成与 find_package 分支相同的变量名，src/CMakeLists.txt 无需改
+    set(OpenCV_LIBS
+        opencv_core opencv_imgproc opencv_highgui opencv_features2d
+        opencv_calib3d opencv_flann opencv_video opencv_imgcodecs
+        opencv_objdetect opencv_optflow
+    )
+    set(OpenCV_INCLUDE_DIRS
+        "${opencv_SOURCE_DIR}/modules/core/include"
+        "${opencv_SOURCE_DIR}/modules/imgproc/include"
+        "${opencv_SOURCE_DIR}/modules/highgui/include"
+        "${opencv_SOURCE_DIR}/modules/features2d/include"
+        "${opencv_SOURCE_DIR}/modules/calib3d/include"
+        "${opencv_SOURCE_DIR}/modules/flann/include"
+        "${opencv_SOURCE_DIR}/modules/video/include"
+        "${opencv_SOURCE_DIR}/modules/imgcodecs/include"
+        "${opencv_SOURCE_DIR}/modules/objdetect/include"
+        "${opencv_contrib_SOURCE_DIR}/modules/optflow/include"
+    )
+    message(STATUS "OpenCV: 源码构建模式，target 列表 = ${OpenCV_LIBS}")
+endif()
 
 # ============================================================
 # FFmpeg（CPM 下载预编译包）
