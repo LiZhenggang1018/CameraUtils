@@ -7,6 +7,7 @@ target_sources(CameraUtils PRIVATE
     OpticalFlow/LkTracker.cpp
     OpticalFlow/MiddleburyColor.cpp
     OpticalFlow/Visualization.cpp
+    OpticalFlow/BiDirectionalLkFilter.cpp
 )
 
 target_include_directories(CameraUtils PRIVATE
