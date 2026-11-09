@@ -12,6 +12,9 @@
 #include "LkTracker.h"
 #include "MiddleburyColor.h"
 #include "Visualization.h"
+#include "CommonEnv.h"
+
+inline const std::string OPTICAL_FLOW_DATA_PATH = std::string(PROJECT_ROOT_DIR) + "/data/OpticalFlow_1.mp4";
 
 enum class Mode {
     Lk,
