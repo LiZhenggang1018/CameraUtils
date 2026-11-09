@@ -55,17 +55,17 @@ public:
 
 private:
     void Recreate() {
-        int presetFlag = cv::optflow::DISOpticalFlow::PRESET_FAST;
+        int presetFlag = cv::DISOpticalFlow::PRESET_FAST;
         if (m_preset == Preset::UltraFast) {
-            presetFlag = cv::optflow::DISOpticalFlow::PRESET_ULTRAFAST;
+            presetFlag = cv::DISOpticalFlow::PRESET_ULTRAFAST;
         } else if (m_preset == Preset::Medium) {
-            presetFlag = cv::optflow::DISOpticalFlow::PRESET_MEDIUM;
+            presetFlag = cv::DISOpticalFlow::PRESET_MEDIUM;
         }
-        m_dis = cv::optflow::DISOpticalFlow::create(presetFlag);
+        m_dis = cv::DISOpticalFlow::create(presetFlag);
     }
 
     Preset m_preset;
-    cv::Ptr<cv::optflow::DISOpticalFlow> m_dis;
+    cv::Ptr<cv::DISOpticalFlow> m_dis;
 };
 
 #endif
