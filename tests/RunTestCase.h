@@ -34,7 +34,8 @@ inline void RunTest()
     // Type2InstMapTest();
     // MagicEnumTest::TestMagicEnum();
     // HarrisTest();
-     OpticalFlowTest();
+     // OpticalFlowTest();
+     Upsample30To60();
 }
 
 #endif
