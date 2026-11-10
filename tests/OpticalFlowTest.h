@@ -27,7 +27,7 @@ enum class Mode {
     Overlay
 };
 
-const char* ModeName(Mode mode) {
+inline const char* ModeName(Mode mode) {
     switch (mode) {
         case Mode::Lk:       return "LK";
         case Mode::Dense:    return "Dense";
@@ -46,7 +46,7 @@ struct AppState {
     bool m_deepFlowDirty = true;
 };
 
-void OnMouse(int event, int x, int y, int /*flags*/, void* userdata) {
+inline void OnMouse(int event, int x, int y, int /*flags*/, void* userdata) {
     auto* state = static_cast<AppState*>(userdata);
     if (state == nullptr || state->m_tracker == nullptr) {
         return;
