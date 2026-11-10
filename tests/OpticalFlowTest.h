@@ -324,8 +324,9 @@ inline int OpticalFlowTest() {
     return 0;
 }
 
-inline int Upsample30To60(const std::string& inputPath,
-                          const std::string& outputPath) {
+inline int Upsample30To60() {
+    const std::string inputPath = OPTICAL_FLOW_DATA_PATH;
+    const std::string outputPath = PROJECT_ROOT_DIR + "/data/OpticalFlow/1_60fps.mp4";
     cv::VideoCapture cap(inputPath);
     if (!cap.isOpened()) return -1;
 
