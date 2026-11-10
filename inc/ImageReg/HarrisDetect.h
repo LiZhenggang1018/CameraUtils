@@ -5,8 +5,18 @@
 #include "CommonEnv.h"
 #include <iostream>
 
-inline const std::string IMAGE_REG_DATA_PATH = std::string(PROJECT_ROOT_DIR) + "/data/ImageReg/";
-inline const std::string IMAGE_REG_IN_FILE = IMAGE_REG_DATA_PATH + "lhc.jpg";
+// 路径常量：改成"函数内 static"，避免跨文件静态初始化顺序问题
+inline const std::string& ImageRegDataPathImpl() {
+    static const std::string s = std::string(PROJECT_ROOT_DIR) + "/data/ImageReg/";
+    return s;
+}
+inline const std::string& ImageRegInFileImpl() {
+    static const std::string s = ImageRegDataPathImpl() + "lhc.jpg";
+    return s;
+}
+
+#define IMAGE_REG_DATA_PATH (ImageRegDataPathImpl())
+#define IMAGE_REG_IN_FILE   (ImageRegInFileImpl())
 
 // 辅助函数：如果图像尺寸超过 maxSize，则等比例缩放并返回，否则返回原图
 inline cv::Mat fitToScreen(const cv::Mat& img, int maxSize = 800) {
@@ -50,7 +60,7 @@ inline void HarrisTest() {
     cv::imshow("Lambda2", fitToScreen(lambda2, 800));
 
     // Shi-Tomasi 角点二值图
-    // 直接使用两个特征值中较小的那个作为角点强度。一个像素只有在两个方向上都存在显著变化（两个特征值都足够大）时才被认为是角点，而最小特征值恰好能衡量“较弱方向的变化量”。
+    // 直接使用两个特征值中较小的那个作为角点强度。一个像素只有在两个方向上都存在显著变化（两个特征值都足够大）时才被认为是角点，而最小特征值恰好能衡量"较弱方向的变化量"。
     // 前面 已将lambda2线性映射到 [0, 255]，最强的角点响应变为 255，最弱的变为 0。故下面取选择最强角点响应的 1% （0.01 * 255）作为阈值。
     cv::Mat corners;
     cv::threshold(lambda2, corners, 0.01 * 255, 255, cv::THRESH_BINARY);
