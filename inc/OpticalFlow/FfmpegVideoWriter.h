@@ -9,19 +9,27 @@
 // 基于 FFmpeg C API 的 MP4 写入器（H.264 / libx264）
 // 用法：
 //   FfmpegVideoWriter writer;
-//   writer.Open("out.mp4", w, h, 60, 8'000'000);
-//   writer.WriteFrame(bgrMat);   // 每帧调用一次
-//   writer.Close();              // 必须调用，否则 MP4 没有 moov atom
+//   writer.Open("out.mp4", w, h, 60, 16000000);
+//   writer.WriteFrame(bgrMat);
+//   writer.Close();          // 必须调用，否则 MP4 没有 moov atom
 class FfmpegVideoWriter {
 public:
+    // 编码器可选参数
+    struct EncoderParams {
+        std::string preset = "veryfast";   // libx264 preset：ultrafast/veryfast/fast/medium/slow...
+        int         crf    = -1;           // >= 0 时用 CRF 模式，忽略 bitrate；-1 时用 ABR
+    };
+
     FfmpegVideoWriter() = default;
     ~FfmpegVideoWriter() { Close(); }
 
     FfmpegVideoWriter(const FfmpegVideoWriter&) = delete;
     FfmpegVideoWriter& operator=(const FfmpegVideoWriter&) = delete;
 
+    // bitrate 只在 crf < 0 时生效
     bool Open(const std::string& path, int width, int height,
-              int fps, int bitrate = 8000000);
+              int fps, int bitrate = 8000000,
+              const EncoderParams& enc = EncoderParams{});
 
     bool WriteFrame(const cv::Mat& bgr);
 
