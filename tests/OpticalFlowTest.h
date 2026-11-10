@@ -26,7 +26,6 @@ inline const std::string& OpticalFlowDataPathImpl() {
     static const std::string s = std::string(PROJECT_ROOT_DIR) + "/data/OpticalFlow/1.mp4";
     return s;
 }
-#define OPTICAL_FLOW_DATA_PATH (OpticalFlowDataPathImpl())
 
 enum class Mode {
     Lk,
@@ -72,7 +71,7 @@ inline void OnMouse(int event, int x, int y, int /*flags*/, void* userdata) {
 }
 
 inline int OpticalFlowTest() {
-    std::string videoPath = OPTICAL_FLOW_DATA_PATH;
+    std::string videoPath = OpticalFlowDataPathImpl();
 
     cv::VideoCapture capture(videoPath);
     if (!capture.isOpened()) {
@@ -336,7 +335,7 @@ inline int OpticalFlowTest() {
 inline int Upsample30To60() {
     std::setvbuf(stdout, nullptr, _IONBF, 0);
     std::setvbuf(stderr, nullptr, _IONBF, 0);
-    const std::string inputPath  = OPTICAL_FLOW_DATA_PATH;
+    const std::string inputPath  = OpticalFlowDataPathImpl();
     const std::string outputPath = std::string(PROJECT_ROOT_DIR) + "/data/OpticalFlow/1_60fps.mp4";
 
     std::printf("========== Upsample30To60 begin ==========\n");
