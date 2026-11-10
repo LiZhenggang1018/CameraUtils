@@ -7,7 +7,7 @@
 
 // 路径常量：改成"函数内 static"，避免跨文件静态初始化顺序问题
 inline const std::string& ImageRegDataPathImpl() {
-    static const std::string s = std::string(PROJECT_ROOT_DIR) + "/data/ImageReg/";
+    static const std::string s = EnvRootPath() + "/data/ImageReg/";
     return s;
 }
 inline const std::string& ImageRegInFileImpl() {

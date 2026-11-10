@@ -27,7 +27,7 @@
 
 // 根路径（末尾带斜杠，与原 LP_SMOOTH_PLAY_DATA_PATH 语义一致）
 inline const std::string& LpSmoothPlayDataPath() {
-    static const std::string s = std::string(PROJECT_ROOT_DIR) + "/data/LivePhotoSmoothPlay/";
+    static const std::string s = EnvRootPath() + "/data/LivePhotoSmoothPlay/";
     return s;
 }
 #define LP_SMOOTH_PLAY_DATA_PATH (LpSmoothPlayDataPath())
