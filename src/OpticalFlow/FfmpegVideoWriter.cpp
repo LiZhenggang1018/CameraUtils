@@ -67,7 +67,8 @@ bool FfmpegVideoWriter::Open(const std::string& path, int width, int height,
 
     // libx264 快速预设（其他编码器会忽略未知 key）
     AVDictionary* opts = nullptr;
-    av_dict_set(&opts, "preset", "veryfast", 0);
+    av_dict_set(&opts, "preset", "medium", 0);   // veryfast → medium，画质提升明显
+    av_dict_set(&opts, "crf", "20", 0);          // CRF 18~23 是"视觉无损"范围
 
     ret = avcodec_open2(m_codecCtx, codec, &opts);
     av_dict_free(&opts); // 必须释放，否则内存泄漏

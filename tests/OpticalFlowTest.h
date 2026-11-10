@@ -363,7 +363,11 @@ inline int Upsample30To60() {
     FrameInterpolator interp;
     FfmpegVideoWriter writer;
     const int outFps = static_cast<int>(srcFps * 2);
-    if (!writer.Open(outputPath, W, H, outFps, 8000000)) {
+    // 设置码率16Mbps，保证输出视频质量
+    // 对于1080P 60FPS,推荐码率：12~20Mbps
+    // 对于4K 60FPS,推荐码率：50~80 Mbps
+
+    if (!writer.Open(outputPath, W, H, outFps, 16000000)) {
         std::cerr << "[ERROR] FfmpegVideoWriter Open failed" << std::endl;
         return -1;
     }
