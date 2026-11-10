@@ -173,7 +173,7 @@ class JsonConfig : public Singleton<JsonConfig>
 public:
     JsonConfig()
     {
-        std::ifstream ifs(CONFIG_PARAM_PATH);
+        std::ifstream ifs(ConfigParamPath());
         if (!ifs.is_open())
         {
             PV("open failed", ifs.fail());
