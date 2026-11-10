@@ -38,6 +38,6 @@
 #include "Visualization.h"
 #include "DenseFlow.h"
 #include "BiDirectionalLkFilter.h"
-
+#include "FrameInterpolator.h"
 
 #endif // UTILS_H
