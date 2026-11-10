@@ -413,7 +413,7 @@ inline int Upsample30To60() {
             std::fprintf(stderr, "[BUG] size mismatch\n");
             break;
         }
-        std::printf("[LOOP #%d] prev.data=%p, curr.data=%p\n", readCount, (void*)prev.data, (void*)curr.data);
+        //std::printf("[LOOP #%d] prev.data=%p, curr.data=%p\n", readCount, (void*)prev.data, (void*)curr.data);
         if (curr.empty()) {
             std::cerr << "[WARN ] empty frame at read#" << readCount << std::endl;
             continue;
