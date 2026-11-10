@@ -17,10 +17,12 @@
 #include "Visualization.h"
 #include "CommonEnv.h"
 #include "FfmpegVideoWriter.h"
+#include "FrameInterpolator.h"          // ← 新增：显式包含，避免依赖传递
+#include "InterpolationConfig.h"        // ← 新增：配置结构体 + 序列化
 
 
 // ============================================================
-// 路径常量：改成"函数内 static"，避免跨文件静态初始化顺序问题
+// 路径常量：函数内 static，避免跨文件静态初始化顺序问题
 // ============================================================
 inline const std::string& OpticalFlowDataPathImpl() {
     static const std::string s = EnvRootPath() + "/data/OpticalFlow/1.mp4";
@@ -99,7 +101,6 @@ inline int OpticalFlowTest() {
 
     bool firstFrame = true;
 
-    // 计时：记录最近一次稠密光流计算耗时（ms）
     double lastDenseMs = 0.0;
     double lastDeepFlowMs = 0.0;
 
@@ -140,7 +141,6 @@ inline int OpticalFlowTest() {
 
             prevGray = gray.clone();
             state.m_currentFrame = frame.clone();
-            // 新帧到达，DeepFlow 需要重算
             state.m_deepFlowDirty = true;
         }
 
@@ -148,7 +148,6 @@ inline int OpticalFlowTest() {
             continue;
         }
 
-        // DeepFlow 只在暂停时计算一次
         if (state.m_mode == Mode::DeepFlow &&
             state.m_paused &&
             state.m_deepFlowDirty &&
@@ -194,7 +193,6 @@ inline int OpticalFlowTest() {
             }
         }
 
-        // ---- 第一行状态栏 ----
         char statusBuffer[256];
 
         if (state.m_mode == Mode::Lk || state.m_mode == Mode::Overlay) {
@@ -216,7 +214,7 @@ inline int OpticalFlowTest() {
                     tracker.MaxLevel(),
                     tracker.TrackedCount(),
                     fbInfo,
-                    lastDenseMs,   // LK 模式下此值可能为旧值，保留以显示最近稠密计算耗时
+                    lastDenseMs,
                     state.m_paused ? "PAUSED" : "PLAYING");
             } else {
                 std::snprintf(
@@ -243,7 +241,7 @@ inline int OpticalFlowTest() {
                 denseFlowDis.PresetName(),
                 lastDenseMs,
                 state.m_paused ? "PAUSED" : "PLAYING");
-        } else { // DeepFlow
+        } else {
             if (state.m_paused) {
                 std::snprintf(
                     statusBuffer, sizeof(statusBuffer),
@@ -266,7 +264,6 @@ inline int OpticalFlowTest() {
             1,
             cv::LINE_AA);
 
-        // ---- 底部提示栏 ----
         cv::putText(
             display,
             "m=mode space=pause r=reset q=quit f=fb b/B=fbThr +/-=maxLv w/W=win p=preset",
@@ -291,7 +288,6 @@ inline int OpticalFlowTest() {
             const int nextMode =
                 (static_cast<int>(state.m_mode) + 1) % 5;
             state.m_mode = static_cast<Mode>(nextMode);
-            // 切到 DeepFlow 时标记需要重算（下一次暂停时触发）
             if (state.m_mode == Mode::DeepFlow) {
                 state.m_deepFlowDirty = true;
             }
@@ -332,15 +328,23 @@ inline int OpticalFlowTest() {
     return 0;
 }
 
-inline int Upsample30To60() {
-    std::setvbuf(stdout, nullptr, _IONBF, 0);
-    std::setvbuf(stderr, nullptr, _IONBF, 0);
-    const std::string inputPath  = OpticalFlowDataPathImpl();
-    const std::string outputPath = EnvRootPath() + "/data/OpticalFlow/1_60fps.mp4";
-
-    std::printf("========== Upsample30To60 begin ==========\n");
-    std::printf("[Input ] %s\n",  inputPath.c_str());
+// ============================================================
+// 通用插帧：任意倍率 + 配置驱动
+// 核心优化：每对帧只算一次双向光流，所有中间帧复用
+// ============================================================
+inline int UpsampleVideo(const std::string& inputPath,
+                         const std::string& outputPath,
+                         const InterpolationConfig& cfg) {
+    std::printf("========== UpsampleVideo begin ==========\n");
+    std::printf("[Config] factor=%d, preset=%s, crf=%d, bitrate=%d\n",
+                cfg.factor, cfg.preset.c_str(), cfg.crf, cfg.bitrate);
+    std::printf("[Input ] %s\n", inputPath.c_str());
     std::printf("[Output] %s\n", outputPath.c_str());
+
+    if (cfg.factor < 2) {
+        std::cerr << "[ERROR] factor must be >= 2" << std::endl;
+        return -1;
+    }
 
     cv::VideoCapture cap(inputPath);
     if (!cap.isOpened()) {
@@ -360,14 +364,24 @@ inline int Upsample30To60() {
         return -1;
     }
 
-    FrameInterpolator interp;
-    FfmpegVideoWriter writer;
-    const int outFps = static_cast<int>(srcFps * 2);
-    // 设置码率16Mbps，保证输出视频质量
-    // 对于1080P 60FPS,推荐码率：12~20Mbps
-    // 对于4K 60FPS,推荐码率：50~80 Mbps
+    // 用配置构造 FrameInterpolator::Params
+    FrameInterpolator::Params params;
+    params.flowBackend         = cfg.flowBackend;
+    params.fbThreshold         = cfg.fbThreshold;
+    params.enableStaticProtect = cfg.enableStaticProtect;
+    params.staticMagThreshold  = cfg.staticMagThreshold;
+    params.confidenceBlurSigma = cfg.confidenceBlurSigma;
+    params.occlusionBlurSigma  = cfg.occlusionBlurSigma;
+    FrameInterpolator interp(params);
 
-    if (!writer.Open(outputPath, W, H, outFps, 16000000)) {
+    // 用配置构造 FfmpegVideoWriter::EncoderParams
+    FfmpegVideoWriter writer;
+    FfmpegVideoWriter::EncoderParams enc;
+    enc.preset = cfg.preset;
+    enc.crf    = cfg.crf;
+
+    const int outFps = static_cast<int>(srcFps * cfg.factor);
+    if (!writer.Open(outputPath, W, H, outFps, cfg.bitrate, enc)) {
         std::cerr << "[ERROR] FfmpegVideoWriter Open failed" << std::endl;
         return -1;
     }
@@ -405,37 +419,47 @@ inline int Upsample30To60() {
     // -------- 主循环 --------
     cv::Mat curr;
     while (cap.read(curr)) {
+        // 防御：prev 和 curr 绝不能共享内存（cv::Mat 浅拷贝陷阱）
         if (prev.data == curr.data) {
             std::fprintf(stderr, "[BUG] prev and curr share the same memory!\n");
             break;
         }
-        if (prev.size() != curr.size()) {
-            std::fprintf(stderr, "[BUG] size mismatch\n");
-            break;
-        }
-        //std::printf("[LOOP #%d] prev.data=%p, curr.data=%p\n", readCount, (void*)prev.data, (void*)curr.data);
         if (curr.empty()) {
             std::cerr << "[WARN ] empty frame at read#" << readCount << std::endl;
             continue;
         }
         ++readCount;
 
-        if (curr.cols != prev.cols || curr.rows != prev.rows) {
+        if (prev.size() != curr.size()) {
             std::cerr << "[WARN ] size mismatch at read#" << readCount
                       << ": " << curr.cols << "x" << curr.rows
                       << " vs prev " << prev.cols << "x" << prev.rows << std::endl;
-        }
-
-        cv::Mat mid = interp.Interpolate(prev, curr, 0.5);
-        if (mid.empty() || mid.cols != curr.cols || mid.rows != curr.rows) {
-            std::cerr << "[WARN ] Interpolate returned bad size at read#" << readCount << std::endl;
-        }
-
-        if (!writer.WriteFrame(mid)) {
-            std::cerr << "[ERROR] WriteFrame(mid) failed at read#" << readCount << std::endl;
             break;
         }
-        ++writeCount;
+
+        // ★ 关键优化：每对帧只算一次双向光流，所有中间帧复用
+        cv::Mat flowFwd, flowBwd;
+        interp.ComputeFlows(prev, curr, flowFwd, flowBwd);
+
+        // 生成 factor-1 个中间帧：t = 1/factor, 2/factor, ..., (factor-1)/factor
+        for (int k = 1; k < cfg.factor; ++k) {
+            const double t = static_cast<double>(k) / cfg.factor;
+            cv::Mat mid = interp.BlendFromFlows(prev, curr, flowFwd, flowBwd, t);
+
+            if (mid.empty() || mid.cols != prev.cols || mid.rows != prev.rows) {
+                std::cerr << "[WARN ] BlendFromFlows bad output at t=" << t
+                          << " read#" << readCount << std::endl;
+                continue;
+            }
+
+            if (!writer.WriteFrame(mid)) {
+                std::cerr << "[ERROR] WriteFrame(mid t=" << t << ") failed at read#"
+                          << readCount << std::endl;
+                writer.Close();
+                return -1;
+            }
+            ++writeCount;
+        }
 
         if (!writer.WriteFrame(curr)) {
             std::cerr << "[ERROR] WriteFrame(curr) failed at read#" << readCount << std::endl;
@@ -443,6 +467,7 @@ inline int Upsample30To60() {
         }
         ++writeCount;
 
+        // 必须 swap，不能用 prev = curr（cv::Mat 浅拷贝陷阱）
         std::swap(prev, curr);
 
         if (readCount % 30 == 0) {
@@ -451,10 +476,31 @@ inline int Upsample30To60() {
     }
 
     std::printf("[Done] read=%d write=%d\n", readCount, writeCount);
-
     writer.Close();
-    std::printf("========== Upsample30To60 end ==========\n");
+    std::printf("========== UpsampleVideo end ==========\n");
     return 0;
+}
+
+// ============================================================
+// 便捷入口：读配置 + 默认输入/输出路径
+// 输出文件按 factor 自动命名：1_60fps.mp4 / 1_90fps.mp4 / 1_120fps.mp4
+// ============================================================
+inline int Upsample30To60() {
+    std::setvbuf(stdout, nullptr, _IONBF, 0);
+    std::setvbuf(stderr, nullptr, _IONBF, 0);
+
+    const std::string configPath = InterpolationConfig::DefaultPath();
+    const InterpolationConfig cfg = InterpolationConfig::LoadFromFile(configPath);
+
+    const std::string inputPath  = OpticalFlowDataPathImpl();
+
+    // 根据 factor 自动推断输出帧率，命名输出文件
+    const int outFps = 30 * cfg.factor;
+    const std::string outputPath = EnvRootPath()
+                                 + "/data/OpticalFlow/1_"
+                                 + std::to_string(outFps) + "fps.mp4";
+
+    return UpsampleVideo(inputPath, outputPath, cfg);
 }
 
 #endif // TESTS_OPTICALFLOWTEST_H_
