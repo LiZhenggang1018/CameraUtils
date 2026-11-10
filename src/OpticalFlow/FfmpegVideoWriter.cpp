@@ -124,6 +124,23 @@ bool FfmpegVideoWriter::Open(const std::string& path, int width, int height,
         width, height, AV_PIX_FMT_BGR24,
         width, height, AV_PIX_FMT_YUV420P,
         SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
+
+    if (m_swsCtx != nullptr) {
+        // 显式指定 BT.709 矩阵 + limited range
+        // 源 BGR24: full range (1)
+        // 目标 YUV420P: limited range (0)
+        const int srcRange = 1;   // full
+        const int dstRange = 0;   // limited (16-235)
+        const int* srcCoeff = sws_getCoefficients(SWS_CS_ITU709);
+        const int* dstCoeff = sws_getCoefficients(SWS_CS_ITU709);
+        int brightness = 0;
+        int contrast   = 1 << 16;
+        int saturation = 1 << 16;
+        sws_setColorspaceDetails(m_swsCtx,
+            srcCoeff, srcRange,
+            dstCoeff, dstRange,
+            brightness, contrast, saturation);
+    }
     if (m_swsCtx == nullptr) {
         std::fprintf(stderr, "[FfmpegVideoWriter] sws_getContext failed\n");
         Close();
