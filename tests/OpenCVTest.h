@@ -7,7 +7,12 @@
 
 using namespace cv;
 
-inline const std::string PicPath = std::string(PROJECT_ROOT_DIR) + "/data/lhc.jpg";
+// 路径常量：改成"函数内 static"，避免跨文件静态初始化顺序问题
+inline const std::string& PicPathImpl() {
+    static const std::string s = std::string(PROJECT_ROOT_DIR) + "/data/lhc.jpg";
+    return s;
+}
+#define PicPath (PicPathImpl())
 
 inline void OpenCVTest()
 {
