@@ -9,7 +9,7 @@ using namespace cv;
 
 // 路径常量：改成"函数内 static"，避免跨文件静态初始化顺序问题
 inline const std::string& PicPathImpl() {
-    static const std::string s = std::string(PROJECT_ROOT_DIR) + "/data/lhc.jpg";
+    static const std::string s = EnvRootPath() + "/data/lhc.jpg";
     return s;
 }
 
