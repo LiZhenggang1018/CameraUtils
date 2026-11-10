@@ -23,7 +23,7 @@
 // 路径常量：改成"函数内 static"，避免跨文件静态初始化顺序问题
 // ============================================================
 inline const std::string& OpticalFlowDataPathImpl() {
-    static const std::string s = std::string(PROJECT_ROOT_DIR) + "/data/OpticalFlow/1.mp4";
+    static const std::string s = EnvRootPath() + "/data/OpticalFlow/1.mp4";
     return s;
 }
 
@@ -336,7 +336,7 @@ inline int Upsample30To60() {
     std::setvbuf(stdout, nullptr, _IONBF, 0);
     std::setvbuf(stderr, nullptr, _IONBF, 0);
     const std::string inputPath  = OpticalFlowDataPathImpl();
-    const std::string outputPath = std::string(PROJECT_ROOT_DIR) + "/data/OpticalFlow/1_60fps.mp4";
+    const std::string outputPath = EnvRootPath() + "/data/OpticalFlow/1_60fps.mp4";
 
     std::printf("========== Upsample30To60 begin ==========\n");
     std::printf("[Input ] %s\n",  inputPath.c_str());
