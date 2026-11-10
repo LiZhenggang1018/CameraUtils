@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <iostream>
 #include <string>
+#include <cstdio>
 
 #include "DenseFlow.h"
 #include "DenseFlowDis.h"
@@ -327,43 +328,114 @@ inline int OpticalFlowTest() {
 }
 
 inline int Upsample30To60() {
-    const std::string inputPath = OPTICAL_FLOW_DATA_PATH;
+    std::setvbuf(stdout, nullptr, _IONBF, 0);
+    std::setvbuf(stderr, nullptr, _IONBF, 0);
+    const std::string inputPath  = OPTICAL_FLOW_DATA_PATH;
     const std::string outputPath = std::string(PROJECT_ROOT_DIR) + "/data/OpticalFlow/1_60fps.mp4";
+
+    std::printf("========== Upsample30To60 begin ==========\n");
+    std::printf("[Input ] %s\n",  inputPath.c_str());
+    std::printf("[Output] %s\n", outputPath.c_str());
+
     cv::VideoCapture cap(inputPath);
     if (!cap.isOpened()) {
-        std::cerr << "Cannot open input: " << inputPath << std::endl;
+        std::cerr << "[ERROR] Cannot open input: " << inputPath << std::endl;
         return -1;
     }
 
-    const int W = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
-    const int H = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
-    const double srcFps = cap.get(cv::CAP_PROP_FPS);
+    const int    W           = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
+    const int    H           = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+    const double srcFps      = cap.get(cv::CAP_PROP_FPS);
+    const long   totalFrames = static_cast<long>(cap.get(cv::CAP_PROP_FRAME_COUNT));
+    std::printf("[Meta ] W=%d H=%d srcFps=%.3f totalFrames=%ld\n",
+                W, H, srcFps, totalFrames);
+
+    if (W <= 0 || H <= 0 || srcFps <= 0) {
+        std::cerr << "[ERROR] Invalid input metadata" << std::endl;
+        return -1;
+    }
 
     FrameInterpolator interp;
     FfmpegVideoWriter writer;
     const int outFps = static_cast<int>(srcFps * 2);
     if (!writer.Open(outputPath, W, H, outFps, 8000000)) {
-        std::cerr << "FfmpegVideoWriter Open failed" << std::endl;
+        std::cerr << "[ERROR] FfmpegVideoWriter Open failed" << std::endl;
         return -1;
     }
+    std::printf("[Writer] opened, encoder=%s, %dx%d @ %dfps\n",
+                writer.EncoderName(), W, H, outFps);
 
+    // -------- 读第一帧 --------
     cv::Mat prev;
-    cv::Mat curr;
-    if (!cap.read(prev)) {
+    const bool firstOk = cap.read(prev);
+    std::printf("[Read #0] ret=%d empty=%d size=%dx%d type=%d channels=%d\n",
+                static_cast<int>(firstOk), static_cast<int>(prev.empty()),
+                prev.cols, prev.rows, prev.type(), prev.channels());
+
+    if (!firstOk || prev.empty()) {
+        std::cerr << "[ERROR] Cannot read first frame. "
+                  << "VideoCapture backend may not decode this mp4." << std::endl;
         writer.Close();
         return -1;
     }
-    writer.WriteFrame(prev);   // 原始第 1 帧
 
-    while (cap.read(curr)) {
-        cv::Mat mid = interp.Interpolate(prev, curr, 0.5);
-        writer.WriteFrame(mid);    // 插帧
-        writer.WriteFrame(curr);   // 原始后帧
-        prev = curr;
+    if (prev.cols != W || prev.rows != H) {
+        std::printf("[WARN ] frame size %dx%d != meta %dx%d\n",
+                    prev.cols, prev.rows, W, H);
     }
 
-    // 必须调用 Close()，否则 MP4 没有 moov atom，PotPlayer/ffprobe 打不开
+    // -------- 写第一帧 --------
+    if (!writer.WriteFrame(prev)) {
+        std::cerr << "[ERROR] WriteFrame(first) returned false" << std::endl;
+        writer.Close();
+        return -1;
+    }
+    int readCount  = 1;
+    int writeCount = 1;
+
+    // -------- 主循环 --------
+    cv::Mat curr;
+    while (cap.read(curr)) {
+        if (curr.empty()) {
+            std::cerr << "[WARN ] empty frame at read#" << readCount << std::endl;
+            continue;
+        }
+        ++readCount;
+
+        if (curr.cols != prev.cols || curr.rows != prev.rows) {
+            std::cerr << "[WARN ] size mismatch at read#" << readCount
+                      << ": " << curr.cols << "x" << curr.rows
+                      << " vs prev " << prev.cols << "x" << prev.rows << std::endl;
+        }
+
+        cv::Mat mid = interp.Interpolate(prev, curr, 0.5);
+        if (mid.empty() || mid.cols != curr.cols || mid.rows != curr.rows) {
+            std::cerr << "[WARN ] Interpolate returned bad size at read#" << readCount << std::endl;
+        }
+
+        if (!writer.WriteFrame(mid)) {
+            std::cerr << "[ERROR] WriteFrame(mid) failed at read#" << readCount << std::endl;
+            break;
+        }
+        ++writeCount;
+
+        if (!writer.WriteFrame(curr)) {
+            std::cerr << "[ERROR] WriteFrame(curr) failed at read#" << readCount << std::endl;
+            break;
+        }
+        ++writeCount;
+
+        prev = curr;
+
+        if (readCount % 30 == 0) {
+            std::printf("[Progress] read=%d write=%d\n", readCount, writeCount);
+        }
+    }
+
+    std::printf("[Done] read=%d write=%d\n", readCount, writeCount);
+
     writer.Close();
+    std::printf("========== Upsample30To60 end ==========\n");
     return 0;
 }
 
