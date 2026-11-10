@@ -59,6 +59,12 @@ bool FfmpegVideoWriter::Open(const std::string& path, int width, int height,
     m_codecCtx->max_b_frames = 1;
     m_codecCtx->bit_rate   = bitrate;
 
+    // 显式指定色彩空间，让 mp4 metadata 标记为 BT.709
+    m_codecCtx->color_primaries = AVCOL_PRI_BT709;   // 原色
+    m_codecCtx->color_trc       = AVCOL_TRC_BT709;   // 传输特性
+    m_codecCtx->colorspace      = AVCOL_SPC_BT709;   // 矩阵系数
+    m_codecCtx->color_range     = AVCOL_RANGE_MPEG;  // limited range (16-235)
+
     // MP4 需要全局头
     if (m_fmtCtx->oformat->flags & AVFMT_GLOBALHEADER)
     {
