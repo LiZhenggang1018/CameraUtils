@@ -85,7 +85,7 @@ void FrameInterpolator::ComputeFlow(const cv::Mat& from,
                                     cv::Mat& flow) const {
     if (m_params.flowBackend == 1) {
         static cv::Ptr<cv::DISOpticalFlow> dis =
-            cv::DISOpticalFlow::create(cv::DISOpticalFlow::PRESET_MEDIUM);
+            cv::DISOpticalFlow::create(cv::DISOpticalFlow::PRESET_ULTRAFAST);
         dis->calc(from, to, flow);
     } else {
         cv::calcOpticalFlowFarneback(
