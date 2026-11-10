@@ -1,0 +1,12 @@
+{
+    "bitrate": 16000000,
+    "confidenceBlurSigma": 3.0,
+    "crf": 20,
+    "enableStaticProtect": true,
+    "factor": 2,
+    "fbThreshold": 1.0,
+    "flowBackend": 1,
+    "occlusionBlurSigma": 2.0,
+    "preset": "veryfast",
+    "staticMagThreshold": 1.5
+}
