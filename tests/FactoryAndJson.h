@@ -5,8 +5,10 @@
 
 #include "FactoryDemo_1.h"
 
-inline const std::string JsonPath = ENV_ROOT_PATH + "/configs/Shapes.json";
-
+inline const std::string& ConfigParamPath() {
+    static const std::string path = EnvRootPath() + "/configs/JsonConfig.json";
+    return path;
+}
 // 用于生成json文件，无用
 inline void GenJson()
 {
