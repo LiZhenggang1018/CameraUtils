@@ -100,7 +100,6 @@ cv::Mat FrameInterpolator::Interpolate(
     CV_Assert(prev.type() == curr.type());
     CV_Assert(t > 0.0 && t < 1.0);
 
-    // 1. 灰度化（光流只需要灰度）
     cv::Mat prevGray;
     cv::Mat currGray;
     if (prev.channels() == 3) {
@@ -111,39 +110,38 @@ cv::Mat FrameInterpolator::Interpolate(
         currGray = curr;
     }
 
-    // 2. 双向光流
     cv::Mat flowFwd;
     cv::Mat flowBwd;
-    ComputeFlow(prevGray, currGray, flowFwd);   // prev → curr
-    ComputeFlow(currGray, prevGray, flowBwd);   // curr → prev
+    ComputeFlow(prevGray, currGray, flowFwd);
+    ComputeFlow(currGray, prevGray, flowBwd);
 
-    // 3. 反向映射到中间时刻
-    //    I_t 上位置 p 从 prev 采样：p - t * F_{0→1}(p)
-    //    I_t 上位置 p 从 curr 采样：p + (1-t) * F_{1→0}(p)
     cv::Mat warpedPrev = WarpToMid(prev, flowFwd, t);
     cv::Mat warpedCurr = WarpToMid(curr, flowBwd, -(1.0 - t));
 
-    // 4. 一致性掩膜：把前后向不一致的像素（遮挡/大位移）标出来
     cv::Mat confidence = ComputeConfidence(flowFwd, flowBwd, m_params.fbThreshold);
 
-    // 5. 逐像素融合
-    //    一致区域： (1-t) * warpedPrev + t * warpedCurr
-    //    不一致区域：优先用 warpedCurr（后帧采样通常更稳定，因为合成 t<0.5 时后向信息更丰富）
-    //    这里对通道数分别处理，用 float 中间结果避免 8U 溢出
     const int channels = prev.channels();
-    cv::Mat blended(prev.size(), CV_MAKETYPE(CV_32F, channels));
+    cv::Mat outF(prev.size(), CV_MAKETYPE(CV_32F, channels));
 
     for (int y = 0; y < prev.rows; ++y) {
-        const float* wp = warpedPrev.ptr<float>(y);
-        const float* wc = warpedCurr.ptr<float>(y);
+        const uchar* wp = warpedPrev.ptr<uchar>(y);
+        const uchar* wc = warpedCurr.ptr<uchar>(y);
         const float* conf = confidence.ptr<float>(y);
-        float* out = blended.ptr<float>(y);
-        (void)wp;
-        (void)wc;
-        (void)conf;
-        (void)out;
+        float* out = outF.ptr<float>(y);
+
+        for (int x = 0; x < prev.cols; ++x) {
+            const float c = conf[x];
+            for (int ch = 0; ch < channels; ++ch) {
+                const float pv = static_cast<float>(wp[x * channels + ch]);
+                const float cv_ = static_cast<float>(wc[x * channels + ch]);
+                const float blended = (1.0F - static_cast<float>(t)) * pv
+                                    + static_cast<float>(t) * cv_;
+                out[x * channels + ch] = c * blended + (1.0F - c) * cv_;
+            }
+        }
     }
-    // ↑ 上面空循环是占位，因为 warpedPrev/Curr 是 8U 类型，
-    //    实际实现见下方正式版本（注意：remap 输出与输入同类型）
-    return prev.clone(); // 占位，防止误用；下方正式版本替换
+
+    cv::Mat result;
+    outF.convertTo(result, prev.type());
+    return result;
 }
