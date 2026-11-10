@@ -110,7 +110,7 @@ bool FfmpegVideoWriter::Open(const std::string& path, int width, int height,
     m_swsCtx = sws_getContext(
         width, height, AV_PIX_FMT_BGR24,
         width, height, AV_PIX_FMT_YUV420P,
-        SWS_BILINEAR, nullptr, nullptr, nullptr);
+        SWS_FAST_BILINEAR, nullptr, nullptr, nullptr);
     if (m_swsCtx == nullptr) {
         std::fprintf(stderr, "[FfmpegVideoWriter] sws_getContext failed\n");
         Close();
