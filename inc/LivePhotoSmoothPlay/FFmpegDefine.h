@@ -5,6 +5,7 @@
 #ifndef FFMPEGDEFINE_H_
 #define FFMPEGDEFINE_H_
 
+#include <cstdio>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -19,68 +20,112 @@
 #include "ScopedUtils.h"
 #include "CommonEnv.h"
 
-inline const std::string LP_SMOOTH_PLAY_DATA_PATH = std::string(PROJECT_ROOT_DIR) + "/data/LivePhotoSmoothPlay/";
+// ============================================================
+// 路径常量：全部改为"函数内 static"返回，避免跨文件静态初始化顺序问题
+// 使用方式与原全局变量完全一致（通过 #define 宏别名），引用点无需修改
+// ============================================================
 
-inline const std::string IN_FILE = LP_SMOOTH_PLAY_DATA_PATH + "input.mp4";
-inline const std::string OUT_FILE = LP_SMOOTH_PLAY_DATA_PATH + "output.mp4";
-inline const std::string OUT2_FILE = LP_SMOOTH_PLAY_DATA_PATH + "output2.mp4";
+// 根路径（末尾带斜杠，与原 LP_SMOOTH_PLAY_DATA_PATH 语义一致）
+inline const std::string& LpSmoothPlayDataPath() {
+    static const std::string s = std::string(PROJECT_ROOT_DIR) + "/data/LivePhotoSmoothPlay/";
+    return s;
+}
+#define LP_SMOOTH_PLAY_DATA_PATH (LpSmoothPlayDataPath())
 
-inline const std::string S_LYF_FILE = LP_SMOOTH_PLAY_DATA_PATH + "smallLyf.mp4"; // 小FOV，作为视频帧
-inline const std::string B_LYF_FILE = LP_SMOOTH_PLAY_DATA_PATH + "bigLyf.mp4";	  // 大FOV，用于产生拍照帧 跟平滑过渡帧
+// ---------- 视频文件 ----------
+inline const std::string& InFileImpl()      { static const std::string s = LpSmoothPlayDataPath() + "input.mp4";     return s; }
+inline const std::string& OutFileImpl()     { static const std::string s = LpSmoothPlayDataPath() + "output.mp4";    return s; }
+inline const std::string& Out2FileImpl()    { static const std::string s = LpSmoothPlayDataPath() + "output2.mp4";   return s; }
+inline const std::string& SLyfFileImpl()    { static const std::string s = LpSmoothPlayDataPath() + "smallLyf.mp4";  return s; }
+inline const std::string& BLyfFileImpl()    { static const std::string s = LpSmoothPlayDataPath() + "bigLyf.mp4";    return s; }
+inline const std::string& OriFileImpl()     { static const std::string s = LpSmoothPlayDataPath() + "ori.mp4";       return s; }
+inline const std::string& OptFileImpl()     { static const std::string s = LpSmoothPlayDataPath() + "opt.mp4";       return s; }
+inline const std::string& LpInitFileImpl()  { static const std::string s = LpSmoothPlayDataPath() + "Lp.mp4";        return s; }
+inline const std::string& LpOptFileImpl()   { static const std::string s = LpSmoothPlayDataPath() + "LpOpt.mp4";     return s; }
+inline const std::string& LpCropFileImpl()  { static const std::string s = LpSmoothPlayDataPath() + "LpCrop.mp4";    return s; }
 
-inline const std::string ORI_FILE = LP_SMOOTH_PLAY_DATA_PATH + "ori.mp4"; // 原始LP文件
-inline const std::string OPT_FILE = LP_SMOOTH_PLAY_DATA_PATH + "opt.mp4"; // 优化后LP文件
+#define IN_FILE      (InFileImpl())
+#define OUT_FILE     (OutFileImpl())
+#define OUT2_FILE    (Out2FileImpl())
+#define S_LYF_FILE   (SLyfFileImpl())
+#define B_LYF_FILE   (BLyfFileImpl())
+#define ORI_FILE     (OriFileImpl())
+#define OPT_FILE     (OptFileImpl())
+#define LP_INIT_FILE (LpInitFileImpl())
+#define LP_OPT_FILE  (LpOptFileImpl())
+#define LP_CROP_FILE (LpCropFileImpl())
 
-inline const std::string LP_INIT_FILE = LP_SMOOTH_PLAY_DATA_PATH + "Lp.mp4"; // 随手拍的原始LP
-inline const std::string LP_OPT_FILE = LP_SMOOTH_PLAY_DATA_PATH + "LpOpt.mp4"; // 优化后的LP
-inline const std::string LP_CROP_FILE = LP_SMOOTH_PLAY_DATA_PATH + "LpCrop.mp4"; // 随手拍的原始LP
+// ---------- YUV 目录 ----------
+inline const std::string& LpDecodeYuvDirImpl() {
+    static const std::string s = LpSmoothPlayDataPath() + "LpJpg";
+    return s;
+}
+inline const std::string& CropCoverDirImpl() {
+    static const std::string s = LpSmoothPlayDataPath() + "/CropCover";
+    return s;
+}
 
+#define LP_DECODE_YUV_DIR (LpDecodeYuvDirImpl())
+#define CROP_COVER_DIR    (CropCoverDirImpl())
 
-inline const std::string LP_DECODE_YUV_DIR =
-    LP_SMOOTH_PLAY_DATA_PATH + "LpJpg"; // 原始LP文件逐帧解码生成的yuv&jpg文件路径
-inline const std::string CROP_COVER_DIR = LP_SMOOTH_PLAY_DATA_PATH + "/CropCover";
-
-// 当前仅用于记录用
+// ---------- 查表（纯字面量，无跨全局依赖，保留原样） ----------
 inline const std::unordered_map<std::string, int> VID_FILE_TO_LAST_VID_FRAME_IDX = {
-	{"lyf", 191},
-	{"cat", 275},
-	{"cat&girl", 255},
-	{ "car", 303 }
+    {"lyf", 191},
+    {"cat", 275},
+    {"cat&girl", 255},
+    { "car", 303 }
 };
 
-//// 需手动设置的部分参数
-//// 对于LYF.mp4
-inline constexpr int LAST_VID_FRAME_IDX = 275;					// 手动查看视频最后一帧（LpJpg下逆序播放jpg找到照片水印消失的那一帧）是第几帧
-inline constexpr int TransFrameNum = 20; // 新生成的过渡帧总数
+// ---------- 编译期常量（不需要改） ----------
+inline constexpr int LAST_VID_FRAME_IDX = 275;
+inline constexpr int TransFrameNum = 20;
 
-//  for fullScreen LP
-inline constexpr int YUV_W = 720; // 这块目前打桩，后续可以改成从yuvWidthHeight.txt动态获取
+inline constexpr int YUV_W = 720;
 inline constexpr int YUV_H = 1584;
 
-//// for cropped car LP
-//inline constexpr int YUV_W = 720;
-//inline constexpr int YUV_H = 960; // 1562;
-
-inline constexpr int COVER_FRAME_IDX = LAST_VID_FRAME_IDX + 21; // 封面帧总是在最后视频帧+20+1帧的位置
+inline constexpr int COVER_FRAME_IDX         = LAST_VID_FRAME_IDX + 21;
 inline constexpr int TO_REPLACE_YUV_START_IDX = LAST_VID_FRAME_IDX + 1;
-inline constexpr int TO_REPLACE_YUV_END_IDX = COVER_FRAME_IDX - 1;
+inline constexpr int TO_REPLACE_YUV_END_IDX   = COVER_FRAME_IDX - 1;
 
-// inline const std::string LAST_VID_FRAME_YUV = LP_DECODE_YUV_DIR + std::string("/") + std::to_string(LAST_VID_FRAME_IDX) + ".yuv";
-// inline const std::string COVER_FRAME_YUV = LP_DECODE_YUV_DIR + std::string("/") + "212.yuv"; // 191+21
+// ---------- YUV 帧文件（依赖 LP_DECODE_YUV_DIR 和上面常量） ----------
+inline const std::string& LastVidFrameYuvImpl() {
+    static const std::string s = LpDecodeYuvDirImpl() + "/" + std::to_string(LAST_VID_FRAME_IDX) + ".yuv";
+    return s;
+}
+inline const std::string& CoverFrameYuvImpl() {
+    static const std::string s = LpDecodeYuvDirImpl() + "/" + std::to_string(COVER_FRAME_IDX) + ".yuv";
+    return s;
+}
 
-inline const std::string LAST_VID_FRAME_YUV = LP_DECODE_YUV_DIR + std::string("/") + std::to_string(LAST_VID_FRAME_IDX) + ".yuv";
-inline const std::string COVER_FRAME_YUV = LP_DECODE_YUV_DIR + std::string("/") + std::to_string(COVER_FRAME_IDX) + ".yuv"; // 275+21
+#define LAST_VID_FRAME_YUV (LastVidFrameYuvImpl())
+#define COVER_FRAME_YUV    (CoverFrameYuvImpl())
 
-inline const std::string REG_RESULT_DIR =
-    LP_SMOOTH_PLAY_DATA_PATH + "coverToVidRegResult"; // 封面帧与最后的视频帧的图像配准结果
-inline const std::string vidToCoverScaleRatioFile = LP_SMOOTH_PLAY_DATA_PATH + "vidToCoverScaleRatio.txt";
+// ---------- 其他路径 ----------
+inline const std::string& RegResultDirImpl() {
+    static const std::string s = LpSmoothPlayDataPath() + "coverToVidRegResult";
+    return s;
+}
+inline const std::string& VidToCoverScaleRatioFileImpl() {
+    static const std::string s = LpSmoothPlayDataPath() + "vidToCoverScaleRatio.txt";
+    return s;
+}
+inline const std::string& CropRegResultDirImpl() {
+    static const std::string s = LpSmoothPlayDataPath() + "cropReg/cropReg";
+    return s;
+}
+inline const std::string& YuvWhFileImpl() {
+    static const std::string s = LpSmoothPlayDataPath() + "yuvWidthHeight.txt";
+    return s;
+}
 
-inline const std::string CROP_REG_RESULT_DIR =
-    LP_SMOOTH_PLAY_DATA_PATH + "cropReg/cropReg"; // 过渡帧（封面帧剪裁不同FOV）与最后的视频帧的图像配准结果
+#define REG_RESULT_DIR            (RegResultDirImpl())
+#define vidToCoverScaleRatioFile  (VidToCoverScaleRatioFileImpl())
+#define CROP_REG_RESULT_DIR       (CropRegResultDirImpl())
+#define YUV_WH_FILE               (YuvWhFileImpl())
 
-inline const std::string YUV_WH_FILE = LP_SMOOTH_PLAY_DATA_PATH + "yuvWidthHeight.txt";
-
-// 自定义删除器
+// ============================================================
+// 自定义删除器（与原文件一致）
+// ============================================================
 struct AVFormatContextDeleter
 {
     void operator()(AVFormatContext* p) const noexcept
