@@ -120,6 +120,7 @@ bool FfmpegVideoWriter::Open(const std::string& path, int width, int height,
     }
 
     // 7. 像素格式转换
+    // 由于我的输入源文件是 BT.709，故在这里显式指定 BT.709 + limited range
     m_swsCtx = sws_getContext(
         width, height, AV_PIX_FMT_BGR24,
         width, height, AV_PIX_FMT_YUV420P,
