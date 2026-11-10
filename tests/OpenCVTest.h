@@ -12,7 +12,6 @@ inline const std::string& PicPathImpl() {
     static const std::string s = std::string(PROJECT_ROOT_DIR) + "/data/lhc.jpg";
     return s;
 }
-#define PicPath (PicPathImpl())
 
 inline void OpenCVTest()
 {
@@ -25,7 +24,7 @@ inline void OpenCVTest()
             std::cout << "Loaded OpenCV DLL: " << buf << std::endl;
         }
     }
-    Mat test = imread(PicPath);
+    Mat test = imread(PicPathImpl());
     imshow("test", test); // 运行时窗口有几行报错，可忽视。
     waitKey(); // 这个wait key是必须的，不然窗口图像显示不出来，哪怕system("pause")都不行
     cv::destroyAllWindows();
