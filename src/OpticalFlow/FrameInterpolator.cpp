@@ -2,69 +2,35 @@
 
 namespace {
 
-// 把 flow 在 (x, y) 处的采样点 + 另一侧 flow 做一致性检测，输出 0~1 的置信度
-cv::Mat ComputeConfidence(
-    const cv::Mat& flowFwd,
-    const cv::Mat& flowBwd,
-    double threshold) {
-
-    const int h = flowFwd.rows;
-    const int w = flowFwd.cols;
-
-    // 在 p + F(p) 处采样 F_{1→0}，需要构造重映射坐标
-    cv::Mat mapX(h, w, CV_32F);
-    cv::Mat mapY(h, w, CV_32F);
-
+// 构造/复用全图坐标网格：gridX[y][x] = x, gridY[y][x] = y
+// 每次调用都重新创建，避免线程安全问题；开销相对后续步骤可忽略
+void BuildGrid(int h, int w, cv::Mat& gridX, cv::Mat& gridY) {
+    gridX.create(h, w, CV_32F);
+    gridY.create(h, w, CV_32F);
     for (int y = 0; y < h; ++y) {
+        float* px = gridX.ptr<float>(y);
+        float* py = gridY.ptr<float>(y);
+        const float fy = static_cast<float>(y);
         for (int x = 0; x < w; ++x) {
-            const cv::Point2f f = flowFwd.at<cv::Point2f>(y, x);
-            mapX.at<float>(y, x) = static_cast<float>(x) + f.x;
-            mapY.at<float>(y, x) = static_cast<float>(y) + f.y;
+            px[x] = static_cast<float>(x);
+            py[x] = fy;
         }
     }
-
-    cv::Mat bwdAtFwd;
-    cv::remap(flowBwd, bwdAtFwd, mapX, mapY,
-              cv::INTER_LINEAR, cv::BORDER_REPLICATE);
-
-    // 一致性误差：|F_{0→1}(p) + F_{1→0}(p + F_{0→1}(p))|
-    cv::Mat confidence(h, w, CV_32F);
-    for (int y = 0; y < h; ++y) {
-        for (int x = 0; x < w; ++x) {
-            const cv::Point2f f = flowFwd.at<cv::Point2f>(y, x);
-            const cv::Point2f b = bwdAtFwd.at<cv::Point2f>(y, x);
-            const double err = cv::norm(f + b);
-            confidence.at<float>(y, x) =
-                (err < threshold) ? 1.0F : 0.0F;
-        }
-    }
-
-    // 简单膨胀一次，把边缘扩展到遮挡区内部，减少硬边界
-    cv::Mat mask3(h, w, CV_32F, cv::Scalar(0));
-    cv::dilate(confidence, mask3, cv::getStructuringElement(
-        cv::MORPH_RECT, cv::Size(3, 3)));
-    return mask3;
 }
 
-// 用 flow 把 from 反向映射到中间时刻 t 的坐标系
-cv::Mat WarpToMid(
-    const cv::Mat& from,
-    const cv::Mat& flow,
-    double scale) {
+// 用 flow 把 from 反向映射到中间时刻 t 的坐标系：
+//   mapX = x - scale * flow.x
+//   mapY = y - scale * flow.y
+cv::Mat WarpToMid(const cv::Mat& from,
+                  const cv::Mat& flow,
+                  const cv::Mat& gridX,
+                  const cv::Mat& gridY,
+                  double scale) {
+    std::vector<cv::Mat> flowParts(2);
+    cv::split(flow, flowParts);
 
-    const int h = from.rows;
-    const int w = from.cols;
-
-    cv::Mat mapX(h, w, CV_32F);
-    cv::Mat mapY(h, w, CV_32F);
-
-    for (int y = 0; y < h; ++y) {
-        for (int x = 0; x < w; ++x) {
-            const cv::Point2f f = flow.at<cv::Point2f>(y, x);
-            mapX.at<float>(y, x) = static_cast<float>(x) - scale * f.x;
-            mapY.at<float>(y, x) = static_cast<float>(y) - scale * f.y;
-        }
-    }
+    cv::Mat mapX = gridX - scale * flowParts[0];   // MatExpr：全图 SIMD 减法
+    cv::Mat mapY = gridY - scale * flowParts[1];
 
     cv::Mat out;
     cv::remap(from, out, mapX, mapY,
@@ -72,13 +38,51 @@ cv::Mat WarpToMid(
     return out;
 }
 
+// 一致性置信度：全部向量化
+cv::Mat ComputeConfidence(const cv::Mat& flowFwd,
+                          const cv::Mat& flowBwd,
+                          const cv::Mat& gridX,
+                          const cv::Mat& gridY,
+                          double threshold) {
+    // 1. 在 p + F_{0→1}(p) 处采样 F_{1→0}
+    std::vector<cv::Mat> fwdParts(2);
+    cv::split(flowFwd, fwdParts);
+
+    cv::Mat mapX = gridX + fwdParts[0];
+    cv::Mat mapY = gridY + fwdParts[1];
+
+    cv::Mat bwdAtFwd;
+    cv::remap(flowBwd, bwdAtFwd, mapX, mapY,
+              cv::INTER_LINEAR, cv::BORDER_REPLICATE);
+
+    // 2. err² = (fx + bx)² + (fy + by)²
+    cv::Mat sumFlow;
+    cv::add(flowFwd, bwdAtFwd, sumFlow);
+
+    std::vector<cv::Mat> sumParts(2);
+    cv::split(sumFlow, sumParts);
+
+    cv::Mat err2 = sumParts[0].mul(sumParts[0]) + sumParts[1].mul(sumParts[1]);
+
+    // 3. mask = (err² < threshold²) ? 1 : 0
+    const double thr2 = threshold * threshold;
+    cv::Mat mask8;
+    cv::compare(err2, cv::Scalar(thr2), mask8, cv::CMP_LT);
+
+    cv::Mat confidence;
+    mask8.convertTo(confidence, CV_32F, 1.0 / 255.0);
+
+    // 4. 膨胀一次，减少硬边界
+    cv::dilate(confidence, confidence,
+               cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
+    return confidence;
+}
+
 } // namespace
 
-void FrameInterpolator::ComputeFlow(
-    const cv::Mat& from,
-    const cv::Mat& to,
-    cv::Mat& flow) const {
-
+void FrameInterpolator::ComputeFlow(const cv::Mat& from,
+                                    const cv::Mat& to,
+                                    cv::Mat& flow) const {
     if (m_params.flowBackend == 1) {
         static cv::Ptr<cv::DISOpticalFlow> dis =
             cv::DISOpticalFlow::create(cv::DISOpticalFlow::PRESET_MEDIUM);
@@ -90,18 +94,16 @@ void FrameInterpolator::ComputeFlow(
     }
 }
 
-cv::Mat FrameInterpolator::Interpolate(
-    const cv::Mat& prev,
-    const cv::Mat& curr,
-    double t) const {
-
+cv::Mat FrameInterpolator::Interpolate(const cv::Mat& prev,
+                                       const cv::Mat& curr,
+                                       double t) const {
     CV_Assert(!prev.empty() && !curr.empty());
     CV_Assert(prev.size() == curr.size());
     CV_Assert(prev.type() == curr.type());
     CV_Assert(t > 0.0 && t < 1.0);
 
-    cv::Mat prevGray;
-    cv::Mat currGray;
+    // 1. 灰度化
+    cv::Mat prevGray, currGray;
     if (prev.channels() == 3) {
         cv::cvtColor(prev, prevGray, cv::COLOR_BGR2GRAY);
         cv::cvtColor(curr, currGray, cv::COLOR_BGR2GRAY);
@@ -110,36 +112,42 @@ cv::Mat FrameInterpolator::Interpolate(
         currGray = curr;
     }
 
-    cv::Mat flowFwd;
-    cv::Mat flowBwd;
+    // 2. 双向光流
+    cv::Mat flowFwd, flowBwd;
     ComputeFlow(prevGray, currGray, flowFwd);
     ComputeFlow(currGray, prevGray, flowBwd);
 
-    cv::Mat warpedPrev = WarpToMid(prev, flowFwd, t);
-    cv::Mat warpedCurr = WarpToMid(curr, flowBwd, -(1.0 - t));
+    // 3. 全图坐标网格（一次构建，后续复用）
+    const int h = prev.rows;
+    const int w = prev.cols;
+    cv::Mat gridX, gridY;
+    BuildGrid(h, w, gridX, gridY);
 
-    cv::Mat confidence = ComputeConfidence(flowFwd, flowBwd, m_params.fbThreshold);
+    // 4. 反向映射到中间时刻
+    cv::Mat warpedPrev = WarpToMid(prev, flowFwd, gridX, gridY,  t);
+    cv::Mat warpedCurr = WarpToMid(curr, flowBwd, gridX, gridY, -(1.0 - t));
 
-    const int channels = prev.channels();
-    cv::Mat outF(prev.size(), CV_MAKETYPE(CV_32F, channels));
+    // 5. 一致性置信度
+    cv::Mat confidence = ComputeConfidence(
+        flowFwd, flowBwd, gridX, gridY, m_params.fbThreshold);
 
-    for (int y = 0; y < prev.rows; ++y) {
-        const uchar* wp = warpedPrev.ptr<uchar>(y);
-        const uchar* wc = warpedCurr.ptr<uchar>(y);
-        const float* conf = confidence.ptr<float>(y);
-        float* out = outF.ptr<float>(y);
+    // 6. 融合（全部向量化）
+    cv::Mat wpF, wcF;
+    warpedPrev.convertTo(wpF, CV_32FC3);
+    warpedCurr.convertTo(wcF, CV_32FC3);
 
-        for (int x = 0; x < prev.cols; ++x) {
-            const float c = conf[x];
-            for (int ch = 0; ch < channels; ++ch) {
-                const float pv = static_cast<float>(wp[x * channels + ch]);
-                const float cv_ = static_cast<float>(wc[x * channels + ch]);
-                const float blended = (1.0F - static_cast<float>(t)) * pv
-                                    + static_cast<float>(t) * cv_;
-                out[x * channels + ch] = c * blended + (1.0F - c) * cv_;
-            }
-        }
-    }
+    cv::Mat blended;
+    cv::addWeighted(wpF, 1.0 - t, wcF, t, 0.0, blended);   // (1-t)*wp + t*wc
+
+    cv::Mat conf3;
+    cv::Mat chs[3] = { confidence, confidence, confidence };
+    cv::merge(chs, 3, conf3);                               // 单通道 -> 三通道
+
+    cv::Mat oneMinusConf3;
+    cv::subtract(cv::Scalar::all(1.0), conf3, oneMinusConf3);
+
+    cv::Mat outF;
+    cv::add(conf3.mul(blended), oneMinusConf3.mul(wcF), outF);
 
     cv::Mat result;
     outF.convertTo(result, prev.type());
