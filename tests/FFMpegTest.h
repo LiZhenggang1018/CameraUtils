@@ -15,7 +15,7 @@ inline void TestFFMpeg()
     // 2. 尝试打开一个媒体文件（视频或图片都可以）
     // 用你已有的 data 目录下的文件，或者换成任意一个 mp4/avi
     const std::string file =
-        std::string(PROJECT_ROOT_DIR) + "/data/lhc.jpg"; // 如果没有视频，jpg 也能被 avformat 识别
+        EnvRootPath() + "/data/lhc.jpg"; // 如果没有视频，jpg 也能被 avformat 识别
 
     AVFormatContext* fmtCtx = nullptr;
     int ret = avformat_open_input(&fmtCtx, file.c_str(), nullptr, nullptr);
