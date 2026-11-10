@@ -324,4 +324,33 @@ inline int OpticalFlowTest() {
     return 0;
 }
 
+inline int Upsample30To60(const std::string& inputPath,
+                          const std::string& outputPath) {
+    cv::VideoCapture cap(inputPath);
+    if (!cap.isOpened()) return -1;
+
+    const int W = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
+    const int H = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+    const double srcFps = cap.get(cv::CAP_PROP_FPS);  // 30
+
+    cv::VideoWriter writer(outputPath,
+        cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
+        srcFps * 2, cv::Size(W, H));   // 60fps
+
+    FrameInterpolator interp;
+    cv::Mat prev, curr;
+    if (!cap.read(prev)) return -1;
+
+    writer.write(prev);   // 第一帧原样
+
+    while (cap.read(curr)) {
+        cv::Mat mid = interp.Interpolate(prev, curr, 0.5);
+        writer.write(mid);      // 中间帧
+        writer.write(curr);     // 原始后帧
+        prev = curr;
+    }
+
+    return 0;
+}
+
 #endif // TESTS_OPTICALFLOWTEST_H_
