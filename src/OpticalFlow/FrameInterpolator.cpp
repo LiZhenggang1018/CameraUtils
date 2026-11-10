@@ -83,15 +83,19 @@ cv::Mat ComputeConfidence(const cv::Mat& flowFwd,
 void FrameInterpolator::ComputeFlow(const cv::Mat& from,
                                     const cv::Mat& to,
                                     cv::Mat& flow) const {
-    if (m_params.flowBackend == 1) {
-        static cv::Ptr<cv::DISOpticalFlow> dis =
-            cv::DISOpticalFlow::create(cv::DISOpticalFlow::PRESET_ULTRAFAST);
-        dis->calc(from, to, flow);
-    } else {
-        cv::calcOpticalFlowFarneback(
-            from, to, flow,
-            0.5, 3, 15, 3, 5, 1.1, 0);
-    }
+    static cv::Ptr<cv::DISOpticalFlow> dis =
+        cv::DISOpticalFlow::create(cv::DISOpticalFlow::PRESET_ULTRAFAST);
+
+    const double scale = 0.5;
+    cv::Mat fromSmall, toSmall;
+    cv::resize(from, fromSmall, cv::Size(), scale, scale, cv::INTER_AREA);
+    cv::resize(to,   toSmall,   cv::Size(), scale, scale, cv::INTER_AREA);
+
+    cv::Mat flowSmall;
+    dis->calc(fromSmall, toSmall, flowSmall);
+
+    cv::resize(flowSmall, flow, from.size(), 0, 0, cv::INTER_LINEAR);
+    flow *= (1.0 / scale);   // 上采样后位移值要放大 1/scale 倍
 }
 
 cv::Mat FrameInterpolator::Interpolate(const cv::Mat& prev,
