@@ -16,6 +16,8 @@
 #include "MiddleburyColor.h"
 #include "Visualization.h"
 #include "CommonEnv.h"
+#include "FfmpegVideoWriter.h"
+
 
 inline const std::string OPTICAL_FLOW_DATA_PATH = std::string(PROJECT_ROOT_DIR) + "/data/OpticalFlow/1.mp4";
 
@@ -328,29 +330,40 @@ inline int Upsample30To60() {
     const std::string inputPath = OPTICAL_FLOW_DATA_PATH;
     const std::string outputPath = std::string(PROJECT_ROOT_DIR) + "/data/OpticalFlow/1_60fps.mp4";
     cv::VideoCapture cap(inputPath);
-    if (!cap.isOpened()) return -1;
+    if (!cap.isOpened()) {
+        std::cerr << "Cannot open input: " << inputPath << std::endl;
+        return -1;
+    }
 
     const int W = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
     const int H = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
-    const double srcFps = cap.get(cv::CAP_PROP_FPS);  // 30
-
-    cv::VideoWriter writer(outputPath,
-        cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
-        srcFps * 2, cv::Size(W, H));   // 60fps
+    const double srcFps = cap.get(cv::CAP_PROP_FPS);
 
     FrameInterpolator interp;
-    cv::Mat prev, curr;
-    if (!cap.read(prev)) return -1;
+    FfmpegVideoWriter writer;
+    const int outFps = static_cast<int>(srcFps * 2);
+    if (!writer.Open(outputPath, W, H, outFps, 8000000)) {
+        std::cerr << "FfmpegVideoWriter Open failed" << std::endl;
+        return -1;
+    }
 
-    writer.write(prev);   // 第一帧原样
+    cv::Mat prev;
+    cv::Mat curr;
+    if (!cap.read(prev)) {
+        writer.Close();
+        return -1;
+    }
+    writer.WriteFrame(prev);   // 原始第 1 帧
 
     while (cap.read(curr)) {
         cv::Mat mid = interp.Interpolate(prev, curr, 0.5);
-        writer.write(mid);      // 中间帧
-        writer.write(curr);     // 原始后帧
+        writer.WriteFrame(mid);    // 插帧
+        writer.WriteFrame(curr);   // 原始后帧
         prev = curr;
     }
 
+    // 必须调用 Close()，否则 MP4 没有 moov atom，PotPlayer/ffprobe 打不开
+    writer.Close();
     return 0;
 }
 
