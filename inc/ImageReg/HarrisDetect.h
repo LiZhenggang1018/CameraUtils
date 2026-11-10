@@ -15,9 +15,6 @@ inline const std::string& ImageRegInFileImpl() {
     return s;
 }
 
-#define IMAGE_REG_DATA_PATH (ImageRegDataPathImpl())
-#define IMAGE_REG_IN_FILE   (ImageRegInFileImpl())
-
 // 辅助函数：如果图像尺寸超过 maxSize，则等比例缩放并返回，否则返回原图
 inline cv::Mat fitToScreen(const cv::Mat& img, int maxSize = 800) {
     int h = img.rows, w = img.cols;
@@ -30,7 +27,7 @@ inline cv::Mat fitToScreen(const cv::Mat& img, int maxSize = 800) {
 }
 
 inline void HarrisTest() {
-    cv::Mat gray = cv::imread(IMAGE_REG_IN_FILE, cv::IMREAD_GRAYSCALE);
+    cv::Mat gray = cv::imread(ImageRegInFileImpl(), cv::IMREAD_GRAYSCALE);
     if (gray.empty()) return;
 
     cv::Mat eigen;
