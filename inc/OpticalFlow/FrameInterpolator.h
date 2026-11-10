@@ -6,33 +6,42 @@
 class FrameInterpolator {
 public:
     struct Params {
-        // 前后向一致性阈值（像素）：越大越宽松，遮挡误判越少但伪影越多
+        // 光流后端：0 = Farneback，1 = DIS（ULTRAFAST 预设，快 2~3 倍）
+        int flowBackend = 1;
+
+        // 前后向一致性阈值（像素）：越大越宽松
         double fbThreshold = 1.0;
 
-        // 光流后端：0 = Farneback，1 = DIS（DIS 更快，Farneback 更平滑）
-        int flowBackend = 1;
+        // 【优化 2】静态区域保护：位移 < threshold 的像素直接用线性混合
+        bool   enableStaticProtect = true;
+        double staticMagThreshold  = 1.5;
+
+        // 【优化 4】遮挡区软化：confidence / occWeight 都做高斯模糊，
+        //          避免硬边界导致的撕裂
+        double confidenceBlurSigma = 3.0;
+        double occlusionBlurSigma  = 2.0;
     };
 
     FrameInterpolator() = default;
+    explicit FrameInterpolator(const Params& params) : m_params(params) {}
 
-    explicit FrameInterpolator(const Params& params)
-        : m_params(params) {}
-
-    // prev/curr 支持 BGR 或 GRAY；t=0.5 表示正中间帧
     [[nodiscard]] cv::Mat Interpolate(
         const cv::Mat& prev,
         const cv::Mat& curr,
         double t = 0.5) const;
 
-    void SetFbThreshold(double threshold) { m_params.fbThreshold = threshold; }
+    // 参数配置（可选）
+    void SetFbThreshold(double v) { m_params.fbThreshold = v; }
     [[nodiscard]] double FbThreshold() const { return m_params.fbThreshold; }
 
-    void SetFlowBackend(int backend) { m_params.flowBackend = backend; }
+    void SetFlowBackend(int b) { m_params.flowBackend = b; }
     [[nodiscard]] int FlowBackend() const { return m_params.flowBackend; }
 
+    void SetStaticProtect(bool enable) { m_params.enableStaticProtect = enable; }
+    [[nodiscard]] bool IsStaticProtectEnabled() const { return m_params.enableStaticProtect; }
+
 private:
-    void ComputeFlow(const cv::Mat& from, const cv::Mat& to,
-                     cv::Mat& flow) const;
+    void ComputeFlow(const cv::Mat& from, const cv::Mat& to, cv::Mat& flow) const;
 
     Params m_params;
 };
