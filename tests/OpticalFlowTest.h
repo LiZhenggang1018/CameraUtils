@@ -8,7 +8,6 @@
 #include <cstdio>
 #include <iostream>
 #include <string>
-#include <cstdio>
 
 #include "DenseFlow.h"
 #include "DenseFlowDis.h"
@@ -20,7 +19,14 @@
 #include "FfmpegVideoWriter.h"
 
 
-inline const std::string OPTICAL_FLOW_DATA_PATH = std::string(PROJECT_ROOT_DIR) + "/data/OpticalFlow/1.mp4";
+// ============================================================
+// 路径常量：改成"函数内 static"，避免跨文件静态初始化顺序问题
+// ============================================================
+inline const std::string& OpticalFlowDataPathImpl() {
+    static const std::string s = std::string(PROJECT_ROOT_DIR) + "/data/OpticalFlow/1.mp4";
+    return s;
+}
+#define OPTICAL_FLOW_DATA_PATH (OpticalFlowDataPathImpl())
 
 enum class Mode {
     Lk,
