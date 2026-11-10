@@ -145,50 +145,96 @@ bool FfmpegVideoWriter::Open(const std::string& path, int width, int height,
 
 bool FfmpegVideoWriter::WriteFrame(const cv::Mat& bgr) {
     if (!m_opened) {
+        std::fprintf(stderr, "[WF] not opened\n");
         return false;
     }
     if (bgr.empty() || bgr.type() != CV_8UC3) {
-        std::fprintf(stderr, "[FfmpegVideoWriter] expect CV_8UC3 BGR\n");
+        std::fprintf(stderr, "[WF] expect CV_8UC3, got type=%d empty=%d\n",
+                     bgr.type(), static_cast<int>(bgr.empty()));
         return false;
     }
 
-    // BGR -> YUV420P
+    std::printf("[WF] enter pts=%lld, frame %dx%d\n",
+                static_cast<long long>(m_pts), bgr.cols, bgr.rows);
+
+    // ---- 检查 m_frame 的 3 个 plane ----
+    if (m_frame->data[0] == nullptr || m_frame->data[1] == nullptr ||
+        m_frame->data[2] == nullptr) {
+        std::fprintf(stderr, "[WF] m_frame planes invalid: %p %p %p\n",
+                     static_cast<void*>(m_frame->data[0]),
+                     static_cast<void*>(m_frame->data[1]),
+                     static_cast<void*>(m_frame->data[2]));
+        return false;
+    }
+    std::printf("[WF] linesize: %d %d %d\n",
+                m_frame->linesize[0], m_frame->linesize[1], m_frame->linesize[2]);
+
+    // ---- BGR -> YUV420P ----
     const uint8_t* srcData[1] = { bgr.data };
     const int      srcLine[1] = { static_cast<int>(bgr.step) };
-    sws_scale(m_swsCtx,
-              srcData, srcLine, 0, bgr.rows,
-              m_frame->data, m_frame->linesize);
+    std::printf("[WF] sws_scale begin, src step=%d\n", srcLine[0]);
+    const int scaled = sws_scale(m_swsCtx,
+                                 srcData, srcLine, 0, bgr.rows,
+                                 m_frame->data, m_frame->linesize);
+    std::printf("[WF] sws_scale end, returned=%d\n", scaled);
 
     m_frame->pts = m_pts++;
 
+    // ---- send frame ----
+    std::printf("[WF] send_frame pts=%lld\n", static_cast<long long>(m_frame->pts));
     int ret = avcodec_send_frame(m_codecCtx, m_frame);
-    if (ret < 0 && ret != AVERROR(EAGAIN)) {
-        std::fprintf(stderr, "[FfmpegVideoWriter] send_frame: %s\n",
-                     AvErr(ret).c_str());
+    std::printf("[WF] send_frame ret=%d (%s)\n", ret,
+                ret < 0 ? AvErr(ret).c_str() : "OK");
+
+    if (ret == AVERROR(EAGAIN)) {
+        std::fprintf(stderr, "[WF] encoder full (EAGAIN), drain first\n");
+        // 先 drain
+        while (true) {
+            int rr = avcodec_receive_packet(m_codecCtx, m_packet);
+            if (rr == AVERROR(EAGAIN) || rr == AVERROR_EOF) break;
+            if (rr < 0) {
+                std::fprintf(stderr, "[WF] drain recv: %s\n", AvErr(rr).c_str());
+                return false;
+            }
+            av_packet_rescale_ts(m_packet, m_codecCtx->time_base, m_stream->time_base);
+            m_packet->stream_index = m_stream->index;
+            av_interleaved_write_frame(m_fmtCtx, m_packet);
+            av_packet_unref(m_packet);
+        }
+        // 重试一次
+        ret = avcodec_send_frame(m_codecCtx, m_frame);
+        std::printf("[WF] send_frame retry ret=%d\n", ret);
+        if (ret < 0) {
+            std::fprintf(stderr, "[WF] send_frame retry: %s\n", AvErr(ret).c_str());
+            return false;
+        }
+    } else if (ret < 0) {
+        std::fprintf(stderr, "[WF] send_frame: %s\n", AvErr(ret).c_str());
         return false;
     }
 
+    // ---- receive packets ----
     while (true) {
         ret = avcodec_receive_packet(m_codecCtx, m_packet);
-        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-            break;
-        }
+        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) break;
         if (ret < 0) {
-            std::fprintf(stderr, "[FfmpegVideoWriter] receive_packet: %s\n",
-                         AvErr(ret).c_str());
+            std::fprintf(stderr, "[WF] recv_packet: %s\n", AvErr(ret).c_str());
             return false;
         }
+        std::printf("[WF] got packet size=%d\n", m_packet->size);
 
         av_packet_rescale_ts(m_packet, m_codecCtx->time_base, m_stream->time_base);
         m_packet->stream_index = m_stream->index;
 
-        ret = av_interleaved_write_frame(m_fmtCtx, m_packet);
-        if (ret < 0) {
-            std::fprintf(stderr, "[FfmpegVideoWriter] write_frame: %s\n",
-                         AvErr(ret).c_str());
+        int wret = av_interleaved_write_frame(m_fmtCtx, m_packet);
+        if (wret < 0) {
+            std::fprintf(stderr, "[WF] write_frame: %s\n", AvErr(wret).c_str());
             return false;
         }
+        std::printf("[WF] packet written\n");
+        av_packet_unref(m_packet);
     }
+    std::printf("[WF] done pts=%lld\n", static_cast<long long>(m_pts));
     return true;
 }
 
