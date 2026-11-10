@@ -101,6 +101,7 @@ void FrameInterpolator::ComputeFlow(const cv::Mat& from,
 cv::Mat FrameInterpolator::Interpolate(const cv::Mat& prev,
                                        const cv::Mat& curr,
                                        double t) const {
+    std::fprintf(stderr, "[INTERP] t = %.6f\n", t);   // 加这一行
     CV_Assert(!prev.empty() && !curr.empty());
     CV_Assert(prev.size() == curr.size());
     CV_Assert(prev.type() == curr.type());
@@ -130,6 +131,11 @@ cv::Mat FrameInterpolator::Interpolate(const cv::Mat& prev,
     // 4. 反向映射到中间时刻
     cv::Mat warpedPrev = WarpToMid(prev, flowFwd, gridX, gridY,  t);
     cv::Mat warpedCurr = WarpToMid(curr, flowBwd, gridX, gridY, -(1.0 - t));
+    cv::Mat diff;
+    cv::absdiff(warpedPrev, warpedCurr, diff);
+    cv::Scalar meanDiff = cv::mean(diff);
+    std::fprintf(stderr, "[INTERP] mean(warpedPrev - warpedCurr) = (%.2f, %.2f, %.2f)\n",
+        meanDiff[0], meanDiff[1], meanDiff[2]);
 
     // 5. 一致性置信度
     cv::Mat confidence = ComputeConfidence(
