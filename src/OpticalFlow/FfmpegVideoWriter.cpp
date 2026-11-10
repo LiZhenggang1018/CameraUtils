@@ -60,11 +60,23 @@ bool FfmpegVideoWriter::Open(const std::string& path, int width, int height,
     m_codecCtx->bit_rate   = bitrate;
 
     // MP4 需要全局头
-    if (m_fmtCtx->oformat->flags & AVFMT_GLOBALHEADER) {
+    if (m_fmtCtx->oformat->flags & AVFMT_GLOBALHEADER)
+    {
         m_codecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
 
-    ret = avcodec_open2(m_codecCtx, codec, nullptr);
+    // libx264 快速预设（其他编码器会忽略未知 key）
+    AVDictionary* opts = nullptr;
+    av_dict_set(&opts, "preset", "veryfast", 0);
+
+    ret = avcodec_open2(m_codecCtx, codec, &opts);
+    av_dict_free(&opts); // 必须释放，否则内存泄漏
+    if (ret < 0)
+    {
+        std::fprintf(stderr, "[FfmpegVideoWriter] avcodec_open2: %s\n", AvErr(ret).c_str());
+        Close();
+        return false;
+    }
     if (ret < 0) {
         std::fprintf(stderr, "[FfmpegVideoWriter] avcodec_open2: %s\n",
                      AvErr(ret).c_str());
