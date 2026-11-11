@@ -413,7 +413,7 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
             oneMinusCombinedW3.mul(warpedAvg),
             candidateOccluded);
 
-    // ---------- 三区融合 ----------
+    // 静态区和非静态区的粗融合（保底）
     cv::Mat conf3   = ExpandWeightTo3Ch(confidence);
     cv::Mat static3 = ExpandWeightTo3Ch(staticMask);
 
@@ -432,9 +432,11 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
             oneMinusStatic3.mul(nonStatic),
             result32F);
 
-    // ---------- 转回 8UC3 ----------
-    cv::Mat result;
-    result32F.convertTo(result, prev.type());
+    cv::Mat coarseResult;
+    result32F.convertTo(coarseResult, prev.type());
+
+    // ★ 拉普拉斯金字塔融合：覆盖 coarseResult，得到更好的结果
+    cv::Mat result = LaplacianBlend(prev, curr, wpF, wcF, confidence, t, 4);
     return result;
 }
 
