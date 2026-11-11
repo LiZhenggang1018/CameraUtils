@@ -16,48 +16,35 @@ void BuildGrid(int h, int w, cv::Mat& gridX, cv::Mat& gridY) {
     }
 }
 
-cv::Mat WarpToMid(const cv::Mat& from,
-                  const cv::Mat& flow,
-                  const cv::Mat& gridX,
-                  const cv::Mat& gridY,
-                  double scale) {
+cv::Mat WarpToMid(const cv::Mat& from, const cv::Mat& flow,
+                  const cv::Mat& gridX, const cv::Mat& gridY, double scale) {
     std::vector<cv::Mat> parts(2);
     cv::split(flow, parts);
-
     cv::Mat mapX = gridX - scale * parts[0];
     cv::Mat mapY = gridY - scale * parts[1];
-
     cv::Mat out;
-    cv::remap(from, out, mapX, mapY,
-              cv::INTER_LINEAR, cv::BORDER_REPLICATE);
+    cv::remap(from, out, mapX, mapY, cv::INTER_LINEAR, cv::BORDER_REPLICATE);
     return out;
 }
 
-cv::Mat ComputeConfidence(const cv::Mat& flowFwd,
-                          const cv::Mat& flowBwd,
-                          const cv::Mat& gridX,
-                          const cv::Mat& gridY,
+cv::Mat ComputeConfidence(const cv::Mat& flowFwd, const cv::Mat& flowBwd,
+                          const cv::Mat& gridX, const cv::Mat& gridY,
                           double threshold) {
     std::vector<cv::Mat> fwdParts(2);
     cv::split(flowFwd, fwdParts);
-
     cv::Mat mapX = gridX + fwdParts[0];
     cv::Mat mapY = gridY + fwdParts[1];
-
     cv::Mat bwdAtFwd;
-    cv::remap(flowBwd, bwdAtFwd, mapX, mapY,
-              cv::INTER_LINEAR, cv::BORDER_REPLICATE);
+    cv::remap(flowBwd, bwdAtFwd, mapX, mapY, cv::INTER_LINEAR, cv::BORDER_REPLICATE);
 
     cv::Mat sumFlow;
     cv::add(flowFwd, bwdAtFwd, sumFlow);
-
     std::vector<cv::Mat> sumParts(2);
     cv::split(sumFlow, sumParts);
     cv::Mat err2 = sumParts[0].mul(sumParts[0]) + sumParts[1].mul(sumParts[1]);
 
     cv::Mat mask8;
     cv::compare(err2, cv::Scalar(threshold * threshold), mask8, cv::CMP_LT);
-
     cv::Mat confidence;
     mask8.convertTo(confidence, CV_32F, 1.0 / 255.0);
     cv::dilate(confidence, confidence,
@@ -69,10 +56,8 @@ cv::Mat ComputeStaticMask(const cv::Mat& flowFwd, double threshold) {
     std::vector<cv::Mat> parts(2);
     cv::split(flowFwd, parts);
     cv::Mat mag2 = parts[0].mul(parts[0]) + parts[1].mul(parts[1]);
-
     cv::Mat mask8;
     cv::compare(mag2, cv::Scalar(threshold * threshold), mask8, cv::CMP_LT);
-
     cv::Mat staticMask;
     mask8.convertTo(staticMask, CV_32F, 1.0 / 255.0);
     return staticMask;
@@ -85,22 +70,74 @@ cv::Mat ExpandWeightTo3Ch(const cv::Mat& weight) {
     return w3;
 }
 
+// 计算光流幅值（单通道）
+cv::Mat ComputeFlowMagnitude(const cv::Mat& flow) {
+    std::vector<cv::Mat> parts(2);
+    cv::split(flow, parts);
+    cv::Mat mag;
+    cv::magnitude(parts[0], parts[1], mag);
+    return mag;
+}
+
 } // namespace
 
+// ============================================================
+// 优化 4：大位移处理
+//   1. 降采样到 1/(2^maxCoarseLevels)，用 Farneback 算粗光流
+//   2. 上采样回全分辨率，乘以 1/coarseScale，得到粗光流初值
+//   3. 传给 DIS 作为初值，DIS 内部从初值开始精修
+// ============================================================
 void FrameInterpolator::ComputeFlow(const cv::Mat& from,
                                     const cv::Mat& to,
                                     cv::Mat& flow) const {
-    if (m_params.flowBackend == 1) {
-        cv::Ptr<cv::DISOpticalFlow> dis =
-            cv::DISOpticalFlow::create(cv::DISOpticalFlow::PRESET_ULTRAFAST);
-        dis->calc(from, to, flow);
-    } else {
-        cv::calcOpticalFlowFarneback(
-            from, to, flow,
+    // Farneback 后端：不做大位移处理（本身自带金字塔）
+    if (m_params.flowBackend == 0) {
+        cv::calcOpticalFlowFarneback(from, to, flow,
             0.5, 3, 15, 3, 5, 1.1, 0);
+        return;
     }
+
+    // ---- DIS 后端 ----
+    cv::Mat initialFlow;
+    if (m_params.maxCoarseLevels > 0) {
+        const double coarseScale = std::pow(0.5, m_params.maxCoarseLevels);
+        cv::Mat fromCoarse, toCoarse;
+        cv::resize(from, fromCoarse, cv::Size(), coarseScale, coarseScale, cv::INTER_AREA);
+        cv::resize(to,   toCoarse,   cv::Size(), coarseScale, coarseScale, cv::INTER_AREA);
+
+        // 粗层用 Farneback（多尺度金字塔内部已实现），得到大位移估计
+        cv::Mat flowCoarse;
+        cv::calcOpticalFlowFarneback(fromCoarse, toCoarse, flowCoarse,
+            0.5, 3, 15, 3, 5, 1.1, 0);
+
+        // 上采样回全分辨率，位移按 1/coarseScale 缩放
+        cv::resize(flowCoarse, initialFlow, from.size(), 0, 0, cv::INTER_LINEAR);
+        initialFlow *= (1.0 / coarseScale);
+    }
+
+    // 根据 disPreset 选择 DIS 预设
+    int preset = cv::DISOpticalFlow::PRESET_ULTRAFAST;
+    switch (m_params.disPreset) {
+        case 1: preset = cv::DISOpticalFlow::PRESET_FAST;   break;
+        case 2: preset = cv::DISOpticalFlow::PRESET_MEDIUM; break;
+        default: preset = cv::DISOpticalFlow::PRESET_ULTRAFAST; break;
+    }
+    cv::Ptr<cv::DISOpticalFlow> dis = cv::DISOpticalFlow::create(preset);
+
+    // DIS 的 calc() 支持把非空 flow 作为初值
+    if (!initialFlow.empty()) {
+        flow = initialFlow;
+    } else {
+        flow.release();
+    }
+    dis->calc(from, to, flow);
 }
 
+// ============================================================
+// 优化 5：时域平滑
+//   小位移区域（|F| < temporalMagThreshold）做 EMA，
+//   大位移区域完全用新值，避免滞后。
+// ============================================================
 void FrameInterpolator::ComputeFlows(const cv::Mat& prev,
                                      const cv::Mat& curr,
                                      cv::Mat& flowFwd,
@@ -116,8 +153,49 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev,
 
     ComputeFlow(prevGray, currGray, flowFwd);
     ComputeFlow(currGray, prevGray, flowBwd);
+
+    // ---- 时域平滑 ----
+    if (m_params.enableTemporalSmooth
+        && !m_prevFlowFwd.empty()
+        && m_prevFlowFwd.size() == flowFwd.size()
+        && m_prevFlowFwd.type() == flowFwd.type()) {
+
+        // 当前光流的幅值
+        cv::Mat mag = ComputeFlowMagnitude(flowFwd);
+
+        // 小位移掩膜：mag < threshold → 1
+        cv::Mat smallMask8;
+        cv::compare(mag, cv::Scalar(m_params.temporalMagThreshold),
+                    smallMask8, cv::CMP_LT);
+        cv::Mat smallMask;
+        smallMask8.convertTo(smallMask, CV_32F, 1.0 / 255.0);
+
+        // EMA 平滑光流：alpha * new + (1-alpha) * prev
+        cv::Mat smoothFlow;
+        cv::addWeighted(flowFwd, m_params.temporalAlpha,
+                        m_prevFlowFwd, 1.0 - m_params.temporalAlpha,
+                        0.0, smoothFlow);
+
+        // 掩膜扩展到 2 通道（flow 是 CV_32FC2）
+        cv::Mat mask3;
+        cv::Mat ch[2] = { smallMask, smallMask };
+        cv::merge(ch, 2, mask3);
+        cv::Mat invMask3;
+        cv::subtract(cv::Scalar::all(1.0), mask3, invMask3);
+
+        // 小位移区用 smooth，大位移区用 new
+        cv::Mat flowFwdSmoothed;
+        cv::add(mask3.mul(smoothFlow), invMask3.mul(flowFwd), flowFwdSmoothed);
+        flowFwd = flowFwdSmoothed;
+    }
+
+    // 更新缓存（给下一对帧用）
+    m_prevFlowFwd = flowFwd.clone();
 }
 
+// ============================================================
+// 融合：向量化版本（优化 1 + 2 + 3 保留）
+// ============================================================
 cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
                                           const cv::Mat& curr,
                                           const cv::Mat& flowFwd,
@@ -166,16 +244,12 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
     cv::Mat candidateLinear;
     cv::addWeighted(prevF, 1.0 - t, currF, t, 0.0, candidateLinear);
 
-    cv::Mat magFwd;
-    {
-        std::vector<cv::Mat> parts(2);
-        cv::split(flowFwd, parts);
-        cv::magnitude(parts[0], parts[1], magFwd);
-    }
-    cv::Mat occWeight;
+    cv::Mat magFwd = ComputeFlowMagnitude(flowFwd);
+    cv::Mat occWeight8;
     cv::compare(magFwd, cv::Scalar(m_params.staticMagThreshold),
-                occWeight, cv::CMP_GT);
-    occWeight.convertTo(occWeight, CV_32F, 1.0 / 255.0);
+                occWeight8, cv::CMP_GT);
+    cv::Mat occWeight;
+    occWeight8.convertTo(occWeight, CV_32F, 1.0 / 255.0);
     if (m_params.occlusionBlurSigma > 0.0) {
         cv::GaussianBlur(occWeight, occWeight,
                          cv::Size(0, 0), m_params.occlusionBlurSigma);
