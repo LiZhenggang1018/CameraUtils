@@ -229,19 +229,53 @@ void CleanFlowNaN(cv::Mat& flow) {
 } // namespace
 
 // ============================================================
-// 光流计算：0=Farneback, 1=DIS, 2=TV-L1
+// 新增：ComputeFlow 包装 —— 根据 flowDownscale 决定是否降分辨率
 // ============================================================
 void FrameInterpolator::ComputeFlow(const cv::Mat& from,
                                     const cv::Mat& to,
                                     cv::Mat& flow) const {
+    if (m_params.flowDownscale >= 1.0 || m_params.flowDownscale <= 0.0) {
+        // 全分辨率：直接调 internal
+        ComputeFlowInternal(from, to, flow);
+        return;
+    }
+
+    // 降分辨率：resize → 算光流 → upsample → 缩放位移
+    const double s = m_params.flowDownscale;
+    cv::Mat fromSmall, toSmall;
+    cv::resize(from, fromSmall, cv::Size(), s, s, cv::INTER_AREA);
+    cv::resize(to,   toSmall,   cv::Size(), s, s, cv::INTER_AREA);
+
+    cv::Mat flowSmall;
+    ComputeFlowInternal(fromSmall, toSmall, flowSmall);
+
+    if (flowSmall.empty() || flowSmall.type() != CV_32FC2) {
+        flow = cv::Mat::zeros(from.size(), CV_32FC2);
+        return;
+    }
+    CleanFlowNaN(flowSmall);
+
+    cv::resize(flowSmall, flow, from.size(), 0, 0, cv::INTER_LINEAR);
+    flow *= (1.0 / s);
+}
+
+// ============================================================
+// 原 ComputeFlow 逻辑改名为 ComputeFlowInternal
+// ============================================================
+void FrameInterpolator::ComputeFlowInternal(const cv::Mat& from,
+                                            const cv::Mat& to,
+                                            cv::Mat& flow) const {
+    // ---------- 后端 0：Farneback ----------
     if (m_params.flowBackend == 0) {
         cv::calcOpticalFlowFarneback(from, to, flow, 0.5, 3, 15, 3, 5, 1.1, 0);
         return;
     }
 
-    // 大位移处理：粗分辨率 Farneback 作为初值（仅 DIS 用）
+    // ---------- 大位移处理（仅全分辨率 + DIS 时有效）----------
     cv::Mat initialFlow;
-    if (m_params.maxCoarseLevels > 0 && m_params.flowBackend == 1) {
+    if (m_params.maxCoarseLevels > 0
+        && m_params.flowBackend == 1
+        && m_params.flowDownscale >= 1.0) {   // ← 关键：降分辨率时跳过，避免重复
         const double coarseScale = std::pow(0.5, m_params.maxCoarseLevels);
         cv::Mat fromCoarse, toCoarse;
         cv::resize(from, fromCoarse, cv::Size(), coarseScale, coarseScale, cv::INTER_AREA);
@@ -270,7 +304,6 @@ void FrameInterpolator::ComputeFlow(const cv::Mat& from,
             tvl1->calc(from, to, flow);
 
             if (flow.empty() || flow.type() != CV_32FC2 || flow.size() != from.size()) {
-                std::fprintf(stderr, "[TV-L1] invalid output, using zero flow\n");
                 flow = cv::Mat::zeros(from.size(), CV_32FC2);
                 return;
             }
@@ -295,9 +328,6 @@ void FrameInterpolator::ComputeFlow(const cv::Mat& from,
     dis->calc(from, to, flow);
 }
 
-// ============================================================
-// 时域平滑 + 光流后处理
-// ============================================================
 void FrameInterpolator::ComputeFlows(const cv::Mat& prev,
                                      const cv::Mat& curr,
                                      cv::Mat& flowFwd,
@@ -311,18 +341,29 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev,
         currGray = curr;
     }
 
-    cv::Mat prevSmooth, currSmooth;
-    constexpr double bs = 8.0;
-    cv::bilateralFilter(prevGray, prevSmooth, 5, bs, bs);
-    cv::bilateralFilter(currGray, currSmooth, 5, bs, bs);
+    // ★ 开关 1：双边预处理
+    cv::Mat prevForFlow = prevGray;
+    cv::Mat currForFlow = currGray;
+    if (m_params.enableBilateralPreprocess) {
+        constexpr double bs = 8.0;
+        cv::bilateralFilter(prevGray, prevForFlow, 5, bs, bs);
+        cv::bilateralFilter(currGray, currForFlow, 5, bs, bs);
+    }
 
     cv::Mat flowFwdRaw, flowBwdRaw;
-    ComputeFlow(prevSmooth, currSmooth, flowFwdRaw);
-    ComputeFlow(currSmooth, prevSmooth, flowBwdRaw);
+    ComputeFlow(prevForFlow, currForFlow, flowFwdRaw);
+    ComputeFlow(currForFlow, prevForFlow, flowBwdRaw);
 
-    PostProcessFlow(flowFwdRaw, prevGray, flowFwd);
-    PostProcessFlow(flowBwdRaw, currGray, flowBwd);
+    // ★ 开关 2：光流后处理
+    if (m_params.enableFlowPostProcess) {
+        PostProcessFlow(flowFwdRaw, prevGray, flowFwd);
+        PostProcessFlow(flowBwdRaw, currGray, flowBwd);
+    } else {
+        flowFwd = flowFwdRaw;
+        flowBwd = flowBwdRaw;
+    }
 
+    // ★ 开关 3：时域平滑（原有）
     if (m_params.enableTemporalSmooth
         && !m_prevFlowFwd.empty()
         && m_prevFlowFwd.size() == flowFwd.size()
@@ -459,14 +500,18 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
     cv::Mat coarseResult;
     result32F.convertTo(coarseResult, prev.type());
 
-    // ★ 拉普拉斯融合：加 try/catch，失败时回退到 coarseResult
-    try {
-        cv::Mat result = LaplacianBlend(prev, curr, wpF, wcF, confidence, t, 4);
-        return result;
-    } catch (const cv::Exception& e) {
-        std::fprintf(stderr, "[LaplacianBlend] exception: %s, fallback to coarse\n", e.what());
-        return coarseResult;
+    // ★ 开关 4：拉普拉斯金字塔融合
+    if (m_params.enableLaplacianBlend) {
+        try {
+            int lv = std::max(2, std::min(4, m_params.laplacianLevels));
+            cv::Mat result = LaplacianBlend(prev, curr, wpF, wcF, confidence, t, lv);
+            return result;
+        } catch (const cv::Exception& e) {
+            std::fprintf(stderr, "[LaplacianBlend] exception: %s, fallback\n", e.what());
+            return coarseResult;
+        }
     }
+    return coarseResult;
 }
 
 cv::Mat FrameInterpolator::Interpolate(const cv::Mat& prev,
