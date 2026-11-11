@@ -1,17 +1,17 @@
 {
-    "bitrate": 16000000,
+    "flowBackend": 2,
+    "maxCoarseLevels": 1,
+    "disPreset": 0,
+    "fbThreshold": 1.0,
+    "staticMagThreshold": 3.0,
     "confidenceBlurSigma": 1.0,
-    "crf": 20,
-    "disPreset": 1,
+    "occlusionBlurSigma": 1.0,
     "enableStaticProtect": true,
     "enableTemporalSmooth": true,
-    "factor": 2,
-    "fbThreshold": 1.5,
-    "flowBackend": 1,
-    "maxCoarseLevels": 1,
-    "occlusionBlurSigma": 1.0,
-    "preset": "veryfast",
-    "staticMagThreshold": 3.0,
     "temporalAlpha": 0.85,
-    "temporalMagThreshold": 5.0
+    "temporalMagThreshold": 5.0,
+    "factor": 2,
+    "preset": "veryfast",
+    "crf": 20,
+    "bitrate": 16000000
 }
