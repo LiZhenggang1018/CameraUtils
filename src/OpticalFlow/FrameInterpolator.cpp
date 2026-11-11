@@ -19,6 +19,13 @@ void BuildGrid(int h, int w, cv::Mat& gridX, cv::Mat& gridY) {
     }
 }
 
+cv::Mat ExpandWeightTo3Ch(const cv::Mat& weight) {
+    cv::Mat ch[3] = { weight, weight, weight };
+    cv::Mat w3;
+    cv::merge(ch, 3, w3);
+    return w3;
+}
+
 cv::Mat LaplacianBlend(const cv::Mat& prev8u, const cv::Mat& curr8u,
                        const cv::Mat& wpF, const cv::Mat& wcF,
                        const cv::Mat& confidence,
@@ -167,13 +174,6 @@ cv::Mat ComputeStaticMask(const cv::Mat& flowFwd, double threshold) {
     cv::Mat staticMask;
     mask8.convertTo(staticMask, CV_32F, 1.0 / 255.0);
     return staticMask;
-}
-
-cv::Mat ExpandWeightTo3Ch(const cv::Mat& weight) {
-    cv::Mat ch[3] = { weight, weight, weight };
-    cv::Mat w3;
-    cv::merge(ch, 3, w3);
-    return w3;
 }
 
 
