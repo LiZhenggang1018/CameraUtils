@@ -138,8 +138,9 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev,
 
     // 大招 2：双边滤波预处理，平滑纹理噪声
     cv::Mat prevSmooth, currSmooth;
-    cv::bilateralFilter(prevGray, prevSmooth, 5, 25.0, 25.0);
-    cv::bilateralFilter(currGray, currSmooth, 5, 25.0, 25.0);
+    constexpr float bilateralSigmaColor = 8.0f;
+    cv::bilateralFilter(prevGray, prevSmooth, 5, bilateralSigmaColor, bilateralSigmaColor);
+    cv::bilateralFilter(currGray, currSmooth, 5, bilateralSigmaColor, bilateralSigmaColor);
 
     ComputeFlow(prevSmooth, currSmooth, flowFwd);
     ComputeFlow(currSmooth, prevSmooth, flowBwd);
