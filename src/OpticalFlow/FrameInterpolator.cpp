@@ -30,6 +30,10 @@ cv::Mat WarpToMid(const cv::Mat& from, const cv::Mat& flow,
     return out;
 }
 
+// 原理：
+// 邻域平均：单像素误差大但邻域一致 → 仍然判定为"一致"（文本边缘不再被大面积误判）
+// 动态阈值：小位移区域（文本、静止）本来就准，放宽阈值让它走 warp（保清晰）；大位移区域保持严格（避 ghost）
+// 预期效果：文本区域 confidence 从 0 变成 1，走 warp 保清晰；同时大位移区仍然严格，ghost 不增加，清晰度大幅提升。
 cv::Mat ComputeConfidence(const cv::Mat& flowFwd, const cv::Mat& flowBwd,
                           const cv::Mat& gridX, const cv::Mat& gridY,
                           double threshold) {
@@ -46,11 +50,33 @@ cv::Mat ComputeConfidence(const cv::Mat& flowFwd, const cv::Mat& flowBwd,
     cv::split(sumFlow, sumParts);
     cv::Mat err2 = sumParts[0].mul(sumParts[0]) + sumParts[1].mul(sumParts[1]);
 
-    cv::Mat mask8;
-    cv::compare(err2, cv::Scalar(threshold * threshold), mask8, cv::CMP_LT);
+    // ★ 邻域平均：5x5 邻域内的平均 err²
+    cv::Mat err2Local;
+    cv::blur(err2, err2Local, cv::Size(5, 5));
+
+    // ★ 动态阈值：小位移区域放宽，大位移区域收紧
+    cv::Mat mag = ComputeFlowMagnitude(flowFwd);
+    cv::Mat smallMag8;
+    cv::compare(mag, cv::Scalar(2.0), smallMag8, cv::CMP_LT);
+    cv::Mat smallMag;
+    smallMag8.convertTo(smallMag, CV_32F, 1.0 / 255.0);
+    cv::Mat largeMag;
+    cv::subtract(cv::Scalar::all(1.0), smallMag, largeMag);
+
+    // 小位移：阈值 = (2 * threshold)²，宽松 4 倍
+    // 大位移：阈值 = threshold²，保持严格
+    cv::Mat thr2Small = cv::Mat::ones(err2.size(), CV_32F) * (2.0 * threshold) * (2.0 * threshold);
+    cv::Mat thr2Large = cv::Mat::ones(err2.size(), CV_32F) * threshold * threshold;
+
+    cv::Mat maskSmall, maskLarge, maskSmall8, maskLarge8;
+    cv::compare(err2Local, thr2Small, maskSmall8, cv::CMP_LT);
+    cv::compare(err2Local, thr2Large, maskLarge8, cv::CMP_LT);
+    maskSmall8.convertTo(maskSmall, CV_32F, 1.0 / 255.0);
+    maskLarge8.convertTo(maskLarge, CV_32F, 1.0 / 255.0);
+
     cv::Mat confidence;
-    mask8.convertTo(confidence, CV_32F, 1.0 / 255.0);
-    // 注意：去掉 dilate，避免遮挡边缘误判为"一致"，减轻 ghost
+    cv::add(smallMag.mul(maskSmall), largeMag.mul(maskLarge), confidence);
+
     return confidence;
 }
 
