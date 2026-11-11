@@ -366,12 +366,17 @@ inline int UpsampleVideo(const std::string& inputPath,
 
     // 用配置构造 FrameInterpolator::Params
     FrameInterpolator::Params params;
-    params.flowBackend         = cfg.flowBackend;
-    params.fbThreshold         = cfg.fbThreshold;
-    params.enableStaticProtect = cfg.enableStaticProtect;
-    params.staticMagThreshold  = cfg.staticMagThreshold;
-    params.confidenceBlurSigma = cfg.confidenceBlurSigma;
-    params.occlusionBlurSigma  = cfg.occlusionBlurSigma;
+    params.flowBackend          = cfg.flowBackend;
+    params.disPreset            = cfg.disPreset;
+    params.maxCoarseLevels      = cfg.maxCoarseLevels;
+    params.fbThreshold          = cfg.fbThreshold;
+    params.enableStaticProtect  = cfg.enableStaticProtect;
+    params.staticMagThreshold   = cfg.staticMagThreshold;
+    params.confidenceBlurSigma  = cfg.confidenceBlurSigma;
+    params.occlusionBlurSigma   = cfg.occlusionBlurSigma;
+    params.enableTemporalSmooth = cfg.enableTemporalSmooth;
+    params.temporalAlpha        = cfg.temporalAlpha;
+    params.temporalMagThreshold = cfg.temporalMagThreshold;
     FrameInterpolator interp(params);
 
     // 用配置构造 FfmpegVideoWriter::EncoderParams
