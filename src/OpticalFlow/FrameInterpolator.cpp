@@ -255,16 +255,37 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
                          cv::Size(0, 0), m_params.occlusionBlurSigma);
     }
 
+    // 【Ghost 修复】遮挡区不再用 0.5*wp + 0.5*wc，改成：
+    //   |wp - wc| 大的区域（真遮挡）→ candidateLinear（模糊但无 ghost）
+    //   |wp - wc| 小的区域（伪遮挡）→ warpedAvg（清晰）
     cv::Mat warpedAvg;
     cv::addWeighted(wpF, 0.5, wcF, 0.5, 0.0, warpedAvg);
 
-    cv::Mat occW3 = ExpandWeightTo3Ch(occWeight);
-    cv::Mat oneMinusOccW3;
-    cv::subtract(cv::Scalar::all(1.0), occW3, oneMinusOccW3);
+    // 双向 warp 的差异（3 通道）
+    cv::Mat warpedDiff;
+    cv::absdiff(wpF, wcF, warpedDiff);
 
+    // 转灰度：差异超过 25（0~255）就算真遮挡
+    cv::Mat warpedDiffGray;
+    cv::cvtColor(warpedDiff, warpedDiffGray, cv::COLOR_BGR2GRAY);
+
+    cv::Mat diffMask8;
+    cv::compare(warpedDiffGray, cv::Scalar(25.0), diffMask8, cv::CMP_GT);
+    cv::Mat diffMask;
+    diffMask8.convertTo(diffMask, CV_32F, 1.0 / 255.0);
+
+    // 轻微模糊，避免硬边界
+    cv::GaussianBlur(diffMask, diffMask, cv::Size(0, 0), 1.5);
+
+    cv::Mat diffW3 = ExpandWeightTo3Ch(diffMask);
+    cv::Mat oneMinusDiffW3;
+    cv::subtract(cv::Scalar::all(1.0), diffW3, oneMinusDiffW3);
+
+    // 真遮挡（diff 大）：linear（无 ghost，略糊）
+    // 伪遮挡（diff 小）：warpedAvg（清晰）
     cv::Mat candidateOccluded;
-    cv::add(occW3.mul(warpedAvg),
-            oneMinusOccW3.mul(candidateLinear),
+    cv::add(diffW3.mul(candidateLinear),
+            oneMinusDiffW3.mul(warpedAvg),
             candidateOccluded);
 
     cv::Mat conf3   = ExpandWeightTo3Ch(confidence);
