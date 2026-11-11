@@ -30,6 +30,14 @@ cv::Mat WarpToMid(const cv::Mat& from, const cv::Mat& flow,
     return out;
 }
 
+cv::Mat ComputeFlowMagnitude(const cv::Mat& flow) {
+    std::vector<cv::Mat> parts(2);
+    cv::split(flow, parts);
+    cv::Mat mag;
+    cv::magnitude(parts[0], parts[1], mag);
+    return mag;
+}
+
 // 原理：
 // 邻域平均：单像素误差大但邻域一致 → 仍然判定为"一致"（文本边缘不再被大面积误判）
 // 动态阈值：小位移区域（文本、静止）本来就准，放宽阈值让它走 warp（保清晰）；大位移区域保持严格（避 ghost）
@@ -98,13 +106,6 @@ cv::Mat ExpandWeightTo3Ch(const cv::Mat& weight) {
     return w3;
 }
 
-cv::Mat ComputeFlowMagnitude(const cv::Mat& flow) {
-    std::vector<cv::Mat> parts(2);
-    cv::split(flow, parts);
-    cv::Mat mag;
-    cv::magnitude(parts[0], parts[1], mag);
-    return mag;
-}
 
 // ============================================================
 // 方案 1：光流后处理（中值 + 引导滤波）
