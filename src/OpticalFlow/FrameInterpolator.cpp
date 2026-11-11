@@ -331,11 +331,24 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
     cv::Mat oneMinusDiffW3;
     cv::subtract(cv::Scalar::all(1.0), diffW3, oneMinusDiffW3);
 
-    // 真遮挡（diff 大）：linear（无 ghost，略糊）
-    // 伪遮挡（diff 小）：warpedAvg（清晰）
+    // 效果：combinedMask = 0.5 的过渡区，权重从 0.5 变成 0.25（linear 权重），混合的双影大幅减少。
+    // ============================================================
+    // 【Ghost 修复 2】遮挡区直接用 candidateLinear
+    // warpedAvg 在遮挡区仍有 50/50 平均的双影
+    // 干脆：只有"很轻微遮挡"才用 warpedAvg，"明显遮挡"完全 linear
+    // ============================================================
     cv::Mat candidateOccluded;
-    cv::add(diffW3.mul(candidateLinear),
-            oneMinusDiffW3.mul(warpedAvg),
+
+    // combinedMask 的平方：把"中等遮挡"推向 linear
+    // combined^2 让 0.5 → 0.25，0.8 → 0.64，1.0 → 1.0
+    cv::Mat combinedSq;
+    cv::multiply(combinedW3, combinedW3, combinedSq);
+
+    cv::Mat oneMinusCombinedSq;
+    cv::subtract(cv::Scalar::all(1.0), combinedSq, oneMinusCombinedSq);
+
+    cv::add(combinedSq.mul(candidateLinear),
+            oneMinusCombinedSq.mul(warpedAvg),
             candidateOccluded);
 
     cv::Mat conf3   = ExpandWeightTo3Ch(confidence);
