@@ -77,6 +77,32 @@ cv::Mat ComputeFlowMagnitude(const cv::Mat& flow) {
     return mag;
 }
 
+// 光流后处理：中值 + 引导滤波
+void PostProcessFlow(const cv::Mat& flowIn,
+                     const cv::Mat& guideGray,
+                     cv::Mat& flowOut) {
+    // 1. 中值滤波去孤立噪点
+    std::vector<cv::Mat> ch(2);
+    cv::split(flowIn, ch);
+    cv::medianBlur(ch[0], ch[0], 5);
+    cv::medianBlur(ch[1], ch[1], 5);
+    cv::Mat medianFlow;
+    cv::merge(ch, medianFlow);
+
+    // 2. 引导滤波：以灰度图为 guide，让光流跟随图像边缘
+    //    radius=8, eps=100（flow 是像素单位，量级较大，eps 也要相应大）
+    std::vector<cv::Mat> ch2(2);
+    cv::split(medianFlow, ch2);
+
+    cv::Mat gf0, gf1;
+    cv::ximgproc::guidedFilter(guideGray, ch2[0], gf0, 8, 100.0);
+    cv::ximgproc::guidedFilter(guideGray, ch2[1], gf1, 8, 100.0);
+
+    ch2[0] = gf0;
+    ch2[1] = gf1;
+    cv::merge(ch2, flowOut);
+}
+
 } // namespace
 
 // ============================================================
