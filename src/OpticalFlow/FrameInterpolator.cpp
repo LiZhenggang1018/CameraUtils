@@ -216,17 +216,20 @@ void PostProcessFlow(const cv::Mat& flowIn,
 } // namespace
 
 // ============================================================
-// 优化 4：大位移处理
-//   粗分辨率 Farneback → 上采样作为 DIS 初值 → DIS 精修
+// 光流计算：0=Farneback, 1=DIS, 2=TV-L1
+//   - 大位移处理（maxCoarseLevels）对后端 1 和 2 都生效
+//   - TV-L1 边缘保持最优，但慢 5~10 倍
 // ============================================================
 void FrameInterpolator::ComputeFlow(const cv::Mat& from,
                                     const cv::Mat& to,
                                     cv::Mat& flow) const {
+    // ---------- 后端 0：纯 Farneback（不做大位移处理，Farneback 自带金字塔） ----------
     if (m_params.flowBackend == 0) {
         cv::calcOpticalFlowFarneback(from, to, flow, 0.5, 3, 15, 3, 5, 1.1, 0);
         return;
     }
 
+    // ---------- 大位移处理：粗分辨率 Farneback → 上采样作为初值 ----------
     cv::Mat initialFlow;
     if (m_params.maxCoarseLevels > 0) {
         const double coarseScale = std::pow(0.5, m_params.maxCoarseLevels);
@@ -240,6 +243,30 @@ void FrameInterpolator::ComputeFlow(const cv::Mat& from,
         initialFlow *= (1.0 / coarseScale);
     }
 
+    // ---------- 后端 2：TV-L1（边缘保持最优，慢） ----------
+    if (m_params.flowBackend == 2) {
+        cv::Ptr<cv::optflow::DualTVL1OpticalFlow> tvl1 =
+            cv::optflow::DualTVL1OpticalFlow::create();
+
+        // TV-L1 关键参数
+        tvl1->setScalesNumber(5);         // 金字塔层数（越大捕捉大位移能力越强）
+        tvl1->setWarpingsNumber(5);       // 每层 warp 次数
+        tvl1->setLambda(0.15);            // 平滑强度（越大越平滑，text 边缘可能糊）
+        tvl1->setTau(0.25);               // 时间步长
+        tvl1->setTheta(0.3);              // 对偶变量权重
+        tvl1->setEpsilon(0.01);           // 收敛阈值
+        tvl1->setUseInitialFlow(!initialFlow.empty());  // 允许用粗光流做初值
+
+        if (!initialFlow.empty()) {
+            flow = initialFlow;
+        } else {
+            flow.release();
+        }
+        tvl1->calc(from, to, flow);
+        return;
+    }
+
+    // ---------- 后端 1：DIS（默认） ----------
     int preset = cv::DISOpticalFlow::PRESET_ULTRAFAST;
     switch (m_params.disPreset) {
         case 1: preset = cv::DISOpticalFlow::PRESET_FAST;   break;
