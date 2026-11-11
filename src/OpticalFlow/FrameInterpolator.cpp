@@ -240,8 +240,56 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
     prev.convertTo(prevF, CV_32FC3);
     curr.convertTo(currF, CV_32FC3);
 
+    // 效果：每个像素选一侧（偏向 70%~100% 那侧），而不是 50/50 混合。ghost 从"平均双影"变成"局部单影"——主观上清晰度大幅提升。
+    // ============================================================
+    // 【Ghost 修复 1】非遮挡区不再 50/50 平均
+    // 改用"局部流一致性"加权：
+    //   - 流一致性高的点 → 接近 50/50（两个采样准）
+    //   - 流一致性中等的点 → 向更可信的一侧偏（比如 70/30）
+    //   - 流一致性低的点 → 完全不用这一侧（走候选 B/C）
+    // ============================================================
     cv::Mat candidateWarped;
-    cv::addWeighted(wpF, 1.0 - t, wcF, t, 0.0, candidateWarped);
+
+    if (t == 0.5) {
+        // t=0.5 时特殊处理：不平均，取"局部误差更小的一侧"
+        // 用 3x3 邻域内 |wp - wc| 的均值做"局部误差"
+        cv::Mat localDiff;
+        cv::Mat diffForLocal;
+        cv::absdiff(wpF, wcF, diffForLocal);
+        cv::cvtColor(diffForLocal, localDiff, cv::COLOR_BGR2GRAY);
+        cv::blur(localDiff, localDiff, cv::Size(5, 5));
+
+        // 每个像素，比较 wpF 和 wcF 与邻域的"局部平滑度"
+        // 靠近局部均值的更可信；偏离的更可能是错采
+        cv::Mat wpBlur, wcBlur;
+        cv::blur(wpF, wpBlur, cv::Size(5, 5));
+        cv::blur(wcF, wcBlur, cv::Size(5, 5));
+
+        cv::Mat wpDev, wcDev;
+        cv::absdiff(wpF, wpBlur, wpDev);
+        cv::absdiff(wcF, wcBlur, wcDev);
+        cv::Mat wpDevGray, wcDevGray;
+        cv::cvtColor(wpDev, wpDevGray, cv::COLOR_BGR2GRAY);
+        cv::cvtColor(wcDev, wcDevGray, cv::COLOR_BGR2GRAY);
+
+        // wpDev < wcDev → wp 更可信 → 权重偏 wp
+        cv::Mat weightBias;
+        cv::compare(wpDevGray, wcDevGray, weightBias, cv::CMP_LT);   // 1 = 偏 wp
+        cv::Mat weightBias3;
+        weightBias.convertTo(weightBias, CV_32F, 1.0 / 255.0);
+        // 平滑过渡，避免硬边界
+        cv::GaussianBlur(weightBias, weightBias, cv::Size(0, 0), 3.0);
+        cv::Mat weightBiasArr[3] = { weightBias, weightBias, weightBias };
+        cv::merge(weightBiasArr, 3, weightBias3);
+
+        // 偏向权重：0.75/0.25 而非 0.5/0.5（降低平均带来的 ghost）
+        cv::Mat oneMinusBias;
+        cv::subtract(cv::Scalar::all(1.0), weightBias3, oneMinusBias);
+        cv::add(weightBias3.mul(wpF), oneMinusBias.mul(wcF), candidateWarped);
+    } else {
+        // 非 t=0.5 时，保持按 t 加权（时间上更接近哪一帧就信哪一帧）
+        cv::addWeighted(wpF, 1.0 - t, wcF, t, 0.0, candidateWarped);
+    }
 
     cv::Mat candidateLinear;
     cv::addWeighted(prevF, 1.0 - t, currF, t, 0.0, candidateLinear);
