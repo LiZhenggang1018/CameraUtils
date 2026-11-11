@@ -1,5 +1,8 @@
 #include "FrameInterpolator.h"
 
+// guidedFilter 需要 ximgproc 模块（BUILD_LIST 里已有，仅头文件 include）
+#include <opencv2/ximgproc.hpp>
+
 namespace {
 
 void BuildGrid(int h, int w, cv::Mat& gridX, cv::Mat& gridY) {
@@ -77,11 +80,21 @@ cv::Mat ComputeFlowMagnitude(const cv::Mat& flow) {
     return mag;
 }
 
-// 光流后处理：中值 + 引导滤波
+// ============================================================
+// 方案 1：光流后处理（中值 + 引导滤波）
+//   目的：消除光流的孤立噪点，让光流跟随图像边缘
+//   - medianBlur：去掉局部跳变（伪匹配）
+//   - guidedFilter：以灰度图为引导，光流在物体边界处断开
+// ============================================================
 void PostProcessFlow(const cv::Mat& flowIn,
                      const cv::Mat& guideGray,
                      cv::Mat& flowOut) {
-    // 1. 中值滤波去孤立噪点
+    if (flowIn.empty()) {
+        flowIn.copyTo(flowOut);
+        return;
+    }
+
+    // 1) 中值滤波去孤立噪点（32F 支持 ksize=3/5）
     std::vector<cv::Mat> ch(2);
     cv::split(flowIn, ch);
     cv::medianBlur(ch[0], ch[0], 5);
@@ -89,8 +102,8 @@ void PostProcessFlow(const cv::Mat& flowIn,
     cv::Mat medianFlow;
     cv::merge(ch, medianFlow);
 
-    // 2. 引导滤波：以灰度图为 guide，让光流跟随图像边缘
-    //    radius=8, eps=100（flow 是像素单位，量级较大，eps 也要相应大）
+    // 2) 引导滤波：以灰度图为 guide，让光流在边缘处保持锐利
+    //    radius=8，eps=100（flow 是像素单位，量级较大，eps 也要相应大）
     std::vector<cv::Mat> ch2(2);
     cv::split(medianFlow, ch2);
 
@@ -147,7 +160,7 @@ void FrameInterpolator::ComputeFlow(const cv::Mat& from,
 }
 
 // ============================================================
-// 优化 5：时域平滑 + 大招 2：bilateral 预处理
+// 优化 5：时域平滑 + 方案 1：光流后处理
 // ============================================================
 void FrameInterpolator::ComputeFlows(const cv::Mat& prev,
                                      const cv::Mat& curr,
@@ -162,18 +175,22 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev,
         currGray = curr;
     }
 
-    // 大招 2：双边滤波预处理，平滑纹理噪声
+    // 双边滤波预处理：平滑纹理噪声
     cv::Mat prevSmooth, currSmooth;
-    constexpr float bilateralSigmaColor = 8.0f;
-    cv::bilateralFilter(prevGray, prevSmooth, 5, bilateralSigmaColor, bilateralSigmaColor);
-    cv::bilateralFilter(currGray, currSmooth, 5, bilateralSigmaColor, bilateralSigmaColor);
+    constexpr double bilateralSigmaColor = 8.0;
+    cv::bilateralFilter(prevGray,  prevSmooth,  5, bilateralSigmaColor, bilateralSigmaColor);
+    cv::bilateralFilter(currGray,  currSmooth,  5, bilateralSigmaColor, bilateralSigmaColor);
 
-    ComputeFlow(prevSmooth, currSmooth, flowFwd);
-    ComputeFlow(currSmooth, prevSmooth, flowBwd);
-    // ★ 光流后处理（新增）
+    // ★ 修复：先算到 Raw 变量，再做后处理输出到 flowFwd / flowBwd
+    cv::Mat flowFwdRaw, flowBwdRaw;
+    ComputeFlow(prevSmooth, currSmooth, flowFwdRaw);
+    ComputeFlow(currSmooth, prevSmooth, flowBwdRaw);
+
+    // ★ 方案 1：光流后处理（中值 + 引导滤波）
     PostProcessFlow(flowFwdRaw, prevGray, flowFwd);
     PostProcessFlow(flowBwdRaw, currGray, flowBwd);
-    // 时域平滑
+
+    // ---- 时域平滑 ----
     if (m_params.enableTemporalSmooth
         && !m_prevFlowFwd.empty()
         && m_prevFlowFwd.size() == flowFwd.size()
@@ -206,7 +223,7 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev,
 }
 
 // ============================================================
-// 融合：修复 1（动态加权） + 修复 2（combined²） + 修复 3（bilateral 后处理）
+// 融合
 // ============================================================
 cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
                                           const cv::Mat& curr,
@@ -230,7 +247,7 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
     cv::Mat warpedPrev = WarpToMid(prev, flowFwd, gridX, gridY,  t);
     cv::Mat warpedCurr = WarpToMid(curr, flowBwd, gridX, gridY, -(1.0 - t));
 
-    // ---------- 1. confidence（已去掉 dilate） ----------
+    // ---------- 1. confidence ----------
     cv::Mat confidence = ComputeConfidence(
         flowFwd, flowBwd, gridX, gridY, m_params.fbThreshold);
     if (m_params.confidenceBlurSigma > 0.0) {
@@ -261,7 +278,7 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
     cv::Mat candidateLinear;
     cv::addWeighted(prevF, 1.0 - t, currF, t, 0.0, candidateLinear);
 
-    // ---------- 候选 C：遮挡区（修复 2） ----------
+    // ---------- 候选 C：遮挡区 ----------
     cv::Mat magFwd = ComputeFlowMagnitude(flowFwd);
     cv::Mat occWeight8;
     cv::compare(magFwd, cv::Scalar(m_params.staticMagThreshold), occWeight8, cv::CMP_GT);
@@ -289,7 +306,6 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
     cv::Mat combinedMask;
     cv::multiply(occWeight, diffMask, combinedMask);
 
-    // ★ combinedW3 必须在这里定义，后面 combinedSq 要用
     cv::Mat combinedW3 = ExpandWeightTo3Ch(combinedMask);
 
     cv::Mat oneMinusCombinedW3;
