@@ -290,30 +290,6 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
             oneMinusStatic3.mul(nonStatic),
             result32F);
 
-    // ============================================================
-    // 修复 3：遮挡区 bilateral 后处理（把双影变成轻微模糊）
-    // ============================================================
-    {
-        cv::Mat confMask8;
-        cv::compare(confidence, cv::Scalar(0.3), confMask8, cv::CMP_LT);
-        cv::Mat confMask;
-        confMask8.convertTo(confMask, CV_32F, 1.0 / 255.0);
-        cv::Mat confMask3 = ExpandWeightTo3Ch(confMask);
-
-        cv::Mat result8u;
-        result32F.convertTo(result8u, CV_8UC3);
-        cv::Mat smoothed8u;
-        cv::bilateralFilter(result8u, smoothed8u, 5, 30.0, 30.0);
-        cv::Mat smoothedF;
-        smoothed8u.convertTo(smoothedF, CV_32FC3);
-
-        cv::Mat oneMinusConfMask3;
-        cv::subtract(cv::Scalar::all(1.0), confMask3, oneMinusConfMask3);
-        cv::add(confMask3.mul(smoothedF),
-                oneMinusConfMask3.mul(result32F),
-                result32F);
-    }
-
     // ---------- 转回 8UC3 ----------
     cv::Mat result;
     result32F.convertTo(result, prev.type());
