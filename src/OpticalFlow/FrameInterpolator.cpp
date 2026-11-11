@@ -1,9 +1,6 @@
 #include "FrameInterpolator.h"
 
-// guidedFilter 需要 ximgproc 模块（BUILD_LIST 里已有，仅头文件 include）
 #include <opencv2/ximgproc.hpp>
-
-// TV-L1 需要 optflow 模块
 #include <opencv2/optflow.hpp>
 
 #include <cmath>
@@ -32,6 +29,10 @@ cv::Mat ExpandWeightTo3Ch(const cv::Mat& weight) {
     return w3;
 }
 
+// ============================================================
+// 拉普拉斯金字塔融合
+// ★ 关键修复：每层用对应尺寸的 confidence（之前 conf3 一直是原图尺寸，导致 mul 崩溃）
+// ============================================================
 cv::Mat LaplacianBlend(const cv::Mat& prev8u, const cv::Mat& curr8u,
                        const cv::Mat& wpF, const cv::Mat& wcF,
                        const cv::Mat& confidence,
@@ -46,6 +47,14 @@ cv::Mat LaplacianBlend(const cv::Mat& prev8u, const cv::Mat& curr8u,
     cv::buildPyramid(wpF, gwp, levels);
     cv::buildPyramid(wcF, gwc, levels);
 
+    // ★ 构建 confidence 金字塔：每层用 resize 降采样到对应尺寸
+    std::vector<cv::Mat> lconf(levels);
+    lconf[0] = confidence;
+    for (int i = 1; i < levels; ++i) {
+        cv::resize(lconf[i-1], lconf[i], gp[i].size(), 0, 0, cv::INTER_AREA);
+    }
+
+    // 拉普拉斯金字塔
     std::vector<cv::Mat> lp, lc, lwp, lwc;
     for (int i = 0; i < levels - 1; ++i) {
         cv::Mat upP, upC, upWP, upWC;
@@ -58,16 +67,13 @@ cv::Mat LaplacianBlend(const cv::Mat& prev8u, const cv::Mat& curr8u,
         cv::subtract(gc[i],  upC,  lapC);
         cv::subtract(gwp[i], upWP, lapWP);
         cv::subtract(gwc[i], upWC, lapWC);
-        lp.push_back(lapP);  lc.push_back(lapC);
+        lp.push_back(lapP);   lc.push_back(lapC);
         lwp.push_back(lapWP); lwc.push_back(lapWC);
     }
-    lp.push_back(gp.back());  lc.push_back(gc.back());
+    lp.push_back(gp.back());   lc.push_back(gc.back());
     lwp.push_back(gwp.back()); lwc.push_back(gwc.back());
 
-    cv::Mat conf3 = ExpandWeightTo3Ch(confidence);
-    cv::Mat oneMinusConf3;
-    cv::subtract(cv::Scalar::all(1.0), conf3, oneMinusConf3);
-
+    // 逐层融合
     std::vector<cv::Mat> lout;
     for (int i = 0; i < levels; ++i) {
         cv::Mat warpBlend, linearBlend;
@@ -76,10 +82,17 @@ cv::Mat LaplacianBlend(const cv::Mat& prev8u, const cv::Mat& curr8u,
 
         cv::Mat blended;
         if (i == levels - 1) {
+            // 最低频（大色块）：全部 linear，无 ghost
             blended = linearBlend;
         } else if (i == 0) {
+            // 最高频（细节）：全部 warp，保留清晰度
             blended = warpBlend;
         } else {
+            // 中间频：用当前层的 confidence 混合
+            cv::Mat conf3 = ExpandWeightTo3Ch(lconf[i]);   // ★ 用 lconf[i] 而不是 confidence
+            cv::Mat oneMinusConf3;
+            cv::subtract(cv::Scalar::all(1.0), conf3, oneMinusConf3);
+
             cv::add(conf3.mul(warpBlend),
                     oneMinusConf3.mul(linearBlend),
                     blended);
@@ -87,6 +100,7 @@ cv::Mat LaplacianBlend(const cv::Mat& prev8u, const cv::Mat& curr8u,
         lout.push_back(blended);
     }
 
+    // 重构
     cv::Mat result = lout[levels - 1];
     for (int i = levels - 2; i >= 0; --i) {
         cv::Mat up;
@@ -145,18 +159,20 @@ cv::Mat ComputeConfidence(const cv::Mat& flowFwd, const cv::Mat& flowBwd,
     cv::Mat largeMag;
     cv::subtract(cv::Scalar::all(1.0), smallMag, largeMag);
 
-    cv::Mat thr2Small = cv::Mat::ones(err2.size(), CV_32F) * (2.0 * threshold) * (2.0 * threshold);
-    cv::Mat thr2Large = cv::Mat::ones(err2.size(), CV_32F) * threshold * threshold;
+    // ★ 用 Scalar 构造阈值矩阵，避免 Mat::ones 的 MatExpr 在某些边界下报错
+    const double thrSmall = 2.0 * threshold;
+    cv::Mat thr2Small(err2.size(), CV_32F, cv::Scalar(thrSmall * thrSmall));
+    cv::Mat thr2Large(err2.size(), CV_32F, cv::Scalar(threshold * threshold));
 
-    cv::Mat maskSmall, maskLarge, maskSmall8, maskLarge8;
+    cv::Mat maskSmall8, maskLarge8;
     cv::compare(err2Local, thr2Small, maskSmall8, cv::CMP_LT);
     cv::compare(err2Local, thr2Large, maskLarge8, cv::CMP_LT);
+    cv::Mat maskSmall, maskLarge;
     maskSmall8.convertTo(maskSmall, CV_32F, 1.0 / 255.0);
     maskLarge8.convertTo(maskLarge, CV_32F, 1.0 / 255.0);
 
     cv::Mat confidence;
     cv::add(smallMag.mul(maskSmall), largeMag.mul(maskLarge), confidence);
-
     return confidence;
 }
 
@@ -198,31 +214,21 @@ void PostProcessFlow(const cv::Mat& flowIn,
     cv::merge(ch2, flowOut);
 }
 
-// ============================================================
-// 清理光流中的 NaN / Inf / 极端值
-//   TV-L1 在参数不当时可能输出这类值，传播到 mul / add 会崩溃
-// ============================================================
+// 清理光流 NaN / Inf / 极端值
 void CleanFlowNaN(cv::Mat& flow) {
-    if (flow.empty() || flow.type() != CV_32FC2) {
-        return;
-    }
+    if (flow.empty() || flow.type() != CV_32FC2) return;
 
     std::vector<cv::Mat> parts(2);
     cv::split(flow, parts);
 
     for (auto& p : parts) {
-        // 1) NaN → 0
         cv::patchNaNs(p, 0.0);
-
-        // 2) |x| > 1e6 视为异常 → 0
         cv::Mat bad;
         cv::compare(p, cv::Scalar(1e6), bad, cv::CMP_GT);
         p.setTo(0.0, bad);
-
         cv::compare(p, cv::Scalar(-1e6), bad, cv::CMP_LT);
         p.setTo(0.0, bad);
     }
-
     cv::merge(parts, flow);
 }
 
@@ -234,15 +240,14 @@ void CleanFlowNaN(cv::Mat& flow) {
 void FrameInterpolator::ComputeFlow(const cv::Mat& from,
                                     const cv::Mat& to,
                                     cv::Mat& flow) const {
-    // ---------- 后端 0：纯 Farneback ----------
     if (m_params.flowBackend == 0) {
         cv::calcOpticalFlowFarneback(from, to, flow, 0.5, 3, 15, 3, 5, 1.1, 0);
         return;
     }
 
-    // ---------- 大位移处理：粗分辨率 Farneback 作为初值 ----------
+    // 大位移处理：粗分辨率 Farneback 作为初值（仅 DIS 用）
     cv::Mat initialFlow;
-    if (m_params.maxCoarseLevels > 0) {
+    if (m_params.maxCoarseLevels > 0 && m_params.flowBackend == 1) {
         const double coarseScale = std::pow(0.5, m_params.maxCoarseLevels);
         cv::Mat fromCoarse, toCoarse;
         cv::resize(from, fromCoarse, cv::Size(), coarseScale, coarseScale, cv::INTER_AREA);
@@ -254,38 +259,27 @@ void FrameInterpolator::ComputeFlow(const cv::Mat& from,
         initialFlow *= (1.0 / coarseScale);
     }
 
-    // ---------- 后端 2：TV-L1（不用初值 + try/catch + NaN 清理） ----------
+    // ---------- 后端 2：TV-L1 ----------
     if (m_params.flowBackend == 2) {
         try {
             cv::Ptr<cv::optflow::DualTVL1OpticalFlow> tvl1 =
                 cv::optflow::DualTVL1OpticalFlow::create();
-
             tvl1->setScalesNumber(5);
             tvl1->setWarpingsNumber(5);
             tvl1->setLambda(0.15);
             tvl1->setTau(0.25);
             tvl1->setTheta(0.3);
             tvl1->setEpsilon(0.01);
-
-            // ★ 关键：不传初值，避免 Farneback 粗算结果让 TV-L1 发散
             tvl1->setUseInitialFlow(false);
 
-            // ★ 清空 flow，让 TV-L1 自己分配内存，避免和 initialFlow 共享
             flow.release();
             tvl1->calc(from, to, flow);
 
-            // ★ 输出校验：尺寸/类型不对 → 回退到零光流
-            if (flow.empty() ||
-                flow.type() != CV_32FC2 ||
-                flow.size() != from.size()) {
-                std::fprintf(stderr,
-                    "[TV-L1] invalid output (size=%dx%d, type=%d), using zero flow\n",
-                    flow.cols, flow.rows, flow.type());
+            if (flow.empty() || flow.type() != CV_32FC2 || flow.size() != from.size()) {
+                std::fprintf(stderr, "[TV-L1] invalid output, using zero flow\n");
                 flow = cv::Mat::zeros(from.size(), CV_32FC2);
                 return;
             }
-
-            // ★ NaN/Inf 清理
             CleanFlowNaN(flow);
         } catch (const cv::Exception& e) {
             std::fprintf(stderr, "[TV-L1] exception: %s\n", e.what());
@@ -294,7 +288,7 @@ void FrameInterpolator::ComputeFlow(const cv::Mat& from,
         return;
     }
 
-    // ---------- 后端 1：DIS（默认） ----------
+    // ---------- 后端 1：DIS ----------
     int preset = cv::DISOpticalFlow::PRESET_ULTRAFAST;
     switch (m_params.disPreset) {
         case 1: preset = cv::DISOpticalFlow::PRESET_FAST;   break;
@@ -302,12 +296,8 @@ void FrameInterpolator::ComputeFlow(const cv::Mat& from,
         default: preset = cv::DISOpticalFlow::PRESET_ULTRAFAST; break;
     }
     cv::Ptr<cv::DISOpticalFlow> dis = cv::DISOpticalFlow::create(preset);
-
-    if (!initialFlow.empty()) {
-        flow = initialFlow;
-    } else {
-        flow.release();
-    }
+    if (!initialFlow.empty()) flow = initialFlow;
+    else                       flow.release();
     dis->calc(from, to, flow);
 }
 
@@ -328,9 +318,9 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev,
     }
 
     cv::Mat prevSmooth, currSmooth;
-    constexpr double bilateralSigmaColor = 8.0;
-    cv::bilateralFilter(prevGray,  prevSmooth,  5, bilateralSigmaColor, bilateralSigmaColor);
-    cv::bilateralFilter(currGray,  currSmooth,  5, bilateralSigmaColor, bilateralSigmaColor);
+    constexpr double bs = 8.0;
+    cv::bilateralFilter(prevGray, prevSmooth, 5, bs, bs);
+    cv::bilateralFilter(currGray, currSmooth, 5, bs, bs);
 
     cv::Mat flowFwdRaw, flowBwdRaw;
     ComputeFlow(prevSmooth, currSmooth, flowFwdRaw);
@@ -339,14 +329,12 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev,
     PostProcessFlow(flowFwdRaw, prevGray, flowFwd);
     PostProcessFlow(flowBwdRaw, currGray, flowBwd);
 
-    // 时域平滑
     if (m_params.enableTemporalSmooth
         && !m_prevFlowFwd.empty()
         && m_prevFlowFwd.size() == flowFwd.size()
         && m_prevFlowFwd.type() == flowFwd.type()) {
 
         cv::Mat mag = ComputeFlowMagnitude(flowFwd);
-
         cv::Mat smallMask8;
         cv::compare(mag, cv::Scalar(m_params.temporalMagThreshold), smallMask8, cv::CMP_LT);
         cv::Mat smallMask;
@@ -448,7 +436,6 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
     cv::multiply(occWeight, diffMask, combinedMask);
 
     cv::Mat combinedW3 = ExpandWeightTo3Ch(combinedMask);
-
     cv::Mat oneMinusCombinedW3;
     cv::subtract(cv::Scalar::all(1.0), combinedW3, oneMinusCombinedW3);
 
@@ -475,8 +462,17 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
             oneMinusStatic3.mul(nonStatic),
             result32F);
 
-    cv::Mat result = LaplacianBlend(prev, curr, wpF, wcF, confidence, t, 4);
-    return result;
+    cv::Mat coarseResult;
+    result32F.convertTo(coarseResult, prev.type());
+
+    // ★ 拉普拉斯融合：加 try/catch，失败时回退到 coarseResult
+    try {
+        cv::Mat result = LaplacianBlend(prev, curr, wpF, wcF, confidence, t, 4);
+        return result;
+    } catch (const cv::Exception& e) {
+        std::fprintf(stderr, "[LaplacianBlend] exception: %s, fallback to coarse\n", e.what());
+        return coarseResult;
+    }
 }
 
 cv::Mat FrameInterpolator::Interpolate(const cv::Mat& prev,
