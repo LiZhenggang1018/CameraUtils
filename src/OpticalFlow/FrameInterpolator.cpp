@@ -152,9 +152,13 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev,
         prevGray = prev;
         currGray = curr;
     }
+    // 【新】双边滤波预处理：平滑纹理噪声，让 DIS 光流更稳定
+    cv::Mat prevSmooth, currSmooth;
+    cv::bilateralFilter(prevGray, prevSmooth, 5, 25.0, 25.0);
+    cv::bilateralFilter(currGray, currSmooth, 5, 25.0, 25.0);
 
-    ComputeFlow(prevGray, currGray, flowFwd);
-    ComputeFlow(currGray, prevGray, flowBwd);
+    ComputeFlow(prevSmooth, currSmooth, flowFwd);
+    ComputeFlow(currSmooth, prevSmooth, flowBwd);
 
     // ---- 时域平滑 ----
     if (m_params.enableTemporalSmooth
