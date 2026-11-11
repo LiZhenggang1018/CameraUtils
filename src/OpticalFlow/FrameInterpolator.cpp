@@ -225,39 +225,8 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
     prev.convertTo(prevF, CV_32FC3);
     curr.convertTo(currF, CV_32FC3);
 
-    // ============================================================
-    // 修复 1：非遮挡区动态加权
-    //   t=0.5 时不再 50/50，改为"局部误差小的一侧"权重更大
-    // ============================================================
     cv::Mat candidateWarped;
-    if (std::abs(t - 0.5) < 1e-9) {
-        // 局部平滑度对比：每个像素与 5x5 邻域均值的偏差越小越可信
-        cv::Mat wpBlur, wcBlur;
-        cv::blur(wpF, wpBlur, cv::Size(5, 5));
-        cv::blur(wcF, wcBlur, cv::Size(5, 5));
-
-        cv::Mat wpDev, wcDev;
-        cv::absdiff(wpF, wpBlur, wpDev);
-        cv::absdiff(wcF, wcBlur, wcDev);
-
-        cv::Mat wpDevGray, wcDevGray;
-        cv::cvtColor(wpDev, wpDevGray, cv::COLOR_BGR2GRAY);
-        cv::cvtColor(wcDev, wcDevGray, cv::COLOR_BGR2GRAY);
-
-        cv::Mat wpBetter8;
-        cv::compare(wpDevGray, wcDevGray, wpBetter8, cv::CMP_LT);
-        cv::Mat wpBetter;
-        wpBetter8.convertTo(wpBetter, CV_32F, 1.0 / 255.0);
-        cv::GaussianBlur(wpBetter, wpBetter, cv::Size(0, 0), 3.0);
-
-        cv::Mat wpBetter3 = ExpandWeightTo3Ch(wpBetter);
-        cv::Mat wpWorse3;
-        cv::subtract(cv::Scalar::all(1.0), wpBetter3, wpWorse3);
-
-        cv::add(wpBetter3.mul(wpF), wpWorse3.mul(wcF), candidateWarped);
-    } else {
-        cv::addWeighted(wpF, 1.0 - t, wcF, t, 0.0, candidateWarped);
-    }
+    cv::addWeighted(wpF, 1.0 - t, wcF, t, 0.0, candidateWarped);
 
     // ---------- 候选 B：线性混合（静态区） ----------
     cv::Mat candidateLinear;
@@ -294,15 +263,12 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev,
     // ★ combinedW3 必须在这里定义，后面 combinedSq 要用
     cv::Mat combinedW3 = ExpandWeightTo3Ch(combinedMask);
 
-    // combinedSq 让"中等遮挡"更偏向 candidateLinear（减少双影）
-    cv::Mat combinedSq;
-    cv::multiply(combinedW3, combinedW3, combinedSq);
-    cv::Mat oneMinusCombinedSq;
-    cv::subtract(cv::Scalar::all(1.0), combinedSq, oneMinusCombinedSq);
+    cv::Mat oneMinusCombinedW3;
+    cv::subtract(cv::Scalar::all(1.0), combinedW3, oneMinusCombinedW3);
 
     cv::Mat candidateOccluded;
-    cv::add(combinedSq.mul(candidateLinear),
-            oneMinusCombinedSq.mul(warpedAvg),
+    cv::add(combinedW3.mul(candidateLinear),
+            oneMinusCombinedW3.mul(warpedAvg),
             candidateOccluded);
 
     // ---------- 三区融合 ----------
