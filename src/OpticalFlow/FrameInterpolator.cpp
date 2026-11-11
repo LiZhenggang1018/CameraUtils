@@ -29,10 +29,6 @@ cv::Mat ExpandWeightTo3Ch(const cv::Mat& weight) {
     return w3;
 }
 
-// ============================================================
-// 拉普拉斯金字塔融合
-// ★ 关键修复：每层用对应尺寸的 confidence（之前 conf3 一直是原图尺寸，导致 mul 崩溃）
-// ============================================================
 cv::Mat LaplacianBlend(const cv::Mat& prev8u, const cv::Mat& curr8u,
                        const cv::Mat& wpF, const cv::Mat& wcF,
                        const cv::Mat& confidence,
@@ -41,13 +37,15 @@ cv::Mat LaplacianBlend(const cv::Mat& prev8u, const cv::Mat& curr8u,
     prev8u.convertTo(prevF, CV_32FC3);
     curr8u.convertTo(currF, CV_32FC3);
 
+    // ★ 修复：buildPyramid 的 maxlevel = levels - 1，
+    //   这样金字塔正好 levels 层（0..levels-1），和后面循环逻辑一致
     std::vector<cv::Mat> gp, gc, gwp, gwc;
-    cv::buildPyramid(prevF, gp, levels);
-    cv::buildPyramid(currF, gc, levels);
-    cv::buildPyramid(wpF, gwp, levels);
-    cv::buildPyramid(wcF, gwc, levels);
+    cv::buildPyramid(prevF, gp, levels - 1);
+    cv::buildPyramid(currF, gc, levels - 1);
+    cv::buildPyramid(wpF, gwp, levels - 1);
+    cv::buildPyramid(wcF, gwc, levels - 1);
 
-    // ★ 构建 confidence 金字塔：每层用 resize 降采样到对应尺寸
+    // confidence 金字塔：每层用 resize 降采样到 gp[i] 尺寸
     std::vector<cv::Mat> lconf(levels);
     lconf[0] = confidence;
     for (int i = 1; i < levels; ++i) {
@@ -70,7 +68,7 @@ cv::Mat LaplacianBlend(const cv::Mat& prev8u, const cv::Mat& curr8u,
         lp.push_back(lapP);   lc.push_back(lapC);
         lwp.push_back(lapWP); lwc.push_back(lapWC);
     }
-    lp.push_back(gp.back());   lc.push_back(gc.back());
+    lp.push_back(gp.back());   lc.push_back(gc.back());     // ← gp.back() = gp[3]
     lwp.push_back(gwp.back()); lwc.push_back(gwc.back());
 
     // 逐层融合
@@ -82,17 +80,13 @@ cv::Mat LaplacianBlend(const cv::Mat& prev8u, const cv::Mat& curr8u,
 
         cv::Mat blended;
         if (i == levels - 1) {
-            // 最低频（大色块）：全部 linear，无 ghost
-            blended = linearBlend;
+            blended = linearBlend;   // 最低频：linear，无 ghost
         } else if (i == 0) {
-            // 最高频（细节）：全部 warp，保留清晰度
-            blended = warpBlend;
+            blended = warpBlend;     // 最高频：warp，保清晰
         } else {
-            // 中间频：用当前层的 confidence 混合
-            cv::Mat conf3 = ExpandWeightTo3Ch(lconf[i]);   // ★ 用 lconf[i] 而不是 confidence
+            cv::Mat conf3 = ExpandWeightTo3Ch(lconf[i]);
             cv::Mat oneMinusConf3;
             cv::subtract(cv::Scalar::all(1.0), conf3, oneMinusConf3);
-
             cv::add(conf3.mul(warpBlend),
                     oneMinusConf3.mul(linearBlend),
                     blended);
@@ -100,7 +94,7 @@ cv::Mat LaplacianBlend(const cv::Mat& prev8u, const cv::Mat& curr8u,
         lout.push_back(blended);
     }
 
-    // 重构
+    // 重构（此时尺寸全对）
     cv::Mat result = lout[levels - 1];
     for (int i = levels - 2; i >= 0; --i) {
         cv::Mat up;
