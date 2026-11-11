@@ -7,8 +7,8 @@ class FrameInterpolator {
 public:
     struct Params {
         // ---- 光流后端 ----
-        int    flowBackend         = 1;      // 0=Farneback, 1=DIS
-        int    disPreset           = 0;      // 0=ULTRAFAST, 1=FAST, 2=MEDIUM
+        int    flowBackend         = 1;      // 0=Farneback, 1=DIS, 2=TV-L1（慢但边缘保持好）
+        int    disPreset           = 0;      // 0=ULTRAFAST, 1=FAST, 2=MEDIUM（仅 flowBackend==1 生效）
         int    maxCoarseLevels     = 1;      // 大位移处理：外部金字塔层数（0=禁用）
 
         // ---- 前后向一致性 ----
