@@ -19,6 +19,76 @@ void BuildGrid(int h, int w, cv::Mat& gridX, cv::Mat& gridY) {
     }
 }
 
+cv::Mat LaplacianBlend(const cv::Mat& prev8u, const cv::Mat& curr8u,
+                       const cv::Mat& wpF, const cv::Mat& wcF,
+                       const cv::Mat& confidence,
+                       double t, int levels = 4) {
+    cv::Mat prevF, currF;
+    prev8u.convertTo(prevF, CV_32FC3);
+    curr8u.convertTo(currF, CV_32FC3);
+
+    std::vector<cv::Mat> gp, gc, gwp, gwc;
+    cv::buildPyramid(prevF, gp, levels);
+    cv::buildPyramid(currF, gc, levels);
+    cv::buildPyramid(wpF, gwp, levels);
+    cv::buildPyramid(wcF, gwc, levels);
+
+    std::vector<cv::Mat> lp, lc, lwp, lwc;
+    for (int i = 0; i < levels - 1; ++i) {
+        cv::Mat upP, upC, upWP, upWC;
+        cv::pyrUp(gp[i+1],  upP,  gp[i].size());
+        cv::pyrUp(gc[i+1],  upC,  gc[i].size());
+        cv::pyrUp(gwp[i+1], upWP, gwp[i].size());
+        cv::pyrUp(gwc[i+1], upWC, gwc[i].size());
+        cv::Mat lapP, lapC, lapWP, lapWC;
+        cv::subtract(gp[i],  upP,  lapP);
+        cv::subtract(gc[i],  upC,  lapC);
+        cv::subtract(gwp[i], upWP, lapWP);
+        cv::subtract(gwc[i], upWC, lapWC);
+        lp.push_back(lapP);  lc.push_back(lapC);
+        lwp.push_back(lapWP); lwc.push_back(lapWC);
+    }
+    lp.push_back(gp.back());  lc.push_back(gc.back());
+    lwp.push_back(gwp.back()); lwc.push_back(gwc.back());
+
+    cv::Mat conf3 = ExpandWeightTo3Ch(confidence);
+    cv::Mat oneMinusConf3;
+    cv::subtract(cv::Scalar::all(1.0), conf3, oneMinusConf3);
+
+    std::vector<cv::Mat> lout;
+    for (int i = 0; i < levels; ++i) {
+        cv::Mat warpBlend, linearBlend;
+        cv::addWeighted(lwp[i], 1.0 - t, lwc[i], t, 0.0, warpBlend);
+        cv::addWeighted(lp[i],  1.0 - t, lc[i],  t, 0.0, linearBlend);
+
+        cv::Mat blended;
+        if (i == levels - 1) {
+            // 最低频（大色块）：全部 linear，无 ghost
+            blended = linearBlend;
+        } else if (i == 0) {
+            // 最高频（细节）：全部 warp，保留清晰度
+            blended = warpBlend;
+        } else {
+            // 中间频：按 confidence 混合
+            cv::add(conf3.mul(warpBlend),
+                    oneMinusConf3.mul(linearBlend),
+                    blended);
+        }
+        lout.push_back(blended);
+    }
+
+    cv::Mat result = lout[levels - 1];
+    for (int i = levels - 2; i >= 0; --i) {
+        cv::Mat up;
+        cv::pyrUp(result, up, lout[i].size());
+        cv::add(up, lout[i], result);
+    }
+
+    cv::Mat result8u;
+    result.convertTo(result8u, CV_8UC3);
+    return result8u;
+}
+
 cv::Mat WarpToMid(const cv::Mat& from, const cv::Mat& flow,
                   const cv::Mat& gridX, const cv::Mat& gridY, double scale) {
     std::vector<cv::Mat> parts(2);
