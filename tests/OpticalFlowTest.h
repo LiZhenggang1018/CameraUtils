@@ -364,19 +364,23 @@ inline int UpsampleVideo(const std::string& inputPath,
         return -1;
     }
 
-    // 用配置构造 FrameInterpolator::Params
     FrameInterpolator::Params params;
-    params.flowBackend          = cfg.flowBackend;
-    params.disPreset            = cfg.disPreset;
-    params.maxCoarseLevels      = cfg.maxCoarseLevels;
-    params.fbThreshold          = cfg.fbThreshold;
-    params.enableStaticProtect  = cfg.enableStaticProtect;
-    params.staticMagThreshold   = cfg.staticMagThreshold;
-    params.confidenceBlurSigma  = cfg.confidenceBlurSigma;
-    params.occlusionBlurSigma   = cfg.occlusionBlurSigma;
-    params.enableTemporalSmooth = cfg.enableTemporalSmooth;
-    params.temporalAlpha        = cfg.temporalAlpha;
-    params.temporalMagThreshold = cfg.temporalMagThreshold;
+    params.flowBackend              = cfg.flowBackend;
+    params.disPreset                = cfg.disPreset;
+    params.maxCoarseLevels          = cfg.maxCoarseLevels;
+    params.flowDownscale            = cfg.flowDownscale;
+    params.enableBilateralPreprocess = cfg.enableBilateralPreprocess;
+    params.enableFlowPostProcess    = cfg.enableFlowPostProcess;
+    params.enableLaplacianBlend     = cfg.enableLaplacianBlend;
+    params.laplacianLevels          = cfg.laplacianLevels;
+    params.fbThreshold              = cfg.fbThreshold;
+    params.enableStaticProtect      = cfg.enableStaticProtect;
+    params.staticMagThreshold       = cfg.staticMagThreshold;
+    params.confidenceBlurSigma      = cfg.confidenceBlurSigma;
+    params.occlusionBlurSigma       = cfg.occlusionBlurSigma;
+    params.enableTemporalSmooth     = cfg.enableTemporalSmooth;
+    params.temporalAlpha            = cfg.temporalAlpha;
+    params.temporalMagThreshold     = cfg.temporalMagThreshold;
     FrameInterpolator interp(params);
 
     // 用配置构造 FfmpegVideoWriter::EncoderParams
