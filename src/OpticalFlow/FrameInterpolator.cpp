@@ -328,6 +328,9 @@ void FrameInterpolator::ComputeFlowInternal(const cv::Mat& from,
     dis->calc(from, to, flow);
 }
 
+// ============================================================
+// 时域平滑 + 光流后处理 + 性能开关
+// ============================================================
 void FrameInterpolator::ComputeFlows(const cv::Mat& prev,
                                      const cv::Mat& curr,
                                      cv::Mat& flowFwd,
@@ -341,13 +344,18 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev,
         currGray = curr;
     }
 
-    // ★ 开关 1：双边预处理
-    cv::Mat prevForFlow = prevGray;
-    cv::Mat currForFlow = currGray;
+    // ★ 修复：bilateralFilter 的 dst 必须是独立 Mat，
+    //   不能写成 `cv::Mat prevForFlow = prevGray;` 再传进去
+    cv::Mat prevForFlow;
+    cv::Mat currForFlow;
     if (m_params.enableBilateralPreprocess) {
         constexpr double bs = 8.0;
-        cv::bilateralFilter(prevGray, prevForFlow, 5, bs, bs);
+        cv::bilateralFilter(prevGray, prevForFlow, 5, bs, bs);   // prevForFlow 是空 Mat，OpenCV 内部会分配新内存
         cv::bilateralFilter(currGray, currForFlow, 5, bs, bs);
+    } else {
+        // 不启用时直接引用灰度图（只读，后续不会修改）
+        prevForFlow = prevGray;
+        currForFlow = currGray;
     }
 
     cv::Mat flowFwdRaw, flowBwdRaw;
@@ -363,7 +371,7 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev,
         flowBwd = flowBwdRaw;
     }
 
-    // ★ 开关 3：时域平滑（原有）
+    // ★ 开关 3：时域平滑
     if (m_params.enableTemporalSmooth
         && !m_prevFlowFwd.empty()
         && m_prevFlowFwd.size() == flowFwd.size()
