@@ -47,8 +47,10 @@ cv::Mat ComputeConfidence(const cv::Mat& flowFwd, const cv::Mat& flowBwd,
     cv::compare(err2, cv::Scalar(threshold * threshold), mask8, cv::CMP_LT);
     cv::Mat confidence;
     mask8.convertTo(confidence, CV_32F, 1.0 / 255.0);
-    cv::dilate(confidence, confidence,
-               cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
+    // 删除 dilate，避免遮挡区边缘被误判为"一致"
+    // 如果 confidence 本身噪声大，改为 erode
+    // cv::erode(confidence, confidence,
+    //           cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)));
     return confidence;
 }
 
