@@ -170,7 +170,9 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev,
 
     ComputeFlow(prevSmooth, currSmooth, flowFwd);
     ComputeFlow(currSmooth, prevSmooth, flowBwd);
-
+    // ★ 光流后处理（新增）
+    PostProcessFlow(flowFwdRaw, prevGray, flowFwd);
+    PostProcessFlow(flowBwdRaw, currGray, flowBwd);
     // 时域平滑
     if (m_params.enableTemporalSmooth
         && !m_prevFlowFwd.empty()
