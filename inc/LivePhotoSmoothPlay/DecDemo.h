@@ -26,12 +26,6 @@ inline void DecodeOptLpMp4ToYuvs()
     DecodeMp4ToYuvFrames(LP_OPT_FILE.c_str(), outDir);
 }
 
-// 生成过渡帧优化后的LP文件：小fov视频 + 一系列FOV渐变过渡帧 + 封面帧
-inline void GenOptLivePhoto()
-{
-    DecodeAndEncodeAndInsertMultiYuvs(S_LYF_FILE.c_str(), OPT_FILE.c_str());
-}
-
 // 替换 alpha 混合过渡帧为 FOV 渐变过渡帧
 // Lp.mp4: [1, LAST_VID_FRAME_IDX] 视频帧; [START, END] alpha混合帧; [COVER_FRAME_IDX] 封面帧
 inline void ReplaceAlhpaMergeToFovSmoothLp()
