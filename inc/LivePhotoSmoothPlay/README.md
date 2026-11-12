@@ -113,8 +113,6 @@ std::tuple<int, int, int> CountFrames(const std::string& input_file);
 
 返回 `(iCount, pCount, bCount)`，用于对比"输入 vs 输出"的 I/P/B 帧分布。
 
-**注意**：**没有 flush decoder**，最后 1~3 帧可能漏统计。
-
 ### `DecAndEnc.h` —— FFmpeg 编解码
 
 | 函数 | 用途 | 状态 |
