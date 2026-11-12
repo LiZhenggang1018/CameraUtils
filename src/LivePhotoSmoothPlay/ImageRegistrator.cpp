@@ -24,13 +24,28 @@ cv::Ptr<cv::Feature2D> ImageRegistrator::createDetector(FeatureDetectorType type
 std::tuple<std::vector<cv::KeyPoint>, cv::Mat>
 ImageRegistrator::detectFeatures(const cv::Mat &image, FeatureDetectorType detector_type)
 {
+    // 修复 #11：兼容 BGR / BGRA / GRAY 三种输入
     cv::Mat gray;
-    cv::cvtColor(image, gray, cv::COLOR_BGR2GRAY);
+    if (image.channels() == 1)
+    {
+        gray = image;
+    }
+    else if (image.channels() == 3)
+    {
+        cv::cvtColor(image, gray, cv::COLOR_BGR2GRAY);
+    }
+    else if (image.channels() == 4)
+    {
+        cv::cvtColor(image, gray, cv::COLOR_BGRA2GRAY);
+    }
+    else
+    {
+        throw std::runtime_error("不支持的图像通道数: " + std::to_string(image.channels()));
+    }
 
     auto detector = createDetector(detector_type);
     std::vector<cv::KeyPoint> keypoints;
     cv::Mat descriptors;
-
     detector->detectAndCompute(gray, cv::noArray(), keypoints, descriptors);
 
     return {keypoints, descriptors};
