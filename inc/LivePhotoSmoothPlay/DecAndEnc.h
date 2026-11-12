@@ -984,6 +984,18 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char *input_filename, const
 	{
 		std::cout << "Invalid replace index range: [" << toReplaceYuvStartIdx << ", " << toReplaceYuvEndIdx << "], no replacement will be performed" << std::endl;
 	}
+	// 修复 #4：校验 replaceYuvFiles 数量与替换区间长度一致
+	const int expectedReplaceCount = toReplaceYuvEndIdx - toReplaceYuvStartIdx + 1;
+	if (!replaceYuvFiles.empty() &&
+		static_cast<int>(replaceYuvFiles.size()) != expectedReplaceCount)
+	{
+		std::cout << "Error: replaceYuvFiles.size() = " << replaceYuvFiles.size()
+				<< " != range size " << expectedReplaceCount
+				<< " ([start=" << toReplaceYuvStartIdx
+				<< ", end=" << toReplaceYuvEndIdx << "])" << std::endl;
+		return;   // ← 直接拒绝，避免静默出错
+	}
+
 	ON_SCOPE_EXIT
 	{
 		CountFrames(input_filename);
