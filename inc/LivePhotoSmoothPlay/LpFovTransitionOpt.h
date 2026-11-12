@@ -45,8 +45,6 @@ inline void GenFromLpToOptLp()
     RegCoverToVid();                // 2、对封面帧进行配准，使其和视频最后一帧对齐
     GenDiffFovYuvsFromCoverFrame(); // 3、基于封面帧生成20帧crop帧 crop1.yuv
     // 直接把crop1~N.yuv 替换掉旧的alpha通道过渡帧就行了。
-    // RegCroppedConverYuvsToVidFrame(); //
-    // （这么做不是必须的，得到的是同一张配准图。但我们可以check过渡帧跟视频帧的fov差别跟对齐状况）将20帧
     // crop帧 crop1.yuv 配准到视频帧。
     ReplaceAlhpaMergeToFovSmoothLp(); // 4、生成LpOpt.mp4: 生成小fov视频+  一系列过渡帧（FOV渐变的）
                                       // + 一帧大fov封面帧 在视频结尾。
