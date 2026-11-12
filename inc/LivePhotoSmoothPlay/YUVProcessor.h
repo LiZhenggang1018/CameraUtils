@@ -114,16 +114,15 @@ private:
                 float src_x = crop_x + (static_cast<float>(x) * crop_width / plane_width);
                 float src_y = crop_y + (static_cast<float>(y) * crop_height / plane_height);
 
-                // 双线性插值
                 int x1 = static_cast<int>(src_x);
                 int y1 = static_cast<int>(src_y);
                 int x2 = std::min(x1 + 1, crop_x + crop_width - 1);
                 int y2 = std::min(y1 + 1, crop_y + crop_height - 1);
 
-                // 边界检查
-                x1 = std::max(0, std::min(x1, crop_x + crop_width - 1));
+                // 边界检查（修复 #9：x/y 分开用各自的边界）
+                x1 = std::max(0, std::min(x1, crop_x + crop_width  - 1));
                 y1 = std::max(0, std::min(y1, crop_y + crop_height - 1));
-                x2 = std::max(0, std::min(x2, crop_x + crop_width - 1));
+                x2 = std::max(0, std::min(x2, crop_x + crop_width  - 1));
                 y2 = std::max(0, std::min(y2, crop_y + crop_height - 1));
 
                 // 获取四个相邻像素
