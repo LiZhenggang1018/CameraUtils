@@ -26,12 +26,6 @@ inline void DecodeOptLpMp4ToYuvs()
     DecodeMp4ToYuvFrames(LP_OPT_FILE.c_str(), outDir);
 }
 
-// 生成小fov视频 + 一帧封面帧（大fov的60.yuv）在视频结尾。作为原始LP文件。
-inline void GenOriginalLivePhoto()
-{
-    DecodeEncodeAndInsertSingleYuv(S_LYF_FILE.c_str(), ORI_FILE.c_str());
-}
-
 // 生成过渡帧优化后的LP文件：小fov视频 + 一系列FOV渐变过渡帧 + 封面帧
 inline void GenOptLivePhoto()
 {
