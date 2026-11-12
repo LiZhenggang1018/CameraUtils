@@ -222,7 +222,6 @@ double rms_error;                // 重投影均方误差（质量指标）
 | `GetXYScaleFroMatrixVidToCover()` | 从 txt 读 `(x, y)` 缩放比例 |
 | `DumpXYScaleFroMatrixVidToCover()` | 从 H 矩阵写 `(x, y)` 到 txt |
 
-**已修复**：`estimateTransform` 里 `inliers_mask` 空检查；`detectFeatures` 兼容 BGR/BGRA/GRAY 三种输入。
 
 ### `CenterCropGenYuvs.h` —— FOV 渐变生成
 
@@ -349,20 +348,7 @@ LpFovTransitionOptTest()
 | :--- | :--- |
 | `DecodeCropEncodeInputVid` 的 `1562` / `1260` / `300` | 对应 X300U 录屏工具，**换录屏必须手动改** |
 | `YUVProcessor::ConvertCoverFrameToMultiFovYuvs` | 死代码（1920×1080 硬编码），无调用 |
-
-### 🟢 已修复汇总
-
-| 位置 | 修复 |
-| :--- | :--- |
-| `YUVImageReader::readYUV420PChannels` | 深拷贝，消除 use-after-free |
-| `YUVImageReader` 色彩范围 | `COLOR_BGR2YUV_I420` / `COLOR_YUV2BGR_I420`，与 FFmpeg limited-range 一致 |
-| `CROP_COVER_DIR` 双斜杠 | 去前导 `/` |
-| `processPlane` 的 `y1` 边界 | `crop_y + crop_height - 1` |
-| `ImageRegistrator::estimateTransform` | `inliers_mask` 空检查 |
-| `ImageRegistrator::detectFeatures` | 兼容 BGR/BGRA/GRAY |
-| `ReplaceMultiYuvs` | `replaceYuvFiles.size()` 校验 |
-| `CountFrames` | 加 flush decoder，最后 1~3 帧不再漏统计 |
-| 死代码清理 | 删 `GenMp4.h`、`DecodeEncode`、`InsertSingleYuv`、`InsertMultiYuvs`、`GenOriginalLivePhoto`、`GenOptLivePhoto`、`ReplaceAlhpaMerge*` 重复函数、`GenFrom2Mp4ToOriAndOptLp` |
+` |
 
 ---
 
