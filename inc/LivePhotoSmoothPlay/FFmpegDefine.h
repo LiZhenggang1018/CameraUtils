@@ -60,8 +60,9 @@ inline const std::string& LpDecodeYuvDirImpl() {
     static const std::string s = LpSmoothPlayDataPath() + "LpJpg";
     return s;
 }
+
 inline const std::string& CropCoverDirImpl() {
-    static const std::string s = LpSmoothPlayDataPath() + "/CropCover";
+    static const std::string s = LpSmoothPlayDataPath() + "CropCover";   // 去掉前导 /
     return s;
 }
 
