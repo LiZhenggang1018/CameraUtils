@@ -21,7 +21,7 @@
 //	DecodeCoverMp4ToYuvs(); // 1、从 bigLyf.mp4 解码生成
 //yuv序列（1.yuv~60.yuv），后面我们选择最后一帧 60.yuv 作为封面帧 	ConvertCoverFrameToMultiFovYuvs();
 //// 2、从封面帧生成一序列FOV渐变的过渡帧(new1.yuv new10.yuv)
-////3、生成ori.mp4: 生成小fov视频+一帧大fov封面帧在视频结尾（60.yuv）。 	GenOptLivePhoto(); //
+////3、生成ori.mp4: 生成小fov视频+一帧大fov封面帧在视频结尾（60.yuv）。
 //4、生成opt.mp4: 生成小fov视频+  一系列过渡帧（FOV渐变的） + 一帧大fov封面帧 在视频结尾。
 //}
 
