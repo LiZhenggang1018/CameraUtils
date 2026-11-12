@@ -54,11 +54,6 @@ Lp.mp4（原始 LP，含 alpha 混合过渡帧）
 | `DumpUtils.h` | 工具 | 模板 Dump 调试 |
 | `YUVProcessor.h` | 工具 | YUV 裁剪（**当前无调用**） |
 
-**已删除**（历史遗留清理完成）：
-- `GenMp4.h`（独立 demo）
-- `DecAndEnc.h` 的 `DecodeEncode` / `InsertSingleYuv` / `InsertMultiYuvs`
-- `DecDemo.h` 的 `GenOriginalLivePhoto` / `GenOptLivePhoto` / 重复的 `ReplaceAlhpaMerge*`
-- `LpFovTransitionOpt.h` 的旧流程注释 `GenFrom2Mp4ToOriAndOptLp`
 
 ---
 
@@ -66,7 +61,7 @@ Lp.mp4（原始 LP，含 alpha 混合过渡帧）
 
 ### `FFmpegDefine.h` —— 路径与常量
 
-#### 路径宏（`函数内 static` + `#define`，已修复静态初始化顺序问题）
+#### 路径宏
 
 | 宏 | 相对 `LP_SMOOTH_PLAY_DATA_PATH` | 用途 |
 | :--- | :--- | :--- |
@@ -116,9 +111,8 @@ std::tuple<int, int, int> CountFrames(const std::string& input_file);
 
 返回 `(iCount, pCount, bCount)`。
 
-**已修复**：主循环结束后用 `avcodec_send_packet(nullptr)` + `receive_frame` 循环 flush 解码器，最后 1~3 帧不再漏统计。同时支持 `otherFrameCnt`（S/SI/SP/NONE 帧）保证 `Total` 准确。
 
-### `DecAndEnc.h` —— FFmpeg 编解码（清理后仅 4 个函数）
+### `DecAndEnc.h` —— FFmpeg 编解码
 
 | 函数 | 用途 |
 | :--- | :--- |
@@ -129,16 +123,6 @@ std::tuple<int, int, int> CountFrames(const std::string& input_file);
 
 **`DecodeAndEncodeAndReplaceMultiYuvs` 签名**：
 
-```cpp
-void DecodeAndEncodeAndReplaceMultiYuvs(
-    const char* input_filename,
-    const char* output_filename,
-    int toReplaceYuvStartIdx,
-    int toReplaceYuvEndIdx,
-    const std::vector<std::string>& replaceYuvFiles);
-```
-
-**已修复**：入口处校验 `replaceYuvFiles.size() == (end - start + 1)`，不匹配时打印错误并返回，不再静默出错。
 
 ### `YUVImageReader.h` —— YUV 读写
 
@@ -147,20 +131,12 @@ class YUVImageReader {
 public:
     YUVImageReader(int width, int height);
 
-    cv::Mat readYUV420P(const std::string& filepath);              // YUV → BGR（已修色彩范围）
+    cv::Mat readYUV420P(const std::string& filepath);              // YUV → BGR
     std::vector<cv::Mat> readYUV420PChannels(const std::string&);  // 3 个独立通道（已修 use-after-free）
-    void saveAsYUV420P(const cv::Mat& image, const std::string&);  // BGR → YUV（已修色彩范围）
+    void saveAsYUV420P(const cv::Mat& image, const std::string&);  // BGR → YUV
 };
 ```
-
-**已修复**：
-
-| 项 | 修复 |
-| :--- | :--- |
-| `readYUV420PChannels` | 返回的 `cv::Mat` 全部 `.clone()`，不再引用局部 vector |
-| 色彩范围 | `readYUV420P` 用 `COLOR_YUV2BGR_I420`；`convertBGRtoYUV420P` 用 `COLOR_BGR2YUV_I420`；与 FFmpeg 编码 default limited-range 一致 |
-| 连续性 | `convertBGRtoYUV420P` 加 `CV_Assert(isContinuous())` |
-| 尺寸不匹配 | `saveAsYUV420P` 缩小时用 `INTER_AREA`，放大时用 `INTER_CUBIC` |
+` |
 
 ### `AlphaMergeYuvs.h` —— YUV 工具
 
