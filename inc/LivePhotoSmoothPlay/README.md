@@ -119,9 +119,6 @@ std::tuple<int, int, int> CountFrames(const std::string& input_file);
 | :--- | :--- | :---: |
 | `GetAVStreamTempInfo` | 读视频流元信息 | ✅ |
 | `DecodeEncode` | 纯转码（无插入/替换） | ❌ 废弃 |
-| `DecodeEncodeAndInsertSingleYuv` | 转码 + 尾部插 1 帧 `"60.yuv"` | ❌ 废弃 |
-| `DecodeAndEncodeAndInsertMultiYuvs` | 转码 + 尾部插 `new10..1.yuv` | ❌ 废弃 |
-| `DecodeAndEncodeAndReplaceMultiYuvs` | **转码 + 替换指定区间** | ✅ **生产** |
 | `DecodeMp4ToYuvFrames` | 解码 mp4 → 逐帧 YUV 文件 | ✅ 工具 |
 | `DecodeCropEncode` | 转码 + 中心裁剪 | ✅ 新功能 |
 
