@@ -19,7 +19,7 @@
 
 ```
 createDetector          → 工厂：ORB/BRISK/KAZE/AKAZE
-detectFeatures          → BGR → GRAY → detectAndCompute
+detectFeatures          → BGR/BGRA/GRAY → GRAY → detectAndCompute
 matchFeatures           → BFMatcher/FLANN + knnMatch + Lowe's ratio
 estimateTransform       → RANSAC 估计 H/仿射/欧氏/平移
 applyTransform          → warpPerspective/warpAffine
@@ -39,7 +39,24 @@ case FeatureDetectorType::ORB:
 
 **代价**：ORB 检测从 ~5ms 涨到 ~30~50ms/帧。但**配准只做一次**，不影响批量处理。
 
-### 1.2 `matchFeatures` —— BFMatcher 与 FLANN 分派
+### 1.2 `detectFeatures` —— 兼容 BGR/BGRA/GRAY
+
+```cpp
+cv::Mat gray;
+if (image.channels() == 1) {
+    gray = image;
+} else if (image.channels() == 3) {
+    cv::cvtColor(image, gray, cv::COLOR_BGR2GRAY);
+} else if (image.channels() == 4) {
+    cv::cvtColor(image, gray, cv::COLOR_BGRA2GRAY);
+} else {
+    throw std::runtime_error("不支持的图像通道数: " + std::to_string(image.channels()));
+}
+```
+
+**已修复**：原代码直接 `cvtColor(BGR2GRAY)`，传灰度图会抛异常。现在三种通道数都能处理。
+
+### 1.3 `matchFeatures` —— BFMatcher 与 FLANN 分派
 
 ```cpp
 if (detector_type == ORB || detector_type == BRISK) {
@@ -66,11 +83,11 @@ if (use_flann && ...) {
 ```
 
 **关键**：
-- **二进制描述符必须用 `NORM_HAMMING`**（ORB/BRISK/AKAZE 默认是二进制的）
-- **浮点描述符用 `NORM_L2`**（KAZE 是浮点的）
-- **FLANN 在某些 OpenCV 构建下不可用**——fallback 到 BFMatcher 保证功能
+- 二进制描述符必须用 `NORM_HAMMING`（ORB/BRISK/AKAZE 默认是二进制的）
+- 浮点描述符用 `NORM_L2`（KAZE 是浮点的）
+- FLANN 在某些 OpenCV 构建下不可用——fallback 到 BFMatcher 保证功能
 
-### 1.3 `estimateTransform` —— RANSAC 配置
+### 1.4 `estimateTransform` —— RANSAC 配置 + 空 mask 检查
 
 ```cpp
 case HOMOGRAPHY:
@@ -84,7 +101,17 @@ case HOMOGRAPHY:
 | `maxIters` | `2000` | 最大迭代次数 |
 | `confidence` | `0.995` | 找到正确解的概率 |
 
-**3.0 像素阈值**对 720×1584 是"~0.4% 画幅"——**比较严格**，能过滤掉误匹配但要求初始匹配质量高。
+**已修复**：提取 `inlier_matches` 前先检查 `inliers_mask.size() == matches.size()`：
+
+```cpp
+if (transform.empty() || inliers_mask.size() != matches.size()) {
+    std::cerr << "Warning: estimateTransform failed or inliers_mask size mismatch" << std::endl;
+    inlier_matches.clear();
+    return transform;
+}
+```
+
+**原因**：`findHomography` 返回空时 `inliers_mask` 可能是空的，原代码 `inliers_mask[i]` 会越界。
 
 **其他变换类型**：
 
@@ -100,25 +127,13 @@ case AFFINE:
 
 case TRANSLATION:
     // 用中位数作为平移量，不做 RANSAC
-    std::vector<float> dx, dy;
-    for (size_t i = 0; i < points1.size(); ++i) {
-        dx.push_back(points2[i].x - points1[i].x);
-        dy.push_back(points2[i].y - points1[i].y);
-    }
-    std::nth_element(dx.begin(), dx.begin() + dx.size() / 2, dx.end());
-    std::nth_element(dy.begin(), dy.begin() + dy.size() / 2, dy.end());
-    float tx = dx[dx.size() / 2];
-    float ty = dy[dy.size() / 2];
+    ...
     transform = (cv::Mat_<double>(3, 3) << 1, 0, tx, 0, 1, ty, 0, 0, 1);
-    inliers_mask = std::vector<uchar>(points1.size(), 1);   // 全部内点
+    inliers_mask = std::vector<uchar>(points1.size(), 1);
     break;
 ```
 
-**`AFFINE` / `EUCLIDEAN` 的 3×3 补齐**：`estimateAffine2D` 返回 2×3，补成 3×3 方便后续 `applyTransform` 统一处理。
-
-**`TRANSLATION` 的全内点**：不做 RANSAC，所有匹配点都算内点，`num_inliers` 会虚高。当前不用，影响不大。
-
-### 1.4 `registerImages` —— 逆矩阵处理（关键设计）
+### 1.5 `registerImages` —— 逆矩阵处理（关键设计）
 
 ```cpp
 // estimateTransform 返回的是 reference → target 的矩阵（points1 → points2）
@@ -132,10 +147,6 @@ cv::invert(result.transform_matrix, warp_to_ref, cv::DECOMP_SVD);
 result.registered_image = applyTransform(target_img, warp_to_ref, reference_img.size());
 ```
 
-**注释写得很清楚**：
-
-> 估计得到的矩阵是从 reference（视频帧）→ target（封面帧）。我们为了把 target（封面帧）对齐到 reference（视频帧），需要使用该矩阵的逆。
-
 **为什么必须求逆**：
 
 - `estimateTransform` 内部 `findHomography(points1, points2, ...)` 返回的 H 满足 `points2 = H * points1`
@@ -144,7 +155,7 @@ result.registered_image = applyTransform(target_img, warp_to_ref, reference_img.
 
 **`cv::DECOMP_SVD`** 是数值最稳的求逆方法——对接近奇异的矩阵也能给出合理结果。
 
-### 1.5 RMS 误差计算
+### 1.6 RMS 误差计算
 
 ```cpp
 for (const auto &match : inlier_matches) {
@@ -164,18 +175,7 @@ result.rms_error = std::sqrt(result.rms_error / inlier_matches.size());
 
 **方向正确**：把 target 点用 `warp_to_ref` 映射回 reference 坐标系，与 reference 点比较。
 
-**齐次归一化** `/= .at<double>(2,0)` 是投影变换的标准操作——把 `(x', y', w')` 变成 `(x'/w', y'/w', 1)`。
-
 **只在 `inlier_matches` 上算**——不是全部 `good_matches`，避免误匹配拉高 RMS。
-
-### 1.6 潜在问题
-
-| 问题 | 说明 | 影响 |
-| :--- | :--- | :--- |
-| **`inliers_mask` 空检查不严密** | `findHomography` 返回空时 `inliers_mask` 可能是空的，`inliers_mask[i]` 越界 | 当前不触发（4 点 RANSAC 通常返回非空） |
-| **`detectFeatures` 不处理灰度图** | `cv::cvtColor(image, gray, COLOR_BGR2GRAY)` 假设输入 BGR | 传入 `CV_8UC1` 会抛异常 |
-| **`inlier_matches` 没返回** | `saveRegistrationResults` 保存的是 `good_matches`（含误匹配） | 调试时 `matches.txt` 不够干净 |
-| **参数全硬编码** | ORB 5000 / RANSAC 3.0 / ratio 0.75 都不暴露 | 不同场景不能调 |
 
 ---
 
@@ -184,11 +184,11 @@ result.rms_error = std::sqrt(result.rms_error / inlier_matches.size());
 ### 文件内部结构
 
 ```
-构造函数         → 计算 y_size_ / uv_size_
-readYUV420P      → YUV 文件 → BGR Mat
-readYUV420PChannels  → YUV 文件 → 3 个独立 cv::Mat（⚠️ bug）
-convertBGRtoYUV420P  → BGR → YUV 缓冲区
-saveAsYUV420P    → BGR → YUV 文件
+构造函数              → 计算 y_size_ / uv_size_
+readYUV420P           → YUV 文件 → BGR Mat（limited-range）
+readYUV420PChannels   → YUV 文件 → 3 个独立 cv::Mat（深拷贝）
+convertBGRtoYUV420P   → BGR → YUV 缓冲区（limited-range）
+saveAsYUV420P         → BGR → YUV 文件
 ```
 
 ### 2.1 构造函数
@@ -197,133 +197,89 @@ saveAsYUV420P    → BGR → YUV 文件
 YUVImageReader::YUVImageReader(int width, int height)
     : width_(width), height_(height)
 {
-    y_size_ = width * height;
+    y_size_  = width * height;
     uv_size_ = (width / 2) * (height / 2);
 }
 ```
 
 **实例是"尺寸绑定"的**——一个实例只能读/写 `width × height` 的 YUV。
 
-### 2.2 `readYUV420P` —— 严格校验文件大小
+### 2.2 `readYUV420P` —— 严格校验 + I420 转换
 
 ```cpp
-std::ifstream file(filepath, std::ios::binary | std::ios::ate);   // ate 模式：打开后定位到末尾
+std::ifstream file(filepath, std::ios::binary | std::ios::ate);
 std::streamsize file_size = file.tellg();
 file.seekg(0, std::ios::beg);
 
-size_t expected_size = y_size_ + 2 * uv_size_;
-if (file_size != expected_size) {
+const size_t expected_size = static_cast<size_t>(y_size_ + 2 * uv_size_);
+if (static_cast<size_t>(file_size) != expected_size) {
     throw std::runtime_error("文件大小与YUV420P格式不匹配");
 }
 ```
 
-**严格校验**——必须精确 `y_size_ + 2 * uv_size_` 字节。这对"每帧一个 YUV 文件"的存储格式是合理的，但**不支持多帧 YUV 文件**。
+**严格校验**——必须精确 `y_size_ + 2 * uv_size_` 字节。
 
-**转换流程**：
-
-```
-读 YUV 数据 → 创建 Y/U/V 平面视图
-  → cv::resize(U) 到全尺寸（INTER_LINEAR）
-  → cv::resize(V) 到全尺寸
-  → cv::merge(Y, U, V) 成 3 通道
-  → cv::cvtColor(COLOR_YUV2BGR)
-```
-
-**性能问题**：手动 `resize` 上采样 + `merge` + `cvtColor` 是三步。**更高效**：
+**已修复**：用 `COLOR_YUV2BGR_I420` 直接转换（limited-range，SIMD），取代原来的 "resize + merge + COLOR_YUV2BGR"（full-range）：
 
 ```cpp
 cv::Mat yuv420(height_ * 3 / 2, width_, CV_8UC1, yuv_data.data());
+cv::Mat bgr_image;
 cv::cvtColor(yuv420, bgr_image, cv::COLOR_YUV2BGR_I420);
 ```
 
-`COLOR_YUV2BGR_I420` 内部用 SIMD 一次完成 4:2:0 → BGR，**比手动 resize 快 3~5 倍**。当前每次配准只调 2 次 `readYUV420P`，影响不大，但对批量处理有优化空间。
+**性能提升**：SIMD 一次完成 4:2:0 → BGR，**比手动 resize 快 3~5 倍**。
 
-### 2.3 🔴 `readYUV420PChannels` —— use-after-free bug
+**色彩正确性**：与 FFmpeg 编码的 default limited-range 一致，消除 ~10% 亮度偏移。
+
+### 2.3 `readYUV420PChannels` —— 深拷贝（已修 use-after-free）
 
 ```cpp
-std::vector<uint8_t> yuv_data(total_size);   // ← 局部 vector
-file.read(reinterpret_cast<char*>(yuv_data.data()), total_size);
-
-cv::Mat y_plane(height_, width_, CV_8UC1, yuv_data.data());   // ← 引用局部内存
-cv::Mat u_plane_subsampled(..., yuv_data.data() + y_size_);
-cv::Mat v_plane_subsampled(..., yuv_data.data() + y_size_ + uv_size_);
-
-return {y_plane, u_plane_subsampled, v_plane_subsampled};   // ← 返回后 yuv_data 销毁
+cv::Mat y_plane = cv::Mat(height_, width_, CV_8UC1, yuv_data.data()).clone();
+cv::Mat u_plane = cv::Mat(height_ / 2, width_ / 2, CV_8UC1,
+                          yuv_data.data() + y_size_).clone();
+cv::Mat v_plane = cv::Mat(height_ / 2, width_ / 2, CV_8UC1,
+                          yuv_data.data() + y_size_ + uv_size_).clone();
 ```
 
-**`cv::Mat` 的外部数据构造（`cv::Mat(h, w, type, data)`）不接管 `data` 的所有权**。`yuv_data` 是局部 `std::vector`，函数返回后销毁，三个 `cv::Mat` 的 `data` 指针全部**悬空**。
+**已修复**：原代码直接返回视图引用局部 vector，函数返回后 `data` 悬空。现在全部 `.clone()` 深拷贝。
 
-**调用方拿到这三个 `cv::Mat` 后，任何 `.at()` / `.data` 访问都是未定义行为**——可能崩溃、可能读到垃圾、可能"看起来正常"（因为 vector 内存还没被覆盖）。
-
-**修复**：
+### 2.4 `convertBGRtoYUV420P` —— I420 转换 + 连续性检查
 
 ```cpp
-cv::Mat y_plane(height_, width_, CV_8UC1, yuv_data.data());
-y_plane = y_plane.clone();   // ← 深拷贝
+CV_Assert(!bgr_image.empty());
+CV_Assert(bgr_image.type() == CV_8UC3);
+CV_Assert(bgr_image.isContinuous());
 
-cv::Mat u_plane_subsampled(height_/2, width_/2, CV_8UC1, yuv_data.data() + y_size_);
-u_plane_subsampled = u_plane_subsampled.clone();
-...
+cv::Mat yuv420;
+cv::cvtColor(bgr_image, yuv420, cv::COLOR_BGR2YUV_I420);
+
+yuv_data.resize(y_size_ + 2 * uv_size_);
+std::memcpy(yuv_data.data(), yuv420.data, yuv_data.size());
 ```
 
-**当前不触发**：`LpReg.h` / `LpFovTransitionOpt.h` 里**没有调用 `readYUV420PChannels`**（只用 `readYUV420P`）。这是"预留接口 + bug"——一旦有人用就炸。
+**已修复**：
 
-### 2.4 `convertBGRtoYUV420P` —— full-range 问题
+| 项 | 改前 | 改后 |
+| :--- | :--- | :--- |
+| 转换 | `COLOR_BGR2YUV + split + resize + memcpy`（full-range） | **`COLOR_BGR2YUV_I420`**（limited-range，一步） |
+| 连续性 | 无检查 | **`CV_Assert(isContinuous())`** |
+| 类型 | 无检查 | **`CV_Assert(CV_8UC3)`** |
 
-```cpp
-cv::cvtColor(bgr_image, yuv_image, cv::COLOR_BGR2YUV);   // ← full-range YUV
-cv::split(yuv_image, channels);
-cv::resize(channels[1], u_downsampled, ..., cv::INTER_AREA);
-cv::resize(channels[2], v_downsampled, ..., cv::INTER_AREA);
-std::memcpy(yuv_data.data(), channels[0].data, y_size_);
-std::memcpy(yuv_data.data() + y_size_, u_downsampled.data, uv_size_);
-std::memcpy(yuv_data.data() + y_size_ + uv_size_, v_downsampled.data, uv_size_);
-```
-
-**色彩范围问题**：
-
-`cv::COLOR_BGR2YUV` 输出 **full-range**（Y 0~255，UV 0~255），而**视频标准（H.264/mp4）通常假设 limited-range**（Y 16~235，UV 16~240）。
-
-| 阶段 | 色彩范围 |
-| :--- | :--- |
-| `saveAsYUV420P` | full-range |
-| FFmpeg 编码 | 默认 limited-range |
-| FFmpeg 解码 + `readYUV420P` | full-range |
-
-**如果 YUV 经过 FFmpeg 编解码**，两端假设不一致，会有 10~15% 的亮度偏移。**这可能和"颜色偏黄"有关**——之前修的是 `sws_scale` 的 BT.709 矩阵，但**范围（range）问题没修**。
-
-**更规范的做法**：
+### 2.5 `saveAsYUV420P` —— 智能插值
 
 ```cpp
-// full-range BGR → limited-range I420（直接输出）
-cv::cvtColor(bgr_image, yuv_image, cv::COLOR_BGR2YUV_I420);
-```
-
-或者保留 full-range，但 FFmpeg 编码时显式设 `color_range = AVCOL_RANGE_JPEG`。
-
-**连续性假设**：
-
-```cpp
-std::memcpy(yuv_data.data(), channels[0].data, y_size_);
-```
-
-`cv::split` 出来的 `channels[0]` **继承父矩阵的 `step`**。如果 `bgr_image` 是 ROI 视图（非连续），`channels[0].data` 有 padding，`memcpy(y_size_)` 会读到下一行的 padding 数据，**输出错位**。
-
-**当前安全**：`saveAsYUV420P` 里做了 `clone()` 或 `resize()`，保证传入的是连续 Mat。但**依赖调用方约定**，加一句 `CV_Assert(bgr_image.isContinuous())` 会更安全。
-
-### 2.5 `saveAsYUV420P` —— 静默 resize
-
-```cpp
+cv::Mat resized_image;
 if (image.cols != width_ || image.rows != height_) {
-    cv::resize(image, resized_image, cv::Size(width_, height_));   // ← INTER_LINEAR
+    const int interp = (image.cols > width_ || image.rows > height_)
+                           ? cv::INTER_AREA
+                           : cv::INTER_CUBIC;
+    cv::resize(image, resized_image, cv::Size(width_, height_), 0, 0, interp);
 } else {
     resized_image = image.clone();
 }
 ```
 
-**尺寸不匹配时 resize**——**没告诉调用方**（静默缩放）。
-
-**`INTER_LINEAR` 对大比例缩放质量差**。如果输入 4K 输出 720p，会有摩尔纹。应该用 `INTER_AREA`（下采样）或 `INTER_CUBIC`（上采样）。**当前输入输出尺寸通常一致**，不触发。
+**已修复**：缩小时用 `INTER_AREA`，放大时用 `INTER_CUBIC`，取代原来的统一 `INTER_LINEAR`。
 
 ---
 
@@ -334,27 +290,26 @@ if (image.cols != width_ || image.rows != height_) {
 | 位置 | 问题 | 修复 |
 | :--- | :--- | :--- |
 | `FFmpegDefine.h` | 全局 `std::string` 静态初始化顺序 | 改成"函数内 static" |
-| `DecAndEnc.h` | 多个函数用裸指针 + 手动释放 | `DecodeAndEncodeAndReplaceMultiYuvs` 用完整 RAII |
-| `DecAndEnc.h` | `DecodeEncode` 400kbps 硬编码 | `ReplaceMultiYuvs` 用 libx264 + CRF 20 |
-| `DecAndEnc.h` | `Close` 漏 `av_packet_unref`（在 FfmpegVideoWriter 里） | 补上 |
-| `ImageRegistrator.cpp` | 逆矩阵方向错误（常见坑） | 正确用 `warp_to_ref` |
+| `YUVImageReader::readYUV420PChannels` | use-after-free | 全部 `.clone()` |
+| `YUVImageReader` 色彩范围 | full-range 与 FFmpeg limited-range 不匹配 | `COLOR_BGR2YUV_I420` / `COLOR_YUV2BGR_I420` |
+| `YUVImageReader::convertBGRtoYUV420P` | 无连续性检查 | `CV_Assert(isContinuous())` |
+| `YUVImageReader::saveAsYUV420P` | 统一 `INTER_LINEAR` | 缩小 `INTER_AREA` / 放大 `INTER_CUBIC` |
+| `FFmpegDefine.h::CropCoverDirImpl` | 路径双斜杠 | 去前导 `/` |
+| `ImageRegistrator::estimateTransform` | `inliers_mask` 空时越界 | 加 `size()` 检查 |
+| `ImageRegistrator::detectFeatures` | 只处理 BGR | 兼容 BGR/BGRA/GRAY |
+| `DecAndEnc.h::ReplaceMultiYuvs` | 无参数校验 | 加 `replaceYuvFiles.size()` 校验 |
+| `FFMpegUtils.h::CountFrames` | 无 flush，最后 1~3 帧漏统计 | `send_packet(nullptr)` + `receive_frame` 循环 |
+| `YUVProcessor::processPlane` | `y1` 边界误用 `crop_x + crop_width` | 改为 `crop_y + crop_height - 1` |
+| 死代码清理 | `GenMp4.h`、`DecodeEncode`、`InsertSingleYuv`、`InsertMultiYuvs`、`GenOriginalLivePhoto`、`GenOptLivePhoto`、`ReplaceAlhpaMerge*` 重复函数、`GenFrom2Mp4ToOriAndOptLp` | 全部删除 |
 
-### 未修复（已知问题）
+### 保留的已知项
 
-| 位置 | 问题 | 影响 |
+| 位置 | 说明 | 影响 |
 | :--- | :--- | :--- |
-| `YUVImageReader::readYUV420PChannels` | use-after-free | 一调用就炸（当前未调用） |
-| `DecodeAndEncodeAndInsertMultiYuvs` | `AVFramePtr` 接管后手动 `av_frame_free` → double free | 崩溃 |
-| `DecodeEncode` / `InsertSingleYuv` / `InsertMultiYuvs` | 400kbps 硬编码 | 画质差 |
-| `YUVImageReader` 色彩范围 | full-range in/out，FFmpeg 编码 default limited-range | 亮度偏移 ~10% |
-| `CROP_COVER_DIR` | 双斜杠路径 | Windows 无害，跨平台可能报错 |
-| `DecodeCropEncodeInputVid` | `1562` 硬编码与 `YUV_H = 1584` 不一致 | 裁剪结果与下游不匹配 |
-| `ReplaceAlhpaMergeToFovSmoothAndAlpaMergedLp` | 与 `ReplaceAlhpaMergeToFovSmoothLp` 逐字相同 | 死代码 |
-| `YUVProcessor::processPlane` | `y1` 上界误用 `crop_x + crop_width` | 当前不触发，潜在定时炸弹 |
-| `DecodeAndEncodeAndReplaceMultiYuvs` | 不校验 `replaceYuvFiles.size()` 与 `[start, end]` 长度 | 参数错时静默出错 |
-| `regCroppedConverYuvsToVidFrame` | `alt_jpg` / `src_yuv_secondary` 是死代码 | — |
-| `GenMp4.h` | 300 行死代码，无 RAII | 无用 include 增加编译时间 |
-| `YUVProcessor::ConvertCoverFrameToMultiFovYuvs` | 1920×1080 硬编码 | 误调用会全错位 |
+| `LpReg.h::DecodeCropEncodeInputVid` | `1562` / `1260` / `300` 硬编码对应 X300U 录屏工具 | 主流程不调用，仅"录屏 LP 预处理"用；换录屏时必须手动改 |
+| `YUVProcessor::ConvertCoverFrameToMultiFovYuvs` | 旧版 FOV 生成（1920×1080 硬编码） | 死代码，无调用 |
+| `DecMp4ToYuvFrames` 的 `jpeg_sws_ctx.release()` | `release()` 后手动 `sws_freeContext` | 逻辑安全（不漏不多），只是风格冗余 |
+| `ImageRegistrator` 硬编码参数 | ORB 5000 / RANSAC 3.0 / ratio 0.75 | 不同场景不能调，但当前场景够用 |
 
 ---
 
