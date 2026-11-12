@@ -195,7 +195,18 @@ cv::Mat ImageRegistrator::estimateTransform(
     }
 
     // 提取内点匹配
+    // 修复 #10：inliers_mask 可能为空（RANSAC 失败），先检查
+    if (transform.empty() || inliers_mask.size() != matches.size())
+    {
+        std::cerr << "Warning: estimateTransform failed or inliers_mask size mismatch"
+                << " (matches=" << matches.size()
+                << ", mask=" << inliers_mask.size() << ")" << std::endl;
+        inlier_matches.clear();
+        return transform;   // 返回空矩阵，由调用方检查
+    }
+
     inlier_matches.clear();
+    inlier_matches.reserve(matches.size());
     for (size_t i = 0; i < matches.size(); ++i)
     {
         if (inliers_mask[i])
