@@ -813,16 +813,25 @@ inline void DecodeAndEncodeAndInsertMultiYuvs(const char *input_filename, const 
 			}
 
 			AVFrame *ins_frame = av_frame_alloc();
-			AVFramePtr insFramePtr(ins_frame);
-			if (!insFramePtr)
+			if (!ins_frame)
 			{
 				std::cout << "警告：av_frame_alloc 失败，跳过 " << fname << std::endl;
-				if (in_fp)
-				{
-					fclose(in_fp);
-				}
+				if (in_fp) { fclose(in_fp); }
 				continue;
 			}
+			AVFramePtr insFramePtr(ins_frame);   // ← 分配成功后接管
+
+			insFramePtr->format = src_pix_fmt;
+			insFramePtr->width = w;
+			insFramePtr->height = h;
+			if (av_frame_get_buffer(insFramePtr.get(), 32) < 0)
+			{
+				std::cout << "警告：av_frame_get_buffer 失败，跳过 " << fname << std::endl;
+				// 修复 #2：不再手动 av_frame_free，由 insFramePtr 析构处理
+				if (in_fp) { fclose(in_fp); }
+				continue;
+			}
+
 			insFramePtr->format = src_pix_fmt;
 			insFramePtr->width = w;
 			insFramePtr->height = h;
