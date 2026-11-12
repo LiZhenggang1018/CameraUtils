@@ -139,18 +139,6 @@ void DecodeAndEncodeAndReplaceMultiYuvs(
 
 ### `YUVImageReader.h` —— YUV 读写
 
-```cpp
-class YUVImageReader {
-public:
-    YUVImageReader(int width, int height);
-
-    cv::Mat readYUV420P(const std::string& filepath);              // YUV → BGR
-    std::vector<cv::Mat> readYUV420PChannels(const std::string&);  // ⚠️ use-after-free bug
-    void saveAsYUV420P(const cv::Mat& image, const std::string&);  // BGR → YUV
-};
-```
-
-**要求**：`width`/`height` 与 YUV 文件实际尺寸一致，否则抛异常。
 
 ### `AlphaMergeYuvs.h` —— YUV 工具
 
