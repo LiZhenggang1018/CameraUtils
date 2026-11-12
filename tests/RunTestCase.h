@@ -30,12 +30,12 @@ inline void RunTest()
     // TestFFMpeg();
     // SplitCppFilesInDirTest();
     // ConcatCppFilesInDirTest();
-    // RunLivePhotoSmoothPlayTest();
+    RunLivePhotoSmoothPlayTest();
     // Type2InstMapTest();
     // MagicEnumTest::TestMagicEnum();
     // HarrisTest();
      // OpticalFlowTest();
-     Upsample30To60();
+     //Upsample30To60();
 }
 
 #endif
