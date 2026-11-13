@@ -38,8 +38,8 @@ inline void RegTest()
     // 2. 图像配准：cover.jpg 配准到 last_frame.jpg
     //    图片文件也同样放在 LP_SMOOTH_PLAY_DATA_PATH 下，用绝对路径。
     // ------------------------------------------------------------
-    const std::string refImgPath = LP_SMOOTH_PLAY_DATA_PATH + "last_frame.jpg";
-    const std::string curImgPath = LP_SMOOTH_PLAY_DATA_PATH + "cover.jpg";
+    const std::string refImgPath = REG_IMG_REF_FILE();
+    const std::string curImgPath = REG_IMG_CUR_FILE();
     const std::string imgOutDir  = LP_SMOOTH_PLAY_DATA_PATH + "reg_img_demo";
 
     std::cout << "[RegTest] refImg = " << refImgPath << std::endl;

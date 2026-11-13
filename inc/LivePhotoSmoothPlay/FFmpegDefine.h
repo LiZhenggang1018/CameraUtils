@@ -44,6 +44,17 @@ inline const std::string& LpInitFileImpl()  { static const std::string s = LpSmo
 inline const std::string& LpOptFileImpl()   { static const std::string s = LpSmoothPlayDataPath() + "LpOpt.mp4";     return s; }
 inline const std::string& LpCropFileImpl()  { static const std::string s = LpSmoothPlayDataPath() + "LpCrop.mp4";    return s; }
 
+inline const std::string& REG_IMG_CUR_FILE()
+{
+    static const std::string s = LpSmoothPlayDataPath() + "2.jpg";
+    return s;
+}
+inline const std::string& REG_IMG_REF_FILE()
+{
+    static const std::string s = LpSmoothPlayDataPath() + "1.jpg";
+    return s;
+}
+
 #define IN_FILE      (InFileImpl())
 #define OUT_FILE     (OutFileImpl())
 #define OUT2_FILE    (Out2FileImpl())
