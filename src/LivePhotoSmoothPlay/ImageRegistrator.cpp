@@ -484,3 +484,271 @@ void ImageRegistrator::saveRegistrationResults(const RegistrationResult &result,
         }
     }
 }
+
+// ============================================================
+// 便捷配准入口实现
+// ============================================================
+
+namespace {
+
+#ifdef _WIN32
+// Windows 原生图像解码（支持 heif/heic/avif 等系统解码器支持的格式）
+cv::Mat LoadImageWithWIC(const std::string& path)
+{
+    // UTF-8 → UTF-16
+    std::wstring wpath;
+    {
+        const int len = MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, nullptr, 0);
+        if (len <= 0) return {};
+        wpath.resize(static_cast<size_t>(len));
+        MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, wpath.data(), len);
+        if (!wpath.empty() && wpath.back() == L'\0') wpath.pop_back();
+    }
+
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    const bool need_uninit = SUCCEEDED(hr);
+    if (FAILED(hr) && hr != RPC_E_CHANGED_MODE)
+    {
+        return {};
+    }
+
+    cv::Mat result;
+    IWICImagingFactory* factory = nullptr;
+    IWICBitmapDecoder* decoder = nullptr;
+    IWICBitmapFrameDecode* frame = nullptr;
+    IWICFormatConverter* converter = nullptr;
+
+    do
+    {
+        hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr,
+                              CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory));
+        if (FAILED(hr)) break;
+
+        hr = factory->CreateDecoderFromFilename(wpath.c_str(), nullptr, GENERIC_READ,
+                                                WICDecodeMetadataCacheOnLoad, &decoder);
+        if (FAILED(hr)) break;
+
+        hr = decoder->GetFrame(0, &frame);
+        if (FAILED(hr)) break;
+
+        hr = factory->CreateFormatConverter(&converter);
+        if (FAILED(hr)) break;
+
+        hr = converter->Initialize(frame, GUID_WICPixelFormat24bppBGR,
+                                   WICBitmapDitherTypeNone, nullptr, 0.0,
+                                   WICBitmapPaletteTypeCustom);
+        if (FAILED(hr)) break;
+
+        UINT w = 0, h = 0;
+        hr = converter->GetSize(&w, &h);
+        if (FAILED(hr) || w == 0 || h == 0) break;
+
+        const UINT stride = w * 3;
+        const UINT buf_size = stride * h;
+        std::vector<uint8_t> buf(buf_size);
+
+        hr = converter->CopyPixels(nullptr, stride, buf_size, buf.data());
+        if (FAILED(hr)) break;
+
+        cv::Mat tmp(static_cast<int>(h), static_cast<int>(w), CV_8UC3, buf.data());
+        result = tmp.clone();
+    } while (false);
+
+    if (converter) converter->Release();
+    if (frame)     frame->Release();
+    if (decoder)   decoder->Release();
+    if (factory)   factory->Release();
+    if (need_uninit) CoUninitialize();
+
+    return result;
+}
+#endif // _WIN32
+
+// 自动加载图像：优先 cv::imread，失败则降级到 WIC
+cv::Mat LoadImageAuto(const std::string& path)
+{
+    cv::Mat img = cv::imread(path, cv::IMREAD_COLOR);
+    if (!img.empty())
+    {
+        std::cout << "[LoadImageAuto] cv::imread OK: " << path
+                  << " (" << img.cols << "x" << img.rows << ")" << std::endl;
+        return img;
+    }
+
+#ifdef _WIN32
+    img = LoadImageWithWIC(path);
+    if (!img.empty())
+    {
+        std::cout << "[LoadImageAuto] WIC OK: " << path
+                  << " (" << img.cols << "x" << img.rows << ")" << std::endl;
+        return img;
+    }
+#endif
+
+    std::cerr << "[LoadImageAuto] Failed to load image: " << path
+              << " (neither imread nor WIC succeeded)" << std::endl;
+    return {};
+}
+
+// 共用逻辑：对两张已加载的 BGR 图做配准，保存结果
+// 成功返回 registered_image，失败返回空 Mat
+cv::Mat RegFromMats(const cv::Mat& target_img,
+                    const cv::Mat& reference_img,
+                    const std::string& output_dir,
+                    FeatureDetectorType detector,
+                    TransformType transform)
+{
+    try
+    {
+        std::filesystem::create_directories(output_dir);
+
+        // 01 / 02：保存原始图
+        if (!cv::imwrite(output_dir + "/01_reference_original.jpg", reference_img))
+        {
+            std::cerr << "Warning: cannot write 01_reference_original.jpg" << std::endl;
+        }
+        if (!cv::imwrite(output_dir + "/02_target_original.jpg", target_img))
+        {
+            std::cerr << "Warning: cannot write 02_target_original.jpg" << std::endl;
+        }
+
+        ImageRegistrator registrator;
+        auto result = registrator.registerImages(reference_img, target_img, detector, transform);
+
+        if (result.registered_image.empty() || result.transform_matrix.empty())
+        {
+            std::cerr << "Registration failed: empty registered_image or transform_matrix" << std::endl;
+            return {};
+        }
+
+        // 基础产物：registered_image.jpg / transform_matrix.txt / matches.txt / inlier_matches.txt
+        registrator.saveRegistrationResults(result, output_dir);
+
+        // 03：特征匹配
+        cv::Mat matches_img = registrator.drawMatches(
+            reference_img, target_img,
+            result.keypoints1, result.keypoints2,
+            result.good_matches);
+        cv::imwrite(output_dir + "/03_feature_matches.jpg", matches_img);
+
+        // 04：半透明叠加
+        cv::Mat overlay;
+        cv::addWeighted(reference_img, 0.5, result.registered_image, 0.5, 0.0, overlay);
+        cv::imwrite(output_dir + "/04_overlay_result.jpg", overlay);
+
+        // 05：并排
+        cv::Mat side_by_side;
+        cv::hconcat(reference_img, result.registered_image, side_by_side);
+        cv::imwrite(output_dir + "/05_side_by_side.jpg", side_by_side);
+
+        // 06：差异
+        cv::Mat diff;
+        cv::absdiff(reference_img, result.registered_image, diff);
+        cv::imwrite(output_dir + "/06_difference.jpg", diff);
+
+        std::cout << "[RegFromMats] done. inliers=" << result.num_inliers
+                  << ", rms=" << result.rms_error << " px" << std::endl;
+        std::cout << "[RegFromMats] output: " << output_dir << std::endl;
+
+        return result.registered_image;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "[RegFromMats] error: " << e.what() << std::endl;
+        return {};
+    }
+}
+
+} // namespace
+
+int RegYuv(const std::string& curYuvFile,
+           const std::string& refYuvFile,
+           const std::string& output_dir,
+           int width,
+           int height,
+           FeatureDetectorType detector,
+           TransformType transform)
+{
+    try
+    {
+        YUVImageReader reader(width, height);
+
+        cv::Mat ref_img = reader.readYUV420P(refYuvFile);
+        if (ref_img.empty())
+        {
+            std::cerr << "Failed to read reference YUV: " << refYuvFile << std::endl;
+            return 1;
+        }
+
+        cv::Mat cur_img = reader.readYUV420P(curYuvFile);
+        if (cur_img.empty())
+        {
+            std::cerr << "Failed to read target YUV: " << curYuvFile << std::endl;
+            return 2;
+        }
+
+        std::cout << "[RegYuv] ref=" << refYuvFile
+                  << " (" << ref_img.cols << "x" << ref_img.rows << ")" << std::endl;
+        std::cout << "[RegYuv] cur=" << curYuvFile
+                  << " (" << cur_img.cols << "x" << cur_img.rows << ")" << std::endl;
+
+        cv::Mat registered = RegFromMats(cur_img, ref_img, output_dir, detector, transform);
+        if (registered.empty())
+        {
+            return 3;
+        }
+
+        // 07：配准后的 YUV（RegYuv 特有）
+        reader.saveAsYUV420P(registered, output_dir + "/07_registered_image.yuv");
+        std::cout << "[RegYuv] saved 07_registered_image.yuv" << std::endl;
+
+        return 0;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "[RegYuv] error: " << e.what() << std::endl;
+        return 4;
+    }
+}
+
+int RegImg(const std::string& curImgFile,
+           const std::string& refImgFile,
+           const std::string& output_dir,
+           FeatureDetectorType detector,
+           TransformType transform)
+{
+    try
+    {
+        cv::Mat ref_img = LoadImageAuto(refImgFile);
+        if (ref_img.empty())
+        {
+            std::cerr << "Failed to load reference image: " << refImgFile << std::endl;
+            return 1;
+        }
+
+        cv::Mat cur_img = LoadImageAuto(curImgFile);
+        if (cur_img.empty())
+        {
+            std::cerr << "Failed to load target image: " << curImgFile << std::endl;
+            return 2;
+        }
+
+        std::cout << "[RegImg] ref=" << refImgFile
+                  << " (" << ref_img.cols << "x" << ref_img.rows << ")" << std::endl;
+        std::cout << "[RegImg] cur=" << curImgFile
+                  << " (" << cur_img.cols << "x" << cur_img.rows << ")" << std::endl;
+
+        cv::Mat registered = RegFromMats(cur_img, ref_img, output_dir, detector, transform);
+        if (registered.empty())
+        {
+            return 3;
+        }
+
+        return 0;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "[RegImg] error: " << e.what() << std::endl;
+        return 4;
+    }
+}
