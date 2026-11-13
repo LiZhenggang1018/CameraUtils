@@ -146,7 +146,7 @@ if(_opencv_local_has_contrib)
     endif()
     message(STATUS "OpenCV_DIR = ${OpenCV_DIR}")
 find_package(OpenCV REQUIRED COMPONENTS
-    core imgproc highgui features2d calib3d flann video videoio imgcodecs objdetect optflow photo stitching xphoto ximgproc stereo)
+    core imgproc highgui features2d calib3d flann video videoio imgcodecs objdetect optflow photo stitching xphoto ximgproc stereo nonfree)
     # ${OpenCV_LIBS} 和 ${OpenCV_INCLUDE_DIRS} 由 find_package 提供
 else()
     # ---------- 分支 B：从源码构建 ----------
@@ -170,6 +170,7 @@ else()
         OPTIONS
             "OPENCV_EXTRA_MODULES_PATH=${opencv_contrib_SOURCE_DIR}/modules"
             "BUILD_LIST=core,imgproc,highgui,features2d,calib3d,flann,video,imgcodecs,objdetect,optflow,photo,stitching,xphoto,ximgproc,stereo"
+            "OPENCV_ENABLE_NONFREE=ON"
             "BUILD_TESTS=OFF"
             "BUILD_PERF_TESTS=OFF"
             "BUILD_EXAMPLES=OFF"
