@@ -26,8 +26,6 @@
 #include "TimeoutMonitor.h"
 #include "Type2InstMap.h"
 
-#include "InstanceCounterTest.h"
-
 #include "OpenCVCommon.h"
 #include "FFMpegCommon.h"
 
@@ -47,7 +45,6 @@
 #include "FfmpegVideoWriter.h"
 #include "FrameInterpolator.h"
 #include "InterpolationConfig.h"
-#include "HdrMerge.h"
 
 #include "HdrMerge.h"
 

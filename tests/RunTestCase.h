@@ -5,7 +5,7 @@
 #include "Type2InstMapTest.h"
 #include "MagicEnumTest.h"
 #include "OpticalFlowTest.h"
-
+#include "HdrMerge/HdrMergeTest.h"
 
 inline void RunTest()
 {
