@@ -25,6 +25,9 @@ cv::Ptr<cv::Feature2D> ImageRegistrator::createDetector(FeatureDetectorType type
     case FeatureDetectorType::ORB:
         detector = cv::ORB::create(5000);   // 5000 个点，保证 RANSAC 有足够内点
         break;
+    case FeatureDetectorType::SIFT:      //
+        detector = cv::SIFT::create(5000);
+        break;
     case FeatureDetectorType::BRISK:
         detector = cv::BRISK::create();
         break;

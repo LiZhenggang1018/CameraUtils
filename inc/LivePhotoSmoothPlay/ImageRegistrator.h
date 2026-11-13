@@ -63,6 +63,7 @@ LpFovTransitionOpt.h::GenFromLpToOptLp()
 enum class FeatureDetectorType
 {
     ORB,   // 默认；5000 个特征点；二值描述符 → NORM_HAMMING
+    SIFT,
     BRISK, // 二值描述符 → NORM_HAMMING
     KAZE,  // 浮点描述符 → NORM_L2 / FLANN
     AKAZE  // 默认二值描述符 → NORM_HAMMING
