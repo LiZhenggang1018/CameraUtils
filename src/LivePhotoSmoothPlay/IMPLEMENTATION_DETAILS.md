@@ -54,8 +54,6 @@ if (image.channels() == 1) {
 }
 ```
 
-**已修复**：原代码直接 `cvtColor(BGR2GRAY)`，传灰度图会抛异常。现在三种通道数都能处理。
-
 ### 1.3 `matchFeatures` —— BFMatcher 与 FLANN 分派
 
 ```cpp
@@ -101,17 +99,6 @@ case HOMOGRAPHY:
 | `maxIters` | `2000` | 最大迭代次数 |
 | `confidence` | `0.995` | 找到正确解的概率 |
 
-**已修复**：提取 `inlier_matches` 前先检查 `inliers_mask.size() == matches.size()`：
-
-```cpp
-if (transform.empty() || inliers_mask.size() != matches.size()) {
-    std::cerr << "Warning: estimateTransform failed or inliers_mask size mismatch" << std::endl;
-    inlier_matches.clear();
-    return transform;
-}
-```
-
-**原因**：`findHomography` 返回空时 `inliers_mask` 可能是空的，原代码 `inliers_mask[i]` 会越界。
 
 **其他变换类型**：
 
@@ -218,89 +205,6 @@ if (static_cast<size_t>(file_size) != expected_size) {
 ```
 
 **严格校验**——必须精确 `y_size_ + 2 * uv_size_` 字节。
-
-**已修复**：用 `COLOR_YUV2BGR_I420` 直接转换（limited-range，SIMD），取代原来的 "resize + merge + COLOR_YUV2BGR"（full-range）：
-
-```cpp
-cv::Mat yuv420(height_ * 3 / 2, width_, CV_8UC1, yuv_data.data());
-cv::Mat bgr_image;
-cv::cvtColor(yuv420, bgr_image, cv::COLOR_YUV2BGR_I420);
-```
-
-**性能提升**：SIMD 一次完成 4:2:0 → BGR，**比手动 resize 快 3~5 倍**。
-
-**色彩正确性**：与 FFmpeg 编码的 default limited-range 一致，消除 ~10% 亮度偏移。
-
-### 2.3 `readYUV420PChannels` —— 深拷贝（已修 use-after-free）
-
-```cpp
-cv::Mat y_plane = cv::Mat(height_, width_, CV_8UC1, yuv_data.data()).clone();
-cv::Mat u_plane = cv::Mat(height_ / 2, width_ / 2, CV_8UC1,
-                          yuv_data.data() + y_size_).clone();
-cv::Mat v_plane = cv::Mat(height_ / 2, width_ / 2, CV_8UC1,
-                          yuv_data.data() + y_size_ + uv_size_).clone();
-```
-
-**已修复**：原代码直接返回视图引用局部 vector，函数返回后 `data` 悬空。现在全部 `.clone()` 深拷贝。
-
-### 2.4 `convertBGRtoYUV420P` —— I420 转换 + 连续性检查
-
-```cpp
-CV_Assert(!bgr_image.empty());
-CV_Assert(bgr_image.type() == CV_8UC3);
-CV_Assert(bgr_image.isContinuous());
-
-cv::Mat yuv420;
-cv::cvtColor(bgr_image, yuv420, cv::COLOR_BGR2YUV_I420);
-
-yuv_data.resize(y_size_ + 2 * uv_size_);
-std::memcpy(yuv_data.data(), yuv420.data, yuv_data.size());
-```
-
-**已修复**：
-
-| 项 | 改前 | 改后 |
-| :--- | :--- | :--- |
-| 转换 | `COLOR_BGR2YUV + split + resize + memcpy`（full-range） | **`COLOR_BGR2YUV_I420`**（limited-range，一步） |
-| 连续性 | 无检查 | **`CV_Assert(isContinuous())`** |
-| 类型 | 无检查 | **`CV_Assert(CV_8UC3)`** |
-
-### 2.5 `saveAsYUV420P` —— 智能插值
-
-```cpp
-cv::Mat resized_image;
-if (image.cols != width_ || image.rows != height_) {
-    const int interp = (image.cols > width_ || image.rows > height_)
-                           ? cv::INTER_AREA
-                           : cv::INTER_CUBIC;
-    cv::resize(image, resized_image, cv::Size(width_, height_), 0, 0, interp);
-} else {
-    resized_image = image.clone();
-}
-```
-
-**已修复**：缩小时用 `INTER_AREA`，放大时用 `INTER_CUBIC`，取代原来的统一 `INTER_LINEAR`。
-
----
-
-## 3. 历史修复汇总
-
-### 已修复
-
-| 位置 | 问题 | 修复 |
-| :--- | :--- | :--- |
-| `FFmpegDefine.h` | 全局 `std::string` 静态初始化顺序 | 改成"函数内 static" |
-| `YUVImageReader::readYUV420PChannels` | use-after-free | 全部 `.clone()` |
-| `YUVImageReader` 色彩范围 | full-range 与 FFmpeg limited-range 不匹配 | `COLOR_BGR2YUV_I420` / `COLOR_YUV2BGR_I420` |
-| `YUVImageReader::convertBGRtoYUV420P` | 无连续性检查 | `CV_Assert(isContinuous())` |
-| `YUVImageReader::saveAsYUV420P` | 统一 `INTER_LINEAR` | 缩小 `INTER_AREA` / 放大 `INTER_CUBIC` |
-| `FFmpegDefine.h::CropCoverDirImpl` | 路径双斜杠 | 去前导 `/` |
-| `ImageRegistrator::estimateTransform` | `inliers_mask` 空时越界 | 加 `size()` 检查 |
-| `ImageRegistrator::detectFeatures` | 只处理 BGR | 兼容 BGR/BGRA/GRAY |
-| `DecAndEnc.h::ReplaceMultiYuvs` | 无参数校验 | 加 `replaceYuvFiles.size()` 校验 |
-| `FFMpegUtils.h::CountFrames` | 无 flush，最后 1~3 帧漏统计 | `send_packet(nullptr)` + `receive_frame` 循环 |
-| `YUVProcessor::processPlane` | `y1` 边界误用 `crop_x + crop_width` | 改为 `crop_y + crop_height - 1` |
-| 死代码清理 | `GenMp4.h`、`DecodeEncode`、`InsertSingleYuv`、`InsertMultiYuvs`、`GenOriginalLivePhoto`、`GenOptLivePhoto`、`ReplaceAlhpaMerge*` 重复函数、`GenFrom2Mp4ToOriAndOptLp` | 全部删除 |
 
 ### 保留的已知项
 
