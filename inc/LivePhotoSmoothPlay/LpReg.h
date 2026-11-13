@@ -10,6 +10,7 @@
 #include "FFmpegDefine.h"
 #include "YUVImageReader.h"
 #include "ImageRegistrator.h"
+#include "DecAndEnc.h"
 
 namespace fs = std::filesystem;
 
