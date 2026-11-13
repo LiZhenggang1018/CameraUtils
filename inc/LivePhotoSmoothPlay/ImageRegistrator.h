@@ -202,6 +202,40 @@ private:
     //     同一 ImageRegistrator 实例，需要加锁或改为每线程独立实例。
     cv::Ptr<cv::Feature2D> createDetector(FeatureDetectorType type) const;
 
+        /**
+     * @brief 对两个 YUV420P 文件做配准，结果保存到 output_dir
+     * @param curYuvFile  待配准的 YUV（目标图）
+     * @param refYuvFile  参考 YUV（参考图）
+     * @param output_dir  输出目录
+     * @param width       YUV 宽（默认 720，对应 YUV_W）
+     * @param height      YUV 高（默认 1584，对应 YUV_H）
+     * @param detector    特征检测器（默认 ORB）
+     * @param transform   变换类型（默认 HOMOGRAPHY）
+     * @return 0 成功，非 0 失败
+     */
+    int RegYuv(const std::string& curYuvFile,
+            const std::string& refYuvFile,
+            const std::string& output_dir,
+            int width = 720,
+            int height = 1584,
+            FeatureDetectorType detector = FeatureDetectorType::ORB,
+            TransformType transform = TransformType::HOMOGRAPHY);
+
+    /**
+     * @brief 对两个图像文件做配准，结果保存到 output_dir
+     *
+     * 支持格式：
+     *   - cv::imread 支持的格式：jpg / png / bmp / tiff 等
+     *   - Windows WIC 支持的格式：heif / heic / avif 等（需系统安装对应解码器）
+     *
+     * 读取策略：先尝试 cv::imread，失败时降级到 WIC
+     */
+    int RegImg(const std::string& curImgFile,
+            const std::string& refImgFile,
+            const std::string& output_dir,
+            FeatureDetectorType detector = FeatureDetectorType::ORB,
+            TransformType transform = TransformType::HOMOGRAPHY);
+
     mutable std::unordered_map<int, cv::Ptr<cv::Feature2D>> m_detectorCache;
 };
 

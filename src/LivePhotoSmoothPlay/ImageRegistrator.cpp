@@ -1,15 +1,21 @@
-/*
- * @Description: Simple Image Registration Source File
- */
-
 #include "ImageRegistrator.h"
+#include "YUVImageReader.h"
+#include <filesystem>
 
-// ============================================================
-// 修复坑 5：检测器缓存
-//   - 首次调用时创建，之后复用
-//   - ORB::create(5000) 每次分配内存并初始化，20 次配准会浪费 20 次
-//   - 缓存后仅首次创建一次
-// ============================================================
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <wincodec.h>
+#include <objbase.h>
+#pragma comment(lib, "windowscodecs.lib")
+#pragma comment(lib, "ole32.lib")
+#endif
+
 cv::Ptr<cv::Feature2D> ImageRegistrator::createDetector(FeatureDetectorType type) const
 {
     const int key = static_cast<int>(type);
