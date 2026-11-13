@@ -1,6 +1,48 @@
 /*
- * @Description: Simple Image Registration Header
- */
+ImageRegistrator 是 LivePhotoSmoothPlay 模块的图像配准引擎
+——输入两张图（参考图 + 目标图），输出"目标图对齐到参考图"的结果，以及它们之间的变换矩阵。
+
+流程图
+┌─────────────────────────────────────────────────────────────┐
+│ 1. detectFeatures(reference_img)  → keypoints1, descriptors1 │
+│ 2. detectFeatures(target_img)     → keypoints2, descriptors2 │
+├─────────────────────────────────────────────────────────────┤
+│ 3. matchFeatures(descriptors1, descriptors2)                 │
+│      → knnMatch(k=2) → Lowe's ratio 0.75 → good_matches      │
+├─────────────────────────────────────────────────────────────┤
+│ 4. estimateTransform(keypoints1, keypoints2, good_matches)   │
+│      → findHomography(RANSAC) → transform (reference→target) │
+│      → inlier_matches（RANSAC 内点）                          │
+├─────────────────────────────────────────────────────────────┤
+│ 5. cv::invert(transform, warp_to_ref, DECOMP_SVD)            │
+│      → warp_to_ref（target→reference）                       │
+├─────────────────────────────────────────────────────────────┤
+│ 6. applyTransform(target_img, warp_to_ref, reference.size()) │
+│      → registered_image                                     │
+├─────────────────────────────────────────────────────────────┤
+│ 7. 对每个 inlier 计算 RMS 误差                               │
+│      → rms_error                                            │
+└─────────────────────────────────────────────────────────────┘
+
+在工程中的调用链
+ImageRegistrator被 LpReg.h 的 RegCoverFrameToLastVidFrame 封装调用
+
+LpFovTransitionOpt.h::GenFromLpToOptLp()
+  └─ RegCoverToVid()                                    ← LpReg.h
+       └─ RegCoverFrameToLastVidFrame(720, 1584,
+              LAST_VID_FRAME_YUV,     ← 参考图 = 最后视频帧
+              COVER_FRAME_YUV,        ← 目标图 = 封面帧
+              REG_RESULT_DIR)         ← 输出目录
+            ├─ YUVImageReader::readYUV420P × 2         ← YUV → BGR
+            ├─ ImageRegistrator::registerImages(       ← ★ 本文档的主角
+            │       reference_img = 视频帧,
+            │       target_img    = 封面帧,
+            │       ORB, HOMOGRAPHY)
+            │     └─ 内部 7 步流程
+            ├─ g_hMatrixVidToCover = result.transform_matrix.clone()
+            ├─ DumpXYScaleFroMatrixVidToCover()         ← 从 H 矩阵取 (0,0) / (1,1) → txt
+            └─ saveRegistrationResults + 8 个调试 jpg
+*/
 
 #ifndef IMAGEREGISTRATOR_H_
 #define IMAGEREGISTRATOR_H_
@@ -15,12 +57,11 @@ enum class FeatureDetectorType
     AKAZE  // AKAZE也是主库中的免费算法
 };
 
-enum class TransformType
-{
-    HOMOGRAPHY,
-    AFFINE,
-    EUCLIDEAN,
-    TRANSLATION
+enum class TransformType {
+    HOMOGRAPHY,   // 默认，8 自由度，3×3
+    AFFINE,       // 6 自由度，2×3
+    EUCLIDEAN,    // 4 自由度（旋转+平移），2×3
+    TRANSLATION   // 2 自由度（纯平移），3×3
 };
 
 struct RegistrationResult
