@@ -12,6 +12,7 @@
 #include "ThreadPoolTest.h"
 #include "OpenCVTest.h"
 #include "FFMpegTest.h"
+#include "InstanceCounterTest.h"
 
 #include "LivePhotoSmoothPlay\LivePhotoSmoothPlayTest.h"
 
