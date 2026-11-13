@@ -4,27 +4,49 @@
 
 #include "ImageRegistrator.h"
 
-cv::Ptr<cv::Feature2D> ImageRegistrator::createDetector(FeatureDetectorType type)
+// ============================================================
+// 修复坑 5：检测器缓存
+//   - 首次调用时创建，之后复用
+//   - ORB::create(5000) 每次分配内存并初始化，20 次配准会浪费 20 次
+//   - 缓存后仅首次创建一次
+// ============================================================
+cv::Ptr<cv::Feature2D> ImageRegistrator::createDetector(FeatureDetectorType type) const
 {
+    const int key = static_cast<int>(type);
+    auto it = m_detectorCache.find(key);
+    if (it != m_detectorCache.end())
+    {
+        return it->second;
+    }
+
+    cv::Ptr<cv::Feature2D> detector;
     switch (type)
     {
     case FeatureDetectorType::ORB:
-        return cv::ORB::create(5000); // 增加特征点数量
+        detector = cv::ORB::create(5000);   // 5000 个点，保证 RANSAC 有足够内点
+        break;
     case FeatureDetectorType::BRISK:
-        return cv::BRISK::create();
+        detector = cv::BRISK::create();
+        break;
     case FeatureDetectorType::KAZE:
-        return cv::KAZE::create();
+        detector = cv::KAZE::create();
+        break;
     case FeatureDetectorType::AKAZE:
-        return cv::AKAZE::create();
+        detector = cv::AKAZE::create();
+        break;
     default:
-        return cv::ORB::create();
+        detector = cv::ORB::create(5000);
+        break;
     }
+
+    m_detectorCache[key] = detector;
+    return detector;
 }
 
 std::tuple<std::vector<cv::KeyPoint>, cv::Mat>
 ImageRegistrator::detectFeatures(const cv::Mat &image, FeatureDetectorType detector_type)
 {
-    // 修复 #11：兼容 BGR / BGRA / GRAY 三种输入
+    // 修复坑 6（兼容性）：支持 BGR / BGRA / GRAY 三种输入
     cv::Mat gray;
     if (image.channels() == 1)
     {
@@ -43,39 +65,43 @@ ImageRegistrator::detectFeatures(const cv::Mat &image, FeatureDetectorType detec
         throw std::runtime_error("不支持的图像通道数: " + std::to_string(image.channels()));
     }
 
-    auto detector = createDetector(detector_type);
+    auto detector = createDetector(detector_type);   // 缓存命中
     std::vector<cv::KeyPoint> keypoints;
     cv::Mat descriptors;
+
     detector->detectAndCompute(gray, cv::noArray(), keypoints, descriptors);
 
     return {keypoints, descriptors};
 }
 
 std::vector<cv::DMatch>
-ImageRegistrator::matchFeatures(const cv::Mat &descriptors1, const cv::Mat &descriptors2, FeatureDetectorType detector_type)
+ImageRegistrator::matchFeatures(const cv::Mat &descriptors1, const cv::Mat &descriptors2,
+                                FeatureDetectorType detector_type)
 {
     if (descriptors1.empty() || descriptors2.empty())
     {
         return {};
     }
 
-    // 根据描述符类型选择匹配器
     cv::Ptr<cv::DescriptorMatcher> matcher;
     bool use_flann = false;
 
-    // ORB和BRISK使用二进制描述符，需要汉明距离
-    if (detector_type == FeatureDetectorType::ORB || detector_type == FeatureDetectorType::BRISK)
+    // ORB/BRISK/AKAZE 默认二值描述符 → NORM_HAMMING
+    // KAZE 是浮点描述符 → NORM_L2
+    if (detector_type == FeatureDetectorType::ORB ||
+        detector_type == FeatureDetectorType::BRISK ||
+        detector_type == FeatureDetectorType::AKAZE)
     {
         matcher = cv::BFMatcher::create(cv::NORM_HAMMING);
         use_flann = false;
     }
     else
-    { // KAZE和AKAZE使用浮点描述符
+    {
         matcher = cv::BFMatcher::create(cv::NORM_L2);
         use_flann = true;
     }
 
-    // 尝试使用FLANN（对于浮点描述符）
+    // 浮点描述符尝试 FLANN（快 2~3 倍），失败回退 BFMatcher
     if (use_flann && !descriptors1.empty() && !descriptors2.empty())
     {
         try
@@ -91,24 +117,22 @@ ImageRegistrator::matchFeatures(const cv::Mat &descriptors1, const cv::Mat &desc
             }
 
             cv::Ptr<cv::flann::SearchParams> searchParams = cv::makePtr<cv::flann::SearchParams>(50);
-
             matcher = cv::makePtr<cv::FlannBasedMatcher>(indexParams, searchParams);
         }
         catch (...)
         {
-            // 如果FLANN失败，回退到暴力匹配
-            matcher = cv::BFMatcher::create(cv::NORM_L2);
+            matcher = cv::BFMatcher::create(cv::NORM_L2);   // 回退
         }
     }
 
-    // 进行KNN匹配
+    // KNN + Lowe's ratio test（0.75 是经典阈值）
     std::vector<std::vector<cv::DMatch>> knn_matches;
     matcher->knnMatch(descriptors1, descriptors2, knn_matches, 2);
 
-    // 应用Lowe's ratio test
     std::vector<cv::DMatch> good_matches;
-    const float ratio_thresh = 0.75f;
+    good_matches.reserve(knn_matches.size());
 
+    const float ratio_thresh = 0.75f;
     for (const auto &knn_match : knn_matches)
     {
         if (knn_match.size() == 2)
@@ -130,14 +154,15 @@ cv::Mat ImageRegistrator::estimateTransform(
     TransformType transform_type,
     std::vector<cv::DMatch> &inlier_matches)
 {
-
     if (matches.size() < 4)
     {
         throw std::runtime_error("匹配点不足4个，无法估计变换矩阵");
     }
 
-    // 提取匹配点坐标
+    // 提取匹配点坐标（Point2f，720×1584 下足够精度）
     std::vector<cv::Point2f> points1, points2;
+    points1.reserve(matches.size());
+    points2.reserve(matches.size());
     for (const auto &match : matches)
     {
         points1.push_back(keypoints1[match.queryIdx].pt);
@@ -152,14 +177,11 @@ cv::Mat ImageRegistrator::estimateTransform(
         switch (transform_type)
         {
         case TransformType::HOMOGRAPHY:
-        {
             transform = cv::findHomography(points1, points2, cv::RANSAC, 3.0, inliers_mask, 2000, 0.995);
             break;
-        }
+
         case TransformType::AFFINE:
-        {
             transform = cv::estimateAffine2D(points1, points2, inliers_mask, cv::RANSAC, 3.0, 2000, 0.995);
-            // 转换为3x3矩阵
             if (!transform.empty())
             {
                 cv::Mat h(3, 3, CV_64F, cv::Scalar(0));
@@ -168,7 +190,7 @@ cv::Mat ImageRegistrator::estimateTransform(
                 transform = h;
             }
             break;
-        }
+
         case TransformType::EUCLIDEAN:
         {
             cv::Mat rigid_transform = cv::estimateAffinePartial2D(points1, points2, inliers_mask, cv::RANSAC, 3.0);
@@ -181,24 +203,26 @@ cv::Mat ImageRegistrator::estimateTransform(
             }
             break;
         }
+
         case TransformType::TRANSLATION:
         {
-            // 计算平移向量
+            // 中位数平移，不做 RANSAC，所有匹配都算内点
             std::vector<float> dx, dy;
+            dx.reserve(points1.size());
+            dy.reserve(points1.size());
             for (size_t i = 0; i < points1.size(); ++i)
             {
                 dx.push_back(points2[i].x - points1[i].x);
                 dy.push_back(points2[i].y - points1[i].y);
             }
-
-            // 使用中位数作为平移量
-            std::nth_element(dx.begin(), dx.begin() + dx.size() / 2, dx.end());
-            std::nth_element(dy.begin(), dy.begin() + dy.size() / 2, dy.end());
-            float tx = dx[dx.size() / 2];
-            float ty = dy[dy.size() / 2];
+            auto mid = dx.size() / 2;
+            std::nth_element(dx.begin(), dx.begin() + mid, dx.end());
+            std::nth_element(dy.begin(), dy.begin() + mid, dy.end());
+            float tx = dx[mid];
+            float ty = dy[mid];
 
             transform = (cv::Mat_<double>(3, 3) << 1, 0, tx, 0, 1, ty, 0, 0, 1);
-            inliers_mask = std::vector<uchar>(points1.size(), 1);
+            inliers_mask.assign(points1.size(), 1);
             break;
         }
         }
@@ -209,17 +233,17 @@ cv::Mat ImageRegistrator::estimateTransform(
         throw std::runtime_error("估计变换矩阵失败");
     }
 
-    // 提取内点匹配
-    // 修复 #10：inliers_mask 可能为空（RANSAC 失败），先检查
+    // 修复（之前 #10）：inliers_mask 空检查，避免越界
     if (transform.empty() || inliers_mask.size() != matches.size())
     {
         std::cerr << "Warning: estimateTransform failed or inliers_mask size mismatch"
-                << " (matches=" << matches.size()
-                << ", mask=" << inliers_mask.size() << ")" << std::endl;
+                  << " (matches=" << matches.size()
+                  << ", mask=" << inliers_mask.size() << ")" << std::endl;
         inlier_matches.clear();
-        return transform;   // 返回空矩阵，由调用方检查
+        return cv::Mat();
     }
 
+    // 提取内点匹配（修复坑 4：现在通过引用传回，最终存进 RegistrationResult::inlier_matches）
     inlier_matches.clear();
     inlier_matches.reserve(matches.size());
     for (size_t i = 0; i < matches.size(); ++i)
@@ -233,7 +257,8 @@ cv::Mat ImageRegistrator::estimateTransform(
     return transform;
 }
 
-cv::Mat ImageRegistrator::applyTransform(const cv::Mat &image, const cv::Mat &transform, const cv::Size &output_size)
+cv::Mat ImageRegistrator::applyTransform(const cv::Mat &image, const cv::Mat &transform,
+                                         const cv::Size &output_size)
 {
     if (transform.empty())
     {
@@ -244,12 +269,10 @@ cv::Mat ImageRegistrator::applyTransform(const cv::Mat &image, const cv::Mat &tr
 
     if (transform.rows == 3 && transform.cols == 3)
     {
-        // 单应性变换
         cv::warpPerspective(image, registered_image, transform, output_size, cv::INTER_LINEAR);
     }
     else if (transform.rows == 2 && transform.cols == 3)
     {
-        // 仿射变换
         cv::warpAffine(image, registered_image, transform, output_size, cv::INTER_LINEAR);
     }
     else
@@ -266,7 +289,6 @@ RegistrationResult ImageRegistrator::registerImages(
     FeatureDetectorType detector_type,
     TransformType transform_type)
 {
-
     auto start_time = std::chrono::high_resolution_clock::now();
 
     RegistrationResult result;
@@ -284,25 +306,20 @@ RegistrationResult ImageRegistrator::registerImages(
     result.good_matches = matchFeatures(descriptors1, descriptors2, detector_type);
     std::cout << "匹配点数: " << result.good_matches.size() << std::endl;
 
-    // 3. 估计变换矩阵
+    // 3. 估计变换矩阵（修复坑 4：inlier_matches 存进 result）
     std::cout << "估计变换矩阵..." << std::endl;
-    std::vector<cv::DMatch> inlier_matches;
-    result.transform_matrix = estimateTransform(keypoints1, keypoints2,
-                                                result.good_matches,
-                                                transform_type,
-                                                inlier_matches);
+    result.transform_matrix = estimateTransform(
+        keypoints1, keypoints2, result.good_matches, transform_type, result.inlier_matches);
 
-    result.num_inliers = static_cast<int>(inlier_matches.size());
+    result.num_inliers = static_cast<int>(result.inlier_matches.size());
     std::cout << "内点数: " << result.num_inliers << std::endl;
 
-    // 重要：估计得到的矩阵 result.transform_matrix是从 reference（视频帧） -> target（封面帧）（points1 -> points2）把reference.img映射到target.img的变换
-    // 也是我们打印在transform_matrix.txt里的矩阵含义。表示缩小reference（视频帧）之后，会对齐到target（封面帧）。
-
-    // 我们为了把 target（封面帧） 对齐到 reference（视频帧），需要使用该矩阵的逆（或在估计时反向求解）。
-    cv::Mat warp_to_ref; // warp_to_ref表示 target -> reference 的变换（把目标图像的点/像素映射到参考图坐标系）
+    // ⚠️ 重要约定（修复坑 1）：
+    //   transform_matrix 是 reference → target（points1 → points2）
+    //   要把 target 对齐到 reference，必须求逆后再 warp
+    cv::Mat warp_to_ref;
     if (!result.transform_matrix.empty())
     {
-        // 如果是 3x3 矩阵，直接求逆
         if (result.transform_matrix.rows == 3 && result.transform_matrix.cols == 3)
         {
             cv::Mat inv;
@@ -312,10 +329,8 @@ RegistrationResult ImageRegistrator::registerImages(
             }
             warp_to_ref = inv;
         }
-        // 如果 estimate 返回 2x3 仿射（已被转换为 3x3 的情形也会走上面分支）
         else if (result.transform_matrix.rows == 2 && result.transform_matrix.cols == 3)
         {
-            // 转为 3x3 再求逆
             cv::Mat h(3, 3, CV_64F, cv::Scalar(0));
             result.transform_matrix.copyTo(h.rowRange(0, 2));
             h.at<double>(2, 2) = 1.0;
@@ -336,18 +351,18 @@ RegistrationResult ImageRegistrator::registerImages(
         throw std::runtime_error("估计出的变换矩阵为空");
     }
 
-    // 4. 应用（对目标图像应用 target->reference 的变换）
+    // 4. 应用变换
     std::cout << "应用变换..." << std::endl;
     result.registered_image = applyTransform(target_img, warp_to_ref, reference_img.size());
 
-    // 计算RMS误差（使用相同方向：把目标点通过 warp_to_ref 映射到参考图像坐标，与参考点比较）
+    // 5. RMS 误差（修复坑 2：内部已说明是"内点重投影误差"，不是"整图像素差"）
     result.rms_error = 0.0;
-    if (!inlier_matches.empty() && !warp_to_ref.empty())
+    if (!result.inlier_matches.empty() && !warp_to_ref.empty())
     {
-        for (const auto &match : inlier_matches)
+        for (const auto &match : result.inlier_matches)
         {
-            cv::Point2f pt_ref = keypoints1[match.queryIdx].pt; // reference
-            cv::Point2f pt_tar = keypoints2[match.trainIdx].pt; // target
+            cv::Point2f pt_ref = keypoints1[match.queryIdx].pt;
+            cv::Point2f pt_tar = keypoints2[match.trainIdx].pt;
 
             cv::Mat pt_tar_homog = (cv::Mat_<double>(3, 1) << pt_tar.x, pt_tar.y, 1);
             cv::Mat pt_tar_transformed = warp_to_ref * pt_tar_homog;
@@ -357,7 +372,7 @@ RegistrationResult ImageRegistrator::registerImages(
             double dy = pt_ref.y - pt_tar_transformed.at<double>(1, 0);
             result.rms_error += dx * dx + dy * dy;
         }
-        result.rms_error = std::sqrt(result.rms_error / inlier_matches.size());
+        result.rms_error = std::sqrt(result.rms_error / result.inlier_matches.size());
     }
 
     result.keypoints1 = std::move(keypoints1);
@@ -379,57 +394,84 @@ cv::Mat ImageRegistrator::drawMatches(
     const std::vector<cv::KeyPoint> &keypoints2,
     const std::vector<cv::DMatch> &matches)
 {
-
     cv::Mat matches_img;
     cv::drawMatches(img1, keypoints1, img2, keypoints2, matches,
                     matches_img, cv::Scalar::all(-1), cv::Scalar::all(-1),
                     std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-
     return matches_img;
 }
 
-void ImageRegistrator::saveRegistrationResults(const RegistrationResult &result, const std::string &output_dir)
+void ImageRegistrator::saveRegistrationResults(const RegistrationResult &result,
+                                               const std::string &output_dir)
 {
-
-    // 创建输出目录
     std::filesystem::create_directories(output_dir);
 
-    // 保存配准后的图像
-    std::string output_path = output_dir + "/registered_image.jpg";
-    cv::imwrite(output_path, result.registered_image);
-
-    // 保存变换矩阵
-    std::string transform_path = output_dir + "/transform_matrix.txt";
-    std::ofstream transform_file(transform_path);
-    if (transform_file.is_open())
+    // 1. 保存配准后的图像
     {
-        transform_file << "变换矩阵:\n";
-        transform_file << result.transform_matrix << std::endl;
-        transform_file << "\n配准参数:\n";
-        transform_file << "内点数: " << result.num_inliers << std::endl;
-        transform_file << "RMS误差: " << result.rms_error << " 像素" << std::endl;
-        transform_file.close();
+        std::string output_path = output_dir + "/registered_image.jpg";
+        cv::imwrite(output_path, result.registered_image);
     }
 
-    // 保存匹配点信息
-    std::string matches_path = output_dir + "/matches.txt";
-    std::ofstream matches_file(matches_path);
-    if (matches_file.is_open())
+    // 2. 保存变换矩阵
     {
-        matches_file << "匹配点数量: " << result.good_matches.size() << std::endl;
-        matches_file << "\n匹配点详细信息:\n";
-        matches_file << "索引, 参考图像X, 参考图像Y, 目标图像X, 目标图像Y, 距离\n";
-
-        for (size_t i = 0; i < result.good_matches.size(); ++i)
+        std::string transform_path = output_dir + "/transform_matrix.txt";
+        std::ofstream transform_file(transform_path);
+        if (transform_file.is_open())
         {
-            const auto &match = result.good_matches[i];
-            cv::Point2f pt1 = result.keypoints1[match.queryIdx].pt;
-            cv::Point2f pt2 = result.keypoints2[match.trainIdx].pt;
-
-            matches_file << i << ", " << pt1.x << ", " << pt1.y << ", "
-                         << pt2.x << ", " << pt2.y << ", "
-                         << match.distance << std::endl;
+            transform_file << "变换矩阵 (reference -> target):\n";
+            transform_file << result.transform_matrix << std::endl;
+            transform_file << "\n配准参数:\n";
+            transform_file << "内点数: " << result.num_inliers << std::endl;
+            transform_file << "RMS误差: " << result.rms_error << " 像素" << std::endl;
+            transform_file.close();
         }
-        matches_file.close();
+    }
+
+    // 3. 保存 good_matches（兼容旧工具）
+    {
+        std::string matches_path = output_dir + "/matches.txt";
+        std::ofstream matches_file(matches_path);
+        if (matches_file.is_open())
+        {
+            matches_file << "匹配点数量: " << result.good_matches.size() << std::endl;
+            matches_file << "\n匹配点详细信息:\n";
+            matches_file << "索引, 参考图像X, 参考图像Y, 目标图像X, 目标图像Y, 距离\n";
+
+            for (size_t i = 0; i < result.good_matches.size(); ++i)
+            {
+                const auto &match = result.good_matches[i];
+                cv::Point2f pt1 = result.keypoints1[match.queryIdx].pt;
+                cv::Point2f pt2 = result.keypoints2[match.trainIdx].pt;
+
+                matches_file << i << ", " << pt1.x << ", " << pt1.y << ", "
+                             << pt2.x << ", " << pt2.y << ", "
+                             << match.distance << std::endl;
+            }
+            matches_file.close();
+        }
+    }
+
+    // 4. 保存 inlier_matches（修复坑 4：RANSAC 内点，更可信）
+    {
+        std::string inliers_path = output_dir + "/inlier_matches.txt";
+        std::ofstream inliers_file(inliers_path);
+        if (inliers_file.is_open())
+        {
+            inliers_file << "RANSAC 内点数量: " << result.inlier_matches.size() << std::endl;
+            inliers_file << "\n内点详细信息:\n";
+            inliers_file << "索引, 参考图像X, 参考图像Y, 目标图像X, 目标图像Y, 距离\n";
+
+            for (size_t i = 0; i < result.inlier_matches.size(); ++i)
+            {
+                const auto &match = result.inlier_matches[i];
+                cv::Point2f pt1 = result.keypoints1[match.queryIdx].pt;
+                cv::Point2f pt2 = result.keypoints2[match.trainIdx].pt;
+
+                inliers_file << i << ", " << pt1.x << ", " << pt1.y << ", "
+                             << pt2.x << ", " << pt2.y << ", "
+                             << match.distance << std::endl;
+            }
+            inliers_file.close();
+        }
     }
 }
