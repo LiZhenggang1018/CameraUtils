@@ -51,20 +51,18 @@
 
 #include "HdrMerge.h"
 
-#include "AlphaMergeYuvs.h"
-#include "CenterCropGenYuvs.h"
-#include "DecAndEnc.h"
-#include "DecDemo.h"
-#include "DumpUtils.h"
 #include "FFmpegDefine.h"
+#include "DumpUtils.h"
 #include "GenMp4.h"
-#include "ImageRegistrator.h"
-#include "LpFovTransitionOpt.h"
-#include "LpReg.h"
-#include "YUVImageReader.h"
 #include "YUVProcessor.h"
-
-
+#include "YUVImageReader.h"
+#include "ImageRegistrator.h"
+#include "AlphaMergeYuvs.h"
+#include "LpReg.h"
+#include "DecAndEnc.h"
+#include "CenterCropGenYuvs.h"
+#include "DecDemo.h"
+#include "LpFovTransitionOpt.h"
 
 
 #endif // UTILS_H
