@@ -246,6 +246,64 @@ message(STATUS "FFMPEG_ROOT        = ${FFMPEG_ROOT}")
 message(STATUS "FFMPEG_INCLUDE_DIR = ${FFMPEG_INCLUDE_DIR}")
 message(STATUS "FFMPEG_LIB_DIR     = ${FFMPEG_LIB_DIR}")
 
+# ============================================================
+# exiv2（图像元数据：EXIF / IPTC / XMP）
+# - 本地已有安装 → 快速加载
+# - 否则从源码构建（静态库）
+# ============================================================
+if(DEFINED ENV{EXIV2_ROOT} AND EXISTS "$ENV{EXIV2_ROOT}")
+    file(TO_CMAKE_PATH "$ENV{EXIV2_ROOT}" _exiv2_candidate)
+    message(STATUS "exiv2: 候选路径来自环境变量 EXIV2_ROOT = ${_exiv2_candidate}")
+elseif(EXISTS "D:/ThirdPartyLib/exiv2")
+    set(_exiv2_candidate "D:/ThirdPartyLib/exiv2")
+    message(STATUS "exiv2: 候选路径为本地 = ${_exiv2_candidate}")
+else()
+    set(_exiv2_candidate "")
+    message(STATUS "exiv2: 无本地候选路径，将从源码构建")
+endif()
+
+if(_exiv2_candidate AND EXISTS "${_exiv2_candidate}/include/exiv2")
+    # ---------- 分支 A：本地已安装 ----------
+    message(STATUS "exiv2: 使用本地安装: ${_exiv2_candidate}")
+    set(EXIV2_INCLUDE_DIR "${_exiv2_candidate}/include")
+    file(GLOB _exiv2_lib_candidates
+        "${_exiv2_candidate}/lib/exiv2*.lib"
+        "${_exiv2_candidate}/lib/exiv2*.a"
+        "${_exiv2_candidate}/lib64/exiv2*.lib"
+        "${_exiv2_candidate}/lib64/exiv2*.a"
+    )
+    if(_exiv2_lib_candidates)
+        list(GET _exiv2_lib_candidates 0 _exiv2_lib_file)
+        set(EXIV2_LIBS "${_exiv2_lib_file}")
+    else()
+        message(FATAL_ERROR "exiv2 library not found under ${_exiv2_candidate}/lib")
+    endif()
+else()
+    # ---------- 分支 B：从源码构建（静态库） ----------
+    message(STATUS "exiv2: 从源码构建（静态库）")
+    CPMAddPackage(
+        NAME exiv2
+        GITHUB_REPOSITORY Exiv2/exiv2
+        GIT_TAG 0.28.7
+        GIT_SHALLOW TRUE
+        OPTIONS
+            "BUILD_SHARED_LIBS OFF"
+            "EXIV2_BUILD_EXIV2 OFF"
+            "EXIV2_ENABLE_PNG ON"
+            "EXIV2_ENABLE_JPEG ON"
+            "EXIV2_ENABLE_TIFF ON"
+            "EXIV2_ENABLE_XMP ON"
+            "EXIV2_ENABLE_WEBP OFF"
+            "EXIV2_ENABLE_INOTIFY OFF"
+            "EXIV2_ENABLE_TESTING OFF"
+    )
+    set(EXIV2_INCLUDE_DIR "${exiv2_SOURCE_DIR}/include")
+    set(EXIV2_LIBS exiv2lib)
+endif()
+
+message(STATUS "EXIV2_INCLUDE_DIR = ${EXIV2_INCLUDE_DIR}")
+message(STATUS "EXIV2_LIBS = ${EXIV2_LIBS}")
+
 enable_testing()
 add_subdirectory(src)
 add_subdirectory(tests)
