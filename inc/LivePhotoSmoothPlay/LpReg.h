@@ -113,7 +113,7 @@ inline int RegCoverFrameToLastVidFrame(int width, int height, const std::string 
 {
     try
     {
-        const FeatureDetectorType DETECTOR_TYPE = FeatureDetectorType::ORB; // 特征检测器类型
+        const FeatureDetectorType DETECTOR_TYPE = FeatureDetectorType::SIFT; // 特征检测器类型
         const TransformType TRANSFORM_TYPE = TransformType::HOMOGRAPHY;     // 变换类型
 
         // ============================================
