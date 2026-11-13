@@ -31,12 +31,13 @@ inline void RunTest()
     // SplitCppFilesInDirTest();
     // ConcatCppFilesInDirTest();
     // RunLivePhotoSmoothPlayTest();
-    RegTest();
+    // RegTest();
     // Type2InstMapTest();
     // MagicEnumTest::TestMagicEnum();
     // HarrisTest();
      // OpticalFlowTest();
      //Upsample30To60();
+     RunHdrMergeTest();
 }
 
 #endif
