@@ -1,0 +1,50 @@
+{
+    "autoDetectBorder": true,
+    "blackRatio": 0.95,
+    "blackThreshold": 5,
+    "contrastWeight": 1.2,
+    "cropRatio": 0.02,
+    "detailSigma_r": 0.15,
+    "detailSigma_s": 10.0,
+    "enableDetailEnhance": false,
+    "enableUnsharpMask": true,
+    "exposureWeight": 1.0,
+    "qualityLevel": 1,
+    "qualityPresets": {
+        "0": {
+            "contrastWeight": 0.8,
+            "enableDetailEnhance": false,
+            "enableUnsharpMask": false,
+            "exposureWeight": 1.0,
+            "saturationWeight": 1.0,
+            "unsharpAmount": 0.6,
+            "unsharpRadius": 1.2,
+            "unsharpThreshold": 0.0
+        },
+        "1": {
+            "contrastWeight": 1.2,
+            "enableDetailEnhance": false,
+            "enableUnsharpMask": true,
+            "exposureWeight": 1.0,
+            "saturationWeight": 1.1,
+            "unsharpAmount": 0.6,
+            "unsharpRadius": 1.2,
+            "unsharpThreshold": 0.0
+        },
+        "2": {
+            "contrastWeight": 1.5,
+            "enableDetailEnhance": false,
+            "enableUnsharpMask": true,
+            "exposureWeight": 1.2,
+            "saturationWeight": 1.2,
+            "unsharpAmount": 1.0,
+            "unsharpRadius": 1.5,
+            "unsharpThreshold": 2.0
+        }
+    },
+    "saturationWeight": 1.1,
+    "saveIntermediate": true,
+    "unsharpAmount": 0.6,
+    "unsharpRadius": 1.2,
+    "unsharpThreshold": 0.0
+}
