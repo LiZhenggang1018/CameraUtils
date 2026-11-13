@@ -1,22 +1,24 @@
 /*
  * @Description: HDR 融合（配准 + Mertens 曝光融合）
  *
- * 输入：低曝光 / 正常曝光 / 高曝光 三张同场景照片
- * 输出：对齐后的三张图 + 一张 HDR 融合图
+ * 实现功能：
+ *   1. Mertens 权重可配置（对比度 / 饱和度 / 曝光度）
+ *   2. 配准后自动检测黑边并裁剪
+ *   3. Unsharp Mask 后处理锐化
+ *   4. （可选）detailEnhance 局部对比度增强
  *
- * 算法：
- *   1. 以 normal 为参考图，用 ImageRegistrator 把 low / high 对齐到 normal
- *   2. 用 cv::MergeMertens（拉普拉斯金字塔曝光融合）合成 HDR
- *   3. MergeMertens 不需要相机的曝光时间（EV），直接对图像做质量评估
+ * 配置来源：configs/HdrConfig.json（见 HdrConfig.h）
  */
 
 #ifndef HDR_MERGE_H
 #define HDR_MERGE_H
 
 #include "OpenCVCommon.h"
+#include "HdrMerge/HdrConfig.h"
 #include "LivePhotoSmoothPlay/ImageRegistrator.h"
 #include "CommonEnv.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -24,10 +26,10 @@
 
 namespace hdr_merge {
 
-// ------------------------------------------------------------
+// ============================================================
 // 把 target 对齐到 reference 坐标系
-// 失败时返回 target 的克隆（保证下游尺寸一致，避免崩溃）
-// ------------------------------------------------------------
+// 失败时返回 resize 后的 target（保证下游尺寸一致）
+// ============================================================
 inline cv::Mat AlignToReference(
     const cv::Mat& reference,
     const cv::Mat& target,
@@ -41,15 +43,13 @@ inline cv::Mat AlignToReference(
 
         if (result.registered_image.empty())
         {
-            std::cerr << "[HdrMerge] Align failed (empty registered_image), use original target"
+            std::cerr << "[HdrMerge] Align failed (empty registered_image), use resized original"
                       << std::endl;
-            // 回退：把 target 缩放到 reference 尺寸，保证三张图同尺寸
             cv::Mat fallback;
             cv::resize(target, fallback, reference.size());
             return fallback;
         }
 
-        // 质量检查
         if (result.num_inliers < 30 || result.rms_error > 5.0)
         {
             std::cerr << "[HdrMerge] Warning: poor alignment (inliers=" << result.num_inliers
@@ -74,12 +74,163 @@ inline cv::Mat AlignToReference(
     }
 }
 
-// ------------------------------------------------------------
-// Mertens 曝光融合
-//   输入：vector<cv::Mat>（CV_8UC3 或 CV_32FC3）
-//   输出：CV_8UC3 [0,255]
-// ------------------------------------------------------------
-inline cv::Mat MergeMertens(const std::vector<cv::Mat>& images)
+// ============================================================
+// 检测图像中的"有效内容区域"（去掉 warp 后的黑边）
+// ============================================================
+inline cv::Rect DetectContentRoi(
+    const cv::Mat& img,
+    int blackThreshold = 5,
+    double blackRatio = 0.95)
+{
+    if (img.empty())
+    {
+        return {};
+    }
+
+    cv::Mat gray;
+    cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+
+    const int H = gray.rows;
+    const int W = gray.cols;
+
+    auto isBlackRow = [&](int y) -> bool
+    {
+        int blackCount = 0;
+        const uint8_t* row = gray.ptr<uint8_t>(y);
+        for (int x = 0; x < W; ++x)
+        {
+            if (row[x] < blackThreshold) ++blackCount;
+        }
+        return static_cast<double>(blackCount) / W >= blackRatio;
+    };
+
+    auto isBlackCol = [&](int x) -> bool
+    {
+        int blackCount = 0;
+        for (int y = 0; y < H; ++y)
+        {
+            if (gray.at<uint8_t>(y, x) < blackThreshold) ++blackCount;
+        }
+        return static_cast<double>(blackCount) / H >= blackRatio;
+    };
+
+    int top = 0;
+    while (top < H && isBlackRow(top)) ++top;
+
+    int bottom = H - 1;
+    while (bottom >= top && isBlackRow(bottom)) --bottom;
+
+    int left = 0;
+    while (left < W && isBlackCol(left)) ++left;
+
+    int right = W - 1;
+    while (right >= left && isBlackCol(right)) --right;
+
+    if (top >= bottom || left >= right)
+    {
+        return cv::Rect(0, 0, W, H);
+    }
+
+    return cv::Rect(left, top, right - left + 1, bottom - top + 1);
+}
+
+// ============================================================
+// 计算三张图的公共 ROI（有效内容区域）
+// ============================================================
+inline cv::Rect ComputeCommonRoi(
+    const cv::Mat& alignedLow,
+    const cv::Mat& alignedHigh,
+    const cv::Mat& reference,
+    const HdrConfig& cfg)
+{
+    if (!cfg.autoDetectBorder)
+    {
+        const int W = reference.cols;
+        const int H = reference.rows;
+        const int bx = static_cast<int>(W * cfg.cropRatio);
+        const int by = static_cast<int>(H * cfg.cropRatio);
+        return cv::Rect(bx, by, W - 2 * bx, H - 2 * by);
+    }
+
+    cv::Rect roiLow  = DetectContentRoi(alignedLow,  cfg.blackThreshold, cfg.blackRatio);
+    cv::Rect roiHigh = DetectContentRoi(alignedHigh, cfg.blackThreshold, cfg.blackRatio);
+
+    const int x1 = std::min(roiLow.x, roiHigh.x);
+    const int y1 = std::min(roiLow.y, roiHigh.y);
+    const int x2 = std::max(roiLow.x + roiLow.width,  roiHigh.x + roiHigh.width);
+    const int y2 = std::max(roiLow.y + roiLow.height, roiHigh.y + roiHigh.height);
+    cv::Rect common(x1, y1, x2 - x1, y2 - y1);
+
+    const double areaRatio = static_cast<double>(common.area()) / reference.total();
+    if (areaRatio < 0.25)
+    {
+        std::cerr << "[HdrMerge] Content ROI too small (" << (areaRatio * 100) << "%), "
+                  << "fallback to fixed crop " << (cfg.cropRatio * 100) << "%" << std::endl;
+
+        const int W = reference.cols;
+        const int H = reference.rows;
+        const int bx = static_cast<int>(W * cfg.cropRatio);
+        const int by = static_cast<int>(H * cfg.cropRatio);
+        return cv::Rect(bx, by, W - 2 * bx, H - 2 * by);
+    }
+
+    std::cout << "[HdrMerge] Content ROI: " << common
+              << " (" << (areaRatio * 100) << "% of frame)" << std::endl;
+    return common;
+}
+
+// ============================================================
+// Unsharp Mask 锐化
+// ============================================================
+inline cv::Mat UnsharpMask(
+    const cv::Mat& src,
+    double amount,
+    double radius,
+    double threshold)
+{
+    if (src.empty() || amount <= 0.0)
+    {
+        return src.clone();
+    }
+
+    cv::Mat blurred;
+    cv::GaussianBlur(src, blurred, cv::Size(0, 0), radius);
+
+    cv::Mat sharpened;
+    cv::addWeighted(src, 1.0 + amount, blurred, -amount, 0.0, sharpened);
+
+    if (threshold > 0.0)
+    {
+        cv::Mat diff;
+        cv::absdiff(src, sharpened, diff);
+
+        cv::Mat diffGray;
+        if (diff.channels() == 3)
+        {
+            cv::cvtColor(diff, diffGray, cv::COLOR_BGR2GRAY);
+        }
+        else
+        {
+            diffGray = diff;
+        }
+
+        cv::Mat mask;
+        cv::compare(diffGray, cv::Scalar(threshold), mask, cv::CMP_GT);
+
+        cv::Mat result = src.clone();
+        sharpened.copyTo(result, mask);
+        return result;
+    }
+
+    return sharpened;
+}
+
+// ============================================================
+// Mertens 曝光融合（带权重配置）
+// ============================================================
+inline cv::Mat MergeMertens(
+    const std::vector<cv::Mat>& images,
+    const HdrConfig& cfg)
 {
     if (images.empty())
     {
@@ -88,15 +239,15 @@ inline cv::Mat MergeMertens(const std::vector<cv::Mat>& images)
 
     cv::Ptr<cv::MergeMertens> merger = cv::createMergeMertens();
 
-    // 可调权重：对比度 / 饱和度 / 良好曝光度（默认 1.0）
-    //   提高 contrast_weight   → 更锐利，但可能过曝
-    //   提高 saturation_weight → 色彩更艳
-    //   提高 exposure_weight   → 更均衡曝光
-    // merger->setContrastWeight(1.0f);
-    // merger->setSaturationWeight(1.0f);
-    // merger->setExposureWeight(1.0f);
+    merger->setContrastWeight(static_cast<float>(cfg.contrastWeight));
+    merger->setSaturationWeight(static_cast<float>(cfg.saturationWeight));
+    merger->setExposureWeight(static_cast<float>(cfg.exposureWeight));
 
-    cv::Mat fused;                 // CV_32FC3, 范围 [0, 1]
+    std::cout << "[HdrMerge] Mertens weights: contrast=" << cfg.contrastWeight
+              << ", saturation=" << cfg.saturationWeight
+              << ", exposure=" << cfg.exposureWeight << std::endl;
+
+    cv::Mat fused;                // CV_32FC3, [0, 1]
     merger->process(images, fused);
 
     cv::Mat fused8u;
@@ -104,14 +255,15 @@ inline cv::Mat MergeMertens(const std::vector<cv::Mat>& images)
     return fused8u;
 }
 
-// ------------------------------------------------------------
-// 主入口：从 3 个文件路径生成 HDR 融合图
-// ------------------------------------------------------------
+// ============================================================
+// 主入口（带 config 版本）
+// ============================================================
 inline int HdrMergeFromFiles(
     const std::string& lowPath,
     const std::string& normalPath,
     const std::string& highPath,
-    const std::string& outDir)
+    const std::string& outDir,
+    const HdrConfig& cfg)
 {
     // 1. 读三张图
     cv::Mat low    = cv::imread(lowPath);
@@ -135,10 +287,25 @@ inline int HdrMergeFromFiles(
     std::cout << "[HdrMerge] Aligning high -> normal..." << std::endl;
     cv::Mat alignedHigh = AlignToReference(normal, high, registrator);
 
-    // 3. Mertens 曝光融合（顺序：低曝光 → 正常 → 高曝光）
+    // 3. 计算公共 ROI 并裁剪（修复黑边）
+    cv::Rect roi = ComputeCommonRoi(alignedLow, alignedHigh, normal, cfg);
+    if (roi.area() <= 0)
+    {
+        std::cerr << "[HdrMerge] Invalid ROI" << std::endl;
+        return 6;
+    }
+
+    cv::Mat lowCropped    = alignedLow(roi).clone();
+    cv::Mat normalCropped = normal(roi).clone();
+    cv::Mat highCropped   = alignedHigh(roi).clone();
+
+    std::cout << "[HdrMerge] Cropped size: " << lowCropped.cols << "x"
+              << lowCropped.rows << std::endl;
+
+    // 4. Mertens 融合
     std::cout << "[HdrMerge] Merging Mertens..." << std::endl;
-    std::vector<cv::Mat> inputs = { alignedLow, normal, alignedHigh };
-    cv::Mat merged = MergeMertens(inputs);
+    std::vector<cv::Mat> inputs = { lowCropped, normalCropped, highCropped };
+    cv::Mat merged = MergeMertens(inputs, cfg);
 
     if (merged.empty())
     {
@@ -146,7 +313,30 @@ inline int HdrMergeFromFiles(
         return 4;
     }
 
-    // 4. 保存
+    // 5. 可选 detailEnhance
+    cv::Mat detailEnhanced = merged;
+    if (cfg.enableDetailEnhance)
+    {
+        std::cout << "[HdrMerge] detailEnhance..." << std::endl;
+        cv::detailEnhance(merged, detailEnhanced,
+                          static_cast<float>(cfg.detailSigma_s),
+                          static_cast<float>(cfg.detailSigma_r));
+    }
+
+    // 6. 可选 Unsharp Mask
+    cv::Mat finalResult = detailEnhanced;
+    if (cfg.enableUnsharpMask)
+    {
+        std::cout << "[HdrMerge] Unsharp Mask (amount=" << cfg.unsharpAmount
+                  << ", radius=" << cfg.unsharpRadius
+                  << ", threshold=" << cfg.unsharpThreshold << ")..." << std::endl;
+        finalResult = UnsharpMask(detailEnhanced,
+                                  cfg.unsharpAmount,
+                                  cfg.unsharpRadius,
+                                  cfg.unsharpThreshold);
+    }
+
+    // 7. 保存
     std::error_code ec;
     std::filesystem::create_directories(outDir, ec);
     if (ec)
@@ -156,13 +346,37 @@ inline int HdrMergeFromFiles(
         return 5;
     }
 
-    cv::imwrite(outDir + "/01_low_registered.jpg",  alignedLow);
-    cv::imwrite(outDir + "/02_normal_reference.jpg", normal);
-    cv::imwrite(outDir + "/03_high_registered.jpg", alignedHigh);
-    cv::imwrite(outDir + "/hdr_merged.jpg",         merged);
+    cv::imwrite(outDir + "/01_low_registered.jpg",   lowCropped);
+    cv::imwrite(outDir + "/02_normal_reference.jpg", normalCropped);
+    cv::imwrite(outDir + "/03_high_registered.jpg",  highCropped);
+
+    if (cfg.saveIntermediate)
+    {
+        cv::imwrite(outDir + "/04_hdr_merged_raw.jpg", merged);
+    }
+
+    if (cfg.enableDetailEnhance)
+    {
+        cv::imwrite(outDir + "/05_hdr_detail_enhanced.jpg", detailEnhanced);
+    }
+
+    cv::imwrite(outDir + "/hdr_merged.jpg", finalResult);
 
     std::cout << "[HdrMerge] Done. Output: " << outDir << std::endl;
     return 0;
+}
+
+// ============================================================
+// 主入口（默认 config 版本，从 JSON 读）
+// ============================================================
+inline int HdrMergeFromFiles(
+    const std::string& lowPath,
+    const std::string& normalPath,
+    const std::string& highPath,
+    const std::string& outDir)
+{
+    const HdrConfig cfg = HdrConfig::LoadFromFile(HdrConfig::DefaultPath());
+    return HdrMergeFromFiles(lowPath, normalPath, highPath, outDir, cfg);
 }
 
 } // namespace hdr_merge
