@@ -30,7 +30,8 @@ inline void RunTest()
     // TestFFMpeg();
     // SplitCppFilesInDirTest();
     // ConcatCppFilesInDirTest();
-    RunLivePhotoSmoothPlayTest();
+    // RunLivePhotoSmoothPlayTest();
+    RegTest();
     // Type2InstMapTest();
     // MagicEnumTest::TestMagicEnum();
     // HarrisTest();
