@@ -46,8 +46,5 @@ inline void ReplaceAlhpaMergeToFovSmoothLp()
         replaceYuvFiles);
 }
 
-// 修复 #13：删除 ReplaceAlhpaMergeToFovSmoothAndAlpaMergedLp
-// （原函数与 ReplaceAlhpaMergeToFovSmoothLp 逐字相同，是未实现的占位）
-// 如果将来要"FOV 渐变 + alpha 混合"的组合方案，应在此重新实现
 
 #endif // DECDEMO_H_
