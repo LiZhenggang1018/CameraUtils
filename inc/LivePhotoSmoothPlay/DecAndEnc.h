@@ -11,6 +11,7 @@
 #include <iostream>
 
 #include "FFmpegDefine.h"
+#include "FFMpegUtils.h"
 
 namespace fs = std::filesystem;
 
