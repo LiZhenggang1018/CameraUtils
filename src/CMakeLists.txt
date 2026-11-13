@@ -19,6 +19,7 @@ target_include_directories(CameraUtils PRIVATE
     ${CMAKE_SOURCE_DIR}/inc/LivePhotoSmoothPlay
     ${CMAKE_SOURCE_DIR}/inc/ImageReg
     ${CMAKE_SOURCE_DIR}/inc/OpticalFlow
+    ${CMAKE_SOURCE_DIR}/inc/HdrMerge
     ${CMAKE_SOURCE_DIR}/tests
 )
 target_include_directories(CameraUtils SYSTEM PRIVATE
