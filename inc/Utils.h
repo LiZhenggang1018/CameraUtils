@@ -27,10 +27,13 @@
 #include "Type2InstMap.h"
 
 #include "InstanceCounterTest.h"
+
 #include "OpenCVCommon.h"
 #include "FFMpegCommon.h"
+
 #include "SplitCppFilesInDir.h"
 #include "ConcatCppFilesInDir.h"
+
 #include "HarrisDetect.h"
 
 #include "LkTracker.h"
@@ -39,5 +42,29 @@
 #include "DenseFlow.h"
 #include "BiDirectionalLkFilter.h"
 #include "FrameInterpolator.h"
+#include "DenseFlowDeepFlow.h"
+#include "DenseFlowDis.h"
+#include "FfmpegVideoWriter.h"
+#include "FrameInterpolator.h"
+#include "InterpolationConfig.h"
+#include "HdrMerge.h"
+
+#include "HdrMerge.h"
+
+#include "AlphaMergeYuvs.h"
+#include "CenterCropGenYuvs.h"
+#include "DecAndEnc.h"
+#include "DecDemo.h"
+#include "DumpUtils.h"
+#include "FFmpegDefine.h"
+#include "GenMp4.h"
+#include "ImageRegistrator.h"
+#include "LpFovTransitionOpt.h"
+#include "LpReg.h"
+#include "YUVImageReader.h"
+#include "YUVProcessor.h"
+
+
+
 
 #endif // UTILS_H
