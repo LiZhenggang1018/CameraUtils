@@ -2,7 +2,12 @@
 
 ## 概述
 
-`configs/HdrConfig.json` 用于配置 HDR 融合模块（`hdr_merge::HdrMergeFromFiles`）的全部运行参数，包括 Mertens 曝光融合权重、黑边裁剪、Unsharp Mask 锐化、detailEnhance、**质量档位定义表**等。
+`configs/HdrConfig.json` 用于配置 HDR 融合模块（`hdr_merge::HdrMergeFromFiles`）的全部运行参数，包括：
+
+- **管线选择**：`pipelineMode`，在 Mertens 曝光融合与物理 HDR 之间切换
+- **Mertens 曝光融合权重**、黑边裁剪、Unsharp Mask 锐化、detailEnhance
+- **质量档位定义表** `qualityPresets`
+- **物理 HDR 参数**：EXIF 曝光读取、手动回退、ISO 基准、响应校准、色调映射
 
 **关键特性**：
 
@@ -10,6 +15,8 @@
 - **修改本文件不需要重新编译**，直接重新运行 `CameraUtils.exe` 即可生效
 - 支持 `qualityLevel` 一键切换质量档位；**档位的具体数值也定义在 JSON 里**，可增删改
 - 支持 `qualityLevel = -1` 时完全手动控制所有细粒度字段
+- 支持 `pipelineMode = "physical"` 走物理 HDR 管线；物理管线失败时自动回退 `"mertens"`，主流程返回码不变
+- 新增字段使用 `NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT` 反序列化，**旧 JSON 缺少新字段不会导致加载失败**，缺失字段使用类内默认值
 
 **文件位置**：`<项目根>/configs/HdrConfig.json`
 
@@ -62,11 +69,37 @@
 }
 ```
 
+### 切换到物理 HDR 管线
+
+```json
+{
+    "pipelineMode": "physical",
+    "tonemapType": "drago",
+    "readExposureFromExif": true,
+    "baseIso": 100.0
+}
+```
+
+物理管线需要三张图的 EXIF 同时包含 `ExposureTime` 与 ISO；任一缺失且未配置手动回退时，会打印 `no valid exposure info` 并回退 Mertens。
+
 ---
 
 ## 参数分组说明
 
-### 一、质量档位选择
+### 一、管线选择
+
+#### `pipelineMode`（字符串，默认 `"mertens"`）
+
+| 值 | 行为 |
+| :---: | :--- |
+| **`"mertens"`** | **sRGB 域 Mertens 曝光融合（默认，向后兼容）** |
+| `"physical"` | EXIF 曝光 + De-gamma + MergeDebevec + 色调映射，输出物理 HDR 辐射图 |
+
+**回退规则**：`"physical"` 下若曝光信息不可用、`MergeDebevec` 返回空或色调映射失败，打印警告并自动回退 `"mertens"`，最终返回码按 Mertens 路径给出。
+
+---
+
+### 二、质量档位选择
 
 #### `qualityLevel`（整数，默认 `1`）
 
@@ -78,11 +111,13 @@
 - `qualityLevel = -1` → **不覆盖**，所有细粒度字段原样生效
 - `qualityLevel >= 0` 但 `qualityPresets` 里没有对应 key → **打印警告**，退回用细粒度字段（不崩）
 
+> 档位覆盖只影响上述 8 个字段；`pipelineMode`、物理 HDR 参数、裁剪四字段、`detailSigma_s/r`、`saveIntermediate` 不受 `qualityLevel` 影响。
+
 ---
 
-### 二、档位定义表：`qualityPresets`
+### 三、档位定义表：`qualityPresets`
 
-**从 v2 起**，档位的具体参数值不再硬编码在代码里，而是存在 JSON 的 `qualityPresets` 字段中。
+档位的具体参数值不硬编码在代码里，而是存在 JSON 的 `qualityPresets` 字段中。
 
 #### 结构
 
@@ -152,10 +187,11 @@
 - 档位数值在 JSON 里改，**代码不校验**——改坏了（比如 `contrastWeight = 10`）会导致严重光晕
 - **建议保留 `0`/`1`/`2` 三个"参考档位"不动**，新增档位用 `3`/`4`/…
 - 如果 `qualityPresets` 为空 map（`{}`）→ 所有档位都找不到 → 全部退化到细粒度字段
+- **`qualityPresets` 是整体替换**：JSON 里只写 `"1"` 会让 `"0"` / `"2"` 消失，要保留就必须一起写
 
 ---
 
-### 三、细粒度字段（Mertens 权重）
+### 四、细粒度字段（Mertens 权重）
 
 > **以下三个字段仅在 `qualityLevel = -1`，或 `qualityLevel >= 0` 但 `qualityPresets` 里找不到对应 key 时生效。**
 
@@ -195,9 +231,9 @@
 
 ---
 
-### 四、黑边裁剪
+### 五、黑边裁剪
 
-> **以下四个字段始终生效**，不受 `qualityLevel` 影响。
+> **以下四个字段始终生效**，不受 `qualityLevel` 与 `pipelineMode` 影响。
 
 #### `autoDetectBorder`（bool，默认 `true`）
 
@@ -222,9 +258,10 @@
 
 ---
 
-### 五、Unsharp Mask 锐化
+### 六、Unsharp Mask 锐化
 
 > **以下四个字段仅在 `qualityLevel = -1`，或 `qualityLevel >= 0` 但找不到对应 preset 时生效。**
+> **两条管线共用同一套锐化参数**：物理路径在色调映射后锐化，Mertens 路径在 detailEnhance 后锐化。
 
 #### `enableUnsharpMask`（bool，默认 `true`）
 
@@ -250,9 +287,10 @@
 
 ---
 
-### 六、detailEnhance（可选）
+### 七、detailEnhance（可选，仅 Mertens 路径）
 
 > **`enableDetailEnhance` 仅在 `qualityLevel = -1`，或找不到对应 preset 时生效。**
+> **仅在 `pipelineMode = "mertens"` 时被调用**；物理路径不做 detailEnhance。
 > **`detailSigma_s` / `detailSigma_r` 始终生效**（但只有在 `enableDetailEnhance = true` 时才被使用）。
 
 #### `enableDetailEnhance`（bool，默认 `false`）
@@ -267,11 +305,113 @@ detailEnhance 的参数，对应 `sigma_s`（空间域标准差）和 `sigma_r`�
 
 ---
 
-### 七、调试产物
+### 八、物理 HDR（`pipelineMode = "physical"` 时生效）
+
+物理 HDR 的目标是重建可测量的辐射图，而不是在 sRGB 域做视觉曝光融合。流程：
+
+```
+EXIF/手动曝光 → sRGB De-gamma → MergeDebevec（32F 辐射图）→ Tonemap → 可选 UnsharpMask
+```
+
+#### 8.1 曝光信息来源
+
+##### `readExposureFromExif`（bool，默认 `true`）
+
+是否从三张图的 EXIF 读取曝光时间与 ISO。
+
+- 三帧都读到 `Exif.Photo.ExposureTime` 与 ISO（`PhotographicSensitivity`，回退 `ISOSpeedRatings`）→ 使用 EXIF 值。
+- 任一帧缺失 → 尝试手动回退（见下）。
+
+##### `manualExposureTimes`（数组，默认 `[]`）
+
+EXIF 不可用时的手动曝光时间（秒），需恰好 3 个值，顺序为 low / normal / high。
+
+##### `manualIsos`（数组，默认 `[]`）
+
+与 `manualExposureTimes` 成对配置的 ISO，需恰好 3 个值。
+
+**回退优先级**：
+
+1. EXIF 三帧齐全 → 用 EXIF。
+2. 否则若 `manualExposureTimes.size() == 3 && manualIsos.size() == 3` → 用手动配置。
+3. 都不可用 → 打印 `no valid exposure info`，回退 Mertens。
+
+**示例：EXIF 缺失时手动指定**
+
+```json
+{
+    "pipelineMode": "physical",
+    "readExposureFromExif": true,
+    "manualExposureTimes": [0.001, 0.004, 0.016],
+    "manualIsos": [100, 100, 400],
+    "baseIso": 100.0
+}
+```
+
+##### `baseIso`（double，默认 `100.0`）
+
+等效曝光量的归一化基准。实际传入 `MergeDebevec` 的 `times` 为：
+
+```
+effectiveExposure = timeSeconds * iso / baseIso
+```
+
+`MergeDebevec` 只关心向量内部的比例，`baseIso` 只影响辐射图的绝对尺度，不影响相对结构；绝对尺度在色调映射中本来就会被重新映射。
+
+> **关于 ISO 与增益**：理想模型中 ISO 与传感器增益线性相关，按 ISO 计算等效曝光量成立。部分手机平台高 ISO 下实际增益可能偏离线性，若发现高 ISO 帧融合异常，可考虑从 MakerNotes 读实际增益，或改用内容估计曝光比例。
+
+#### 8.2 响应曲线校准
+
+##### `calibrateResponse`（bool，默认 `false`）
+
+是否用 `cv::CalibrateDebevec` 从三张线性图估计逆相机响应函数（CRF），再传给 `MergeDebevec`。
+
+- `false`：`MergeDebevec` 使用内部假设的响应，适合输入已完成 De-gamma 的情况。
+- `true`：样本仅 3 张，估计结果可能不稳定，建议作为对比实验开启。
+
+#### 8.3 色调映射
+
+##### `tonemapType`（字符串，默认 `"drago"`）
+
+| 值 | 算法 | 适用场景 |
+| :---: | :--- | :--- |
+| **`"drago"`** | `TonemapDrago` 自适应对数映射 | 风景、高对比、宽动态范围 |
+| `"reinhard"` | `TonemapReinhard` 全局摄影曝光模型 | 人像、室内、追求自然感 |
+
+未知值 → 打印警告并回退 `"drago"`。
+
+##### `dragoGamma`（double，默认 `1.0`）
+
+Drago 的最终显示 gamma。`1.0` 为常规；大于 1 会整体提亮。
+
+##### `dragoSaturation`（double，默认 `1.0`）
+
+Drago 的饱和度增强系数。`1.0` 不增强；`1.2~1.5` 色彩更艳。
+
+##### `reinhardGamma`（double，默认 `1.0`）
+
+Reinhard 的最终显示 gamma。
+
+##### `reinhardIntensity`（double，默认 `0.0`）
+
+Reinhard 的强度参数。`0.0` 表示由 OpenCV 自动估计。
+
+##### `reinhardLightAdapt`（double，默认 `0.0`）
+
+Reinhard 的光照适应参数。`0.0` 表示自动估计。
+
+---
+
+### 九、调试产物
 
 #### `saveIntermediate`（bool，默认 `true`）
 
-是否保存 `04_hdr_merged_raw.jpg`（未锐化的原始 Mertens 结果）。关闭后只保留最终结果，节省磁盘。
+是否保存中间产物：
+
+- Mertens 路径：`04_hdr_merged_raw.jpg`（未锐化的原始 Mertens 结果）。
+- 物理路径：`04_hdr_linear_32f.hdr`（Radiance HDR 格式的 32F 线性辐射图，可用 Luminance HDR 等工具查看动态范围）。
+
+关闭后只保留最终结果 `hdr_merged.jpg`，节省磁盘。
 
 ---
 
@@ -279,6 +419,7 @@ detailEnhance 的参数，对应 `sigma_s`（空间域标准差）和 `sigma_r`�
 
 | 参数 | 类型 | 默认值 | 取值范围 | 分组 | 受 qualityLevel 影响 |
 | :--- | :---: | :---: | :--- | :--- | :---: |
+| `pipelineMode` | string | `"mertens"` | `"mertens"` / `"physical"` | 管线 | — |
 | `qualityLevel` | int | `1` | -1 或 0~N | 档位 | — |
 | `qualityPresets` | map | 3 档 | 任意 | 档位 | — |
 | `contrastWeight` | double | `1.2` | 0.5~2.0 | Mertens | ✅ |
@@ -295,6 +436,17 @@ detailEnhance 的参数，对应 `sigma_s`（空间域标准差）和 `sigma_r`�
 | `enableDetailEnhance` | bool | `false` | true/false | 增强 | ✅ |
 | `detailSigma_s` | double | `10.0` | 5.0~20.0 | 增强 | ❌ |
 | `detailSigma_r` | double | `0.15` | 0.05~0.3 | 增强 | ❌ |
+| `readExposureFromExif` | bool | `true` | true/false | 物理 HDR | ❌ |
+| `manualExposureTimes` | array | `[]` | 3 个秒值 | 物理 HDR | ❌ |
+| `manualIsos` | array | `[]` | 3 个 ISO | 物理 HDR | ❌ |
+| `baseIso` | double | `100.0` | > 0 | 物理 HDR | ❌ |
+| `calibrateResponse` | bool | `false` | true/false | 物理 HDR | ❌ |
+| `tonemapType` | string | `"drago"` | `"drago"` / `"reinhard"` | 物理 HDR | ❌ |
+| `dragoGamma` | double | `1.0` | 0.5~3.0 | 物理 HDR | ❌ |
+| `dragoSaturation` | double | `1.0` | 0.5~2.0 | 物理 HDR | ❌ |
+| `reinhardGamma` | double | `1.0` | 0.5~3.0 | 物理 HDR | ❌ |
+| `reinhardIntensity` | double | `0.0` | 0.0 = 自动 | 物理 HDR | ❌ |
+| `reinhardLightAdapt` | double | `0.0` | 0.0 = 自动 | 物理 HDR | ❌ |
 | `saveIntermediate` | bool | `true` | true/false | 调试 | ❌ |
 
 **"受 qualityLevel 影响"的含义**：
@@ -306,20 +458,27 @@ detailEnhance 的参数，对应 `sigma_s`（空间域标准差）和 `sigma_r`�
 
 ## 完整默认 JSON
 
-首次运行程序时自动生成：
+首次运行程序时自动生成（字段按字母升序）：
 
 ```json
 {
     "autoDetectBorder": true,
+    "baseIso": 100.0,
     "blackRatio": 0.95,
     "blackThreshold": 5,
+    "calibrateResponse": false,
     "contrastWeight": 1.2,
     "cropRatio": 0.02,
     "detailSigma_r": 0.15,
     "detailSigma_s": 10.0,
+    "dragoGamma": 1.0,
+    "dragoSaturation": 1.0,
     "enableDetailEnhance": false,
     "enableUnsharpMask": true,
     "exposureWeight": 1.0,
+    "manualExposureTimes": [],
+    "manualIsos": [],
+    "pipelineMode": "mertens",
     "qualityLevel": 1,
     "qualityPresets": {
         "0": {
@@ -353,8 +512,13 @@ detailEnhance 的参数，对应 `sigma_s`（空间域标准差）和 `sigma_r`�
             "unsharpThreshold": 2.0
         }
     },
+    "readExposureFromExif": true,
+    "reinhardGamma": 1.0,
+    "reinhardIntensity": 0.0,
+    "reinhardLightAdapt": 0.0,
     "saturationWeight": 1.1,
     "saveIntermediate": true,
+    "tonemapType": "drago",
     "unsharpAmount": 0.6,
     "unsharpRadius": 1.2,
     "unsharpThreshold": 0.0
@@ -366,6 +530,7 @@ detailEnhance 的参数，对应 `sigma_s`（空间域标准差）和 `sigma_r`�
 - `nlohmann/json` 序列化时按字段名**字母升序**排列，不是源码顺序
 - `qualityPresets` 的 key 是**字符串**（`"0"` / `"1"` / `"2"`）
 - 嵌套 map 内层同样按字母升序
+- `manualExposureTimes` / `manualIsos` 默认为空数组；配置时需恰好 3 个值
 
 ---
 
@@ -390,6 +555,7 @@ detailEnhance 的参数，对应 `sigma_s`（空间域标准差）和 `sigma_r`�
 {
     "qualityLevel": 1,
     "qualityPresets": {
+        "0": { ... },
         "1": {
             "contrastWeight": 1.4,
             "saturationWeight": 1.2,
@@ -399,7 +565,8 @@ detailEnhance 的参数，对应 `sigma_s`（空间域标准差）和 `sigma_r`�
             "unsharpRadius": 1.2,
             "unsharpThreshold": 0.0,
             "enableDetailEnhance": false
-        }
+        },
+        "2": { ... }
     }
 }
 ```
@@ -482,20 +649,66 @@ detailEnhance 的参数，对应 `sigma_s`（空间域标准差）和 `sigma_r`�
 
 然后设 `"qualityLevel": 3`。
 
+### 场景 7：切换到物理 HDR（Drago，自然风格）
+
+```json
+{
+    "pipelineMode": "physical",
+    "tonemapType": "drago",
+    "dragoGamma": 1.0,
+    "dragoSaturation": 1.1,
+    "enableUnsharpMask": false,
+    "saveIntermediate": true
+}
+```
+
+先关闭锐化观察纯色调映射结果，确认无误后再开启锐化。
+
+### 场景 8：物理 HDR + Reinhard（人像/室内）
+
+```json
+{
+    "pipelineMode": "physical",
+    "tonemapType": "reinhard",
+    "reinhardGamma": 1.0,
+    "reinhardIntensity": 0.0,
+    "reinhardLightAdapt": 0.0
+}
+```
+
+`intensity` / `lightAdapt` 保持 `0.0` 由 OpenCV 自动估计，通常比手动设定更稳。
+
+### 场景 9：EXIF 缺失，物理 HDR 手动指定曝光
+
+```json
+{
+    "pipelineMode": "physical",
+    "readExposureFromExif": true,
+    "manualExposureTimes": [0.001, 0.004, 0.016],
+    "manualIsos": [100, 100, 400],
+    "baseIso": 100.0,
+    "tonemapType": "drago"
+}
+```
+
+先尝试 EXIF，失败后自动使用 `manualExposureTimes` + `manualIsos`。
+
 ---
 
 ## 常见问题
 
 ### Q1：修改 JSON 后重新运行，日志显示的还是旧值
 
-**原因**：文件编码带 UTF-8 BOM，`nlohmann/json` 解析失败，回退到默认值。
+**原因**：文件编码带 UTF-8 BOM 或 JSON 格式非法，`nlohmann/json` 解析失败，回退到默认值。
 
 **验证**：看日志第一行：
 
-- `[HdrConfig] Loaded: ... (qualityLevel=X, presets=N, ...)` → 加载成功
-- `[HdrConfig] ... not found, creating default` → JSON 不存在或解析失败
+- `[HdrConfig] Loaded: ... (pipeline=..., qualityLevel=X, presets=N, tonemap=...)` → 加载成功
+- `[HdrConfig] ... not found or invalid, creating default` → JSON 不存在或解析失败
 
 **修复**：用 VS Code 右下角编码选择器，改成 **"UTF-8"**（不是 "UTF-8 with BOM"）。
+
+> 注意：使用 `_WITH_DEFAULT` 反序列化后，**单个字段缺失**不会导致解析失败，缺失字段使用类内默认值；只有整体格式错误（BOM、语法错误、类型不匹配）才会回退默认配置。
 
 ### Q2：修改 JSON 后是否需要重新编译？
 
@@ -516,6 +729,8 @@ detailEnhance 的参数，对应 `sigma_s`（空间域标准差）和 `sigma_r`�
 | 3 | `saturationWeight` | 决定色彩饱和度 |
 | 4 | `unsharpThreshold` | 决定噪点是否被锐化 |
 
+物理 HDR 路径下，`tonemapType` 与 `dragoSaturation` / `reinhardIntensity` 对整体风格的影响通常大于上述 Mertens 参数。
+
 ### Q5：改 `qualityPresets` 时漏写某个字段会怎样？
 
 **该字段会变成 `QualityPreset` 的默认值**（`contrastWeight=1.2` 等），不是"用 JSON 里的细粒度字段"。
@@ -534,15 +749,45 @@ detailEnhance 的参数，对应 `sigma_s`（空间域标准差）和 `sigma_r`�
 
 ### Q8：JSON 里 `qualityLevel` 写小数会怎样？
 
-`qualityLevel` 是 `int`，JSON 里写 `1.5` 会**解析失败**（`nlohmann/json` 抛异常或返回 `nullopt`），回退到默认配置。
+`qualityLevel` 是 `int`，JSON 里写 `1.5` 会**解析失败**，回退到默认配置。
 
 **必须写整数**。
+
+### Q9：`pipelineMode` 写错会怎样？
+
+只有 `"physical"` 会触发物理 HDR 分支，其他任何值（包括拼写错误）都会按 `"mertens"` 处理。建议严格写 `"mertens"` 或 `"physical"`。
+
+### Q10：物理 HDR 失败时返回码是什么？
+
+物理 HDR 失败**不新增返回码**。`MergePhysicalHdr` 内部失败（曝光不可用、`MergeDebevec` 空、Tonemap 空）会打印警告并回退 Mertens，最终返回码按 Mertens 路径给出（0/4/5/6）。日志中可见 `Physical HDR failed (rc=...), fallback to Mertens`。
+
+### Q11：物理 HDR 没有生成 `04_hdr_linear_32f.hdr`
+
+- `saveIntermediate = false` → 中间产物全部关闭。
+- 物理路径失败回退 Mertens → 此时生成的是 `04_hdr_merged_raw.jpg`，不是 `.hdr`。
+- 查看日志确认最终走的是哪条管线：`Physical HDR succeeded` 还是 `fallback to Mertens`。
+
+### Q12：物理 HDR 结果和 Mertens 几乎一样
+
+检查日志：
+
+- 若出现 `fallback to Mertens` → 物理路径没跑通，按 Q10 排查 EXIF 或 `MergeDebevec`。
+- 若显示 `Physical HDR succeeded` 但结果相近 → 三张输入动态范围本身较窄，或 `tonemapType` 参数过于保守，可尝试调大 `dragoSaturation` 或改用 `reinhard` 并调整 `reinhardIntensity`。
+
+### Q13：`tonemapType` 写错会怎样？
+
+未知值会打印警告并回退 `"drago"`，不会导致失败。
+
+### Q14：`manualExposureTimes` / `manualIsos` 只写 2 个值会怎样？
+
+两者必须**同时恰好为 3 个值**才会被采用；否则视为不可用，若 EXIF 也缺失，则回退 Mertens 并打印 `no valid exposure info`。
 
 ---
 
 ## 相关文件
 
 - `inc/HdrMerge/HdrConfig.h` — 配置结构体（`QualityPreset` + `HdrConfig`）+ `ApplyQualityLevel` + JSON 序列化
-- `inc/HdrMerge/HdrMerge.h` — HDR 融合实现
-- `tests/HdrMerge/HdrMergeTest.h` — 测试入口（含单次运行 + 多档位对比）
+- `inc/HdrMerge/HdrMerge.h` — HDR 融合实现（Mertens + 物理 HDR 双管线）
+- `inc/Exiv2Common.h` — `ExposureInfo` / `ReadExposureInfo`，读取曝光时间与 ISO
+- `tests/HdrMerge/HdrMergeTest.h` — 测试入口（单次运行 + 多档位对比 + 物理 HDR 双 tonemap 对比）
 - `data/HdrMerge/{low,normal,high}.jpg` — 输入数据
