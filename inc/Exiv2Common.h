@@ -24,3 +24,5 @@ inline const std::string& Exif2Path() {
     static const std::string s = EnvRootPath() + "/data/HdrMerge/normal.jpg";
     return s;
 }
+
+#endif  
