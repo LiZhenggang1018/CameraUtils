@@ -1,11 +1,3 @@
-/*
- * Copyright (c) 2026 by Vivo Technologies Co., Ltd, All Rights Reserved.
- * @Description:
- * @Author: lizhenggang
- * @Date: 2026-11-13 16:19:43
- * @LastEditTime: 2026-11-16 11:28:06
- * @FilePath: \CameraUtils\inc\Exiv2Common.h
- */
 #ifndef EXIV2COMMON_H
 #define EXIV2COMMON_H
 
@@ -15,14 +7,73 @@
 #include "CommonEnv.h"
 
 // ============================================================
-// 路径常量：全部改为"函数内 static"返回，避免跨文件静态初始化顺序问题
-// 使用方式与原全局变量完全一致（通过 #define 宏别名），引用点无需修改
+// 路径常量：函数内 static，避免跨文件静态初始化顺序问题
 // ============================================================
-
-// 根路径（末尾带斜杠，与原 LP_SMOOTH_PLAY_DATA_PATH 语义一致）
 inline const std::string& Exif2Path() {
     static const std::string s = EnvRootPath() + "/data/HdrMerge/normal.jpg";
     return s;
 }
 
-#endif  
+namespace CameraUtils {
+
+// ============================================================
+// 曝光信息：时间 + ISO
+//   - 二者都有效才认为 valid()，物理 HDR 需要两者共同确定等效曝光量
+// ============================================================
+struct ExposureInfo
+{
+    double timeSeconds = -1.0;   // 秒
+    double iso         = -1.0;
+    bool valid() const { return timeSeconds > 0.0 && iso > 0.0; }
+};
+
+// ============================================================
+// 从 EXIF 读取曝光时间与 ISO
+//   - ExposureTime: Exif.Photo.ExposureTime (Rational，如 1/500 → 0.002)
+//   - ISO:          Exif.Photo.PhotographicSensitivity (tag 34855)
+//                   回退 Exif.Photo.ISOSpeedRatings
+//   - 任一读取失败 → 保持 -1，valid() == false
+// ============================================================
+inline ExposureInfo ReadExposureInfo(const std::string& filePath)
+{
+    ExposureInfo info;
+    try
+    {
+        auto image = Exiv2::ImageFactory::open(filePath);
+        if (!image.get())
+        {
+            return info;
+        }
+        image->readMetadata();
+        const auto& exif = image->exifData();
+        if (exif.empty())
+        {
+            return info;
+        }
+
+        auto itTime = exif.findKey(Exiv2::ExifKey("Exif.Photo.ExposureTime"));
+        if (itTime != exif.end())
+        {
+            info.timeSeconds = static_cast<double>(itTime->toFloat());
+        }
+
+        auto itIso = exif.findKey(Exiv2::ExifKey("Exif.Photo.PhotographicSensitivity"));
+        if (itIso == exif.end())
+        {
+            itIso = exif.findKey(Exiv2::ExifKey("Exif.Photo.ISOSpeedRatings"));
+        }
+        if (itIso != exif.end())
+        {
+            info.iso = static_cast<double>(itIso->toFloat());
+        }
+    }
+    catch (const Exiv2::Error&)
+    {
+        // 保持无效状态，由调用方决定回退策略
+    }
+    return info;
+}
+
+} // namespace CameraUtils
+
+#endif // EXIV2COMMON_H
