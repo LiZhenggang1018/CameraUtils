@@ -6,6 +6,7 @@
 #include "MagicEnumTest.h"
 #include "OpticalFlowTest.h"
 #include "HdrMerge/HdrMergeTest.h"
+#include "Exiv2Test.h"
 
 inline void RunTest()
 {
