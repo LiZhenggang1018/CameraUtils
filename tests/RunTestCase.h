@@ -40,6 +40,7 @@ inline void RunTest()
      //Upsample30To60();
      //RunHdrMergeTest();
     //CameraUtils::Exif2Test();
+    RunHdrMergePhysicalTest();
 }
 
 #endif
