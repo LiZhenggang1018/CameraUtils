@@ -61,5 +61,7 @@
 #include "DecDemo.h"
 #include "LpFovTransitionOpt.h"
 
+#include "Exiv2Common.h"
+
 
 #endif // UTILS_H
