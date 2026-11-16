@@ -284,18 +284,20 @@ else()
     CPMAddPackage(
         NAME exiv2
         GITHUB_REPOSITORY Exiv2/exiv2
-        GIT_TAG 0.28.7
+        GIT_TAG v0.28.7
         GIT_SHALLOW TRUE
         OPTIONS
             "BUILD_SHARED_LIBS OFF"
             "EXIV2_BUILD_EXIV2 OFF"
-            "EXIV2_ENABLE_PNG ON"
+            "EXIV2_ENABLE_PNG OFF" # ← 改为 OFF，消除 ZLIB 依赖
             "EXIV2_ENABLE_JPEG ON"
             "EXIV2_ENABLE_TIFF ON"
-            "EXIV2_ENABLE_XMP ON"
+            "EXIV2_ENABLE_XMP OFF"      # ← 改为 OFF，消除 EXPAT 依赖
             "EXIV2_ENABLE_WEBP OFF"
             "EXIV2_ENABLE_INOTIFY OFF"
             "EXIV2_ENABLE_TESTING OFF"
+            "EXIV2_ENABLE_BROTLI OFF"   # 新增：关闭 Brotli/JPEG XL 支持
+            "EXIV2_ENABLE_INIH OFF"       # ← 新增：关闭 inih 依赖
     )
     set(EXIV2_INCLUDE_DIR "${exiv2_SOURCE_DIR}/include")
     set(EXIV2_LIBS exiv2lib)

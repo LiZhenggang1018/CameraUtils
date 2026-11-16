@@ -26,6 +26,7 @@ target_include_directories(CameraUtils SYSTEM PRIVATE
     ${OpenCV_INCLUDE_DIRS}
     ${FFMPEG_INCLUDE_DIR}
     ${EXIV2_INCLUDE_DIR}
+    ${CMAKE_BINARY_DIR}        # exiv2lib_export.h 所在目录
 )
 
 target_link_directories(CameraUtils PRIVATE
