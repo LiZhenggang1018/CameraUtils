@@ -5,7 +5,7 @@ CameraUtils
 Utils code for Android camera HAL use / 安卓相机领域 硬件抽象层HAL的一些通用工具类+代码
 
 运行环境：\
-windows11 OS + visual studio 2022 本地计算机 x64Debug,
+windows11 OS + visual studio 2022 本地计算机 x64Debug/Release,
 
 编程语言：\
 C++20
