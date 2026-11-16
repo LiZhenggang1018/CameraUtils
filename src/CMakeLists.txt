@@ -25,6 +25,7 @@ target_include_directories(CameraUtils PRIVATE
 target_include_directories(CameraUtils SYSTEM PRIVATE
     ${OpenCV_INCLUDE_DIRS}
     ${FFMPEG_INCLUDE_DIR}
+    ${EXIV2_INCLUDE_DIR}
 )
 
 target_link_directories(CameraUtils PRIVATE
@@ -34,6 +35,7 @@ target_link_directories(CameraUtils PRIVATE
 target_link_libraries(CameraUtils PRIVATE
     ${OpenCV_LIBS}
     ${FFMPEG_LIBS}
+    ${EXIV2_LIBS}
     STDEXEC::stdexec
     nlohmann_json::nlohmann_json
     magic_enum::magic_enum
