@@ -4,7 +4,3 @@
 #include <string>
 #include <unordered_map>
 #include <exiv2/exiv2.hpp>
-
-
-
-} // namespace CameraUtils

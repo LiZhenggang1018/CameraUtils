@@ -42,4 +42,9 @@ inline std::string GetExifValue(const std::string& filePath,
     return it->value().toString();
 }
 
+
+
+} // namespace CameraUtils
+
+
 #endif // TESTS_EXIV2TEST_H_
