@@ -38,7 +38,8 @@ inline void RunTest()
     // HarrisTest();
      // OpticalFlowTest();
      //Upsample30To60();
-     RunHdrMergeTest();
+     //RunHdrMergeTest();
+     Exif2Test();
 }
 
 #endif
