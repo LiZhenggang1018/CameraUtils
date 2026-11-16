@@ -1,13 +1,6 @@
 /*
- * @Description: HDR 融合配置（支持 JSON 序列化 + 可配置的质量档位）
- *
- * 设计：
- *   - QualityPreset：单个档位的参数集合
- *   - HdrConfig::qualityPresets：档位定义表（key = "0"/"1"/"2"，value = QualityPreset）
- *   - qualityLevel：选哪一档；-1 = 自定义（用细粒度字段）
- *   - 所有档位数值都可以在 JSON 里调整，无需重编译
+ * @Description: HDR 融合配置（支持 Mertens / 物理 HDR 双管线）
  */
-
 #ifndef HDR_CONFIG_H
 #define HDR_CONFIG_H
 
@@ -17,11 +10,10 @@
 #include <cstdio>
 #include <map>
 #include <string>
+#include <vector>
 
 // ============================================================
-// 质量档位的参数集合
-//   - 一个 QualityPreset 就是"一套可调参数"
-//   - 通过 HdrConfig::qualityPresets 可以增删/修改档位
+// 质量档位参数集合
 // ============================================================
 struct QualityPreset
 {
@@ -34,7 +26,8 @@ struct QualityPreset
     double unsharpThreshold    = 0.0;
     bool   enableDetailEnhance = false;
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(QualityPreset,
+    // _WITH_DEFAULT：JSON 缺失字段用类内默认值，兼容旧配置文件
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(QualityPreset,
         contrastWeight, saturationWeight, exposureWeight,
         enableUnsharpMask, unsharpAmount, unsharpRadius, unsharpThreshold,
         enableDetailEnhance)
@@ -42,26 +35,24 @@ struct QualityPreset
 
 // ============================================================
 // HDR 融合配置
-//
-// 配置文件：<项目根>/configs/HdrConfig.json
-// 首次运行自动生成默认配置；之后改 JSON 无需重编译
 // ============================================================
 struct HdrConfig
 {
-    // ---- 质量档位选择 ----
-    //   >= 0 → 从 qualityPresets 里找 key = std::to_string(qualityLevel) 的 preset
-    //   -1  → 不覆盖，使用下面的细粒度字段
+    // ---- 管线模式 ----
+    //   "mertens"  : 现有 Mertens 曝光融合（默认，向后兼容）
+    //   "physical" : EXIF 曝光 + De-gamma + MergeDebevec + Tonemap
+    std::string pipelineMode = "mertens";
+
+    // ---- 质量档位 ----
     int qualityLevel = 1;
 
-    // ---- 档位定义表（可在 JSON 里增删改）----
-    // 默认提供 3 档；用户可以在 JSON 里加 "3" / "4" 等新档位
     std::map<std::string, QualityPreset> qualityPresets = {
-        { "0", QualityPreset{ 0.8, 1.0, 1.0, false, 0.6, 1.2, 0.0, false } },  // 柔和
-        { "1", QualityPreset{ 1.2, 1.1, 1.0, true,  0.6, 1.2, 0.0, false } },  // 平衡
-        { "2", QualityPreset{ 1.5, 1.2, 1.2, true,  1.0, 1.5, 2.0, false } },  // 锐利
+        { "0", QualityPreset{ 0.8, 1.0, 1.0, false, 0.6, 1.2, 0.0, false } },
+        { "1", QualityPreset{ 1.2, 1.1, 1.0, true,  0.6, 1.2, 0.0, false } },
+        { "2", QualityPreset{ 1.5, 1.2, 1.2, true,  1.0, 1.5, 2.0, false } },
     };
 
-    // ---- 细粒度字段（qualityLevel = -1 时生效）----
+    // ---- 细粒度字段 ----
     double contrastWeight   = 1.2;
     double saturationWeight = 1.1;
     double exposureWeight   = 1.0;
@@ -80,16 +71,36 @@ struct HdrConfig
     double detailSigma_s       = 10.0;
     double detailSigma_r       = 0.15;
 
+    // ---- 物理 HDR ----
+    bool   readExposureFromExif = true;
+    std::vector<double> manualExposureTimes;  // 秒，size=3（EXIF 失败时回退）
+    std::vector<double> manualIsos;           // size=3
+    double baseIso = 100.0;                   // 等效曝光量归一化基准
+
+    bool   calibrateResponse = false;         // 是否用 CalibrateDebevec 估计 CRF
+    std::string tonemapType  = "drago";       // "drago" | "reinhard"
+
+    double dragoGamma        = 1.0;
+    double dragoSaturation   = 1.0;
+    double reinhardGamma     = 1.0;
+    double reinhardIntensity = 0.0;           // 0 = 自动
+    double reinhardLightAdapt = 0.0;          // 0 = 自动
+
     bool   saveIntermediate = true;
 
-    // 一行宏完成所有字段的序列化/反序列化
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(HdrConfig,
+    // _WITH_DEFAULT：新增字段在旧 JSON 缺失时使用类内默认值，不会导致加载失败
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(HdrConfig,
+        pipelineMode,
         qualityLevel,
         qualityPresets,
         contrastWeight, saturationWeight, exposureWeight,
         autoDetectBorder, cropRatio, blackThreshold, blackRatio,
         enableUnsharpMask, unsharpAmount, unsharpRadius, unsharpThreshold,
         enableDetailEnhance, detailSigma_s, detailSigma_r,
+        readExposureFromExif, manualExposureTimes, manualIsos, baseIso,
+        calibrateResponse, tonemapType,
+        dragoGamma, dragoSaturation,
+        reinhardGamma, reinhardIntensity, reinhardLightAdapt,
         saveIntermediate)
 
     static const std::string& DefaultPath()
@@ -98,12 +109,11 @@ struct HdrConfig
         return p;
     }
 
-    // 从 qualityPresets 里取对应档位，覆盖细粒度字段
+    // 用 preset 覆盖受档位影响的 8 个字段
     void ApplyQualityLevel()
     {
         if (qualityLevel < 0)
         {
-            // -1 或更小：不覆盖，使用细粒度字段
             return;
         }
 
@@ -136,15 +146,15 @@ struct HdrConfig
         {
             HdrConfig cfg = opt.value();
             cfg.ApplyQualityLevel();
-            std::printf("[HdrConfig] Loaded: %s (qualityLevel=%d, presets=%zu, "
-                        "effective contrast=%.2f, unsharpAmount=%.2f, enableDetailEnhance=%d)\n",
-                        path.c_str(), cfg.qualityLevel, cfg.qualityPresets.size(),
-                        cfg.contrastWeight, cfg.unsharpAmount,
-                        static_cast<int>(cfg.enableDetailEnhance));
+            std::printf("[HdrConfig] Loaded: %s (pipeline=%s, qualityLevel=%d, presets=%zu, "
+                        "tonemap=%s, effective contrast=%.2f, unsharpAmount=%.2f)\n",
+                        path.c_str(), cfg.pipelineMode.c_str(), cfg.qualityLevel,
+                        cfg.qualityPresets.size(), cfg.tonemapType.c_str(),
+                        cfg.contrastWeight, cfg.unsharpAmount);
             return cfg;
         }
 
-        std::printf("[HdrConfig] %s not found, creating default\n", path.c_str());
+        std::printf("[HdrConfig] %s not found or invalid, creating default\n", path.c_str());
         HdrConfig def;
         Srlz(def, path);
         return def;
