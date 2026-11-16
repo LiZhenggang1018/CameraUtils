@@ -42,7 +42,16 @@ inline std::string GetExifValue(const std::string& filePath,
     return it->value().toString();
 }
 
+inline void Exif2Test() {
+    const std::string& filePath = Exif2Path();
+    auto exifData = ReadExif(filePath);
+    for (const auto& [key, value] : exifData) {
+        std::cout << key << ": " << value << std::endl;
+    }
 
+    // 测试按需取单个字段
+    std::string dateTimeOriginal = GetExifValue(filePath, "Exif.Photo.DateTimeOriginal");
+    std::cout << "DateTimeOriginal: " << dateTimeOriginal << std::endl;
 
 } // namespace CameraUtils
 
