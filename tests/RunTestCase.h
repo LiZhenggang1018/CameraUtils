@@ -39,7 +39,7 @@ inline void RunTest()
      // OpticalFlowTest();
      //Upsample30To60();
      //RunHdrMergeTest();
-     Exif2Test();
+    //CameraUtils::Exif2Test();
 }
 
 #endif

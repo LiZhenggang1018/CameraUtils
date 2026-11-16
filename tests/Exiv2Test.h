@@ -1,7 +1,7 @@
 #ifndef TESTS_EXIV2TEST_H_
 #define TESTS_EXIV2TEST_H_
 
-#include "ExifCommon.h"
+#include "Exiv2Common.h"
 
 namespace CameraUtils {
 
@@ -52,8 +52,9 @@ inline void Exif2Test() {
     // 测试按需取单个字段
     std::string dateTimeOriginal = GetExifValue(filePath, "Exif.Photo.DateTimeOriginal");
     std::cout << "DateTimeOriginal: " << dateTimeOriginal << std::endl;
+}
 
-} // namespace CameraUtils
 
+}
 
 #endif // TESTS_EXIV2TEST_H_
