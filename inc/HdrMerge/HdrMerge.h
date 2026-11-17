@@ -446,21 +446,29 @@ inline cv::Mat NormalizedAbsDiff(
     return diff;
 }
 
-// ============================================================
-// Level 1：亮度归一化帧差 → mask
-// ============================================================
 inline cv::Mat DetectMotionDiff(
     const cv::Mat& lowCropped,
     const cv::Mat& normalCropped,
     const cv::Mat& highCropped,
     const HdrConfig& cfg)
 {
-    cv::Mat diffLow  = NormalizedAbsDiff(normalCropped, lowCropped);
-    cv::Mat diffHigh = NormalizedAbsDiff(normalCropped, highCropped);
-    cv::Mat diff = cv::max(diffLow, diffHigh);
+    cv::Mat lut = BuildSrgbDegammaLUT();
+    cv::Mat linL = SrgbToLinear(lowCropped,    lut);
+    cv::Mat linN = SrgbToLinear(normalCropped, lut);
+    cv::Mat linH = SrgbToLinear(highCropped,   lut);
 
+    // 线性域中位数比值对齐
+    double mL = LinearMedian(linL), mN = LinearMedian(linN), mH = LinearMedian(linH);
+    linL *= (mN / std::max(mL, 1e-6));
+    linH *= (mN / std::max(mH, 1e-6));
+
+    cv::Mat diffL = LinearAbsDiff(linN, linL);
+    cv::Mat diffH = LinearAbsDiff(linN, linH);
+    cv::Mat diff  = cv::max(diffL, diffH);   // 可以是逐通道 max，再转灰度
+
+    // 自适应阈值（Otsu 或局部）
     cv::Mat mask;
-    cv::threshold(diff, mask, cfg.motionThreshold, 255, cv::THRESH_BINARY);
+    cv::threshold(diff, mask, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);
     return mask;
 }
 
