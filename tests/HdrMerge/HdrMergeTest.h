@@ -80,8 +80,7 @@ inline void RunHdrMergeMultiLevelTest()
 }
 
 // ============================================================
-// 物理 HDR 测试：分别用 Drago / Reinhard 两种 tonemap
-//   若 EXIF 缺失，主流程会自动回退 Mertens，日志中可见 fallback 提示
+// 物理 HDR 测试（Drago / Reinhard）
 // ============================================================
 inline void RunHdrMergePhysicalTest()
 {
@@ -98,9 +97,9 @@ inline void RunHdrMergePhysicalTest()
     for (const auto& type : tonemapTypes)
     {
         HdrConfig cfg = baseCfg;
-        cfg.pipelineMode     = "physical";
-        cfg.tonemapType      = type;
-        cfg.enableUnsharpMask = false;   // 先看纯 tonemap 结果
+        cfg.pipelineMode      = "physical";
+        cfg.tonemapType       = type;
+        cfg.enableUnsharpMask = false;
 
         const std::string outDir = dataDir + "result_physical_" + type + "/";
         std::cout << "\n--- [pipeline=physical, tonemap=" << type << "] ---" << std::endl;
@@ -110,6 +109,58 @@ inline void RunHdrMergePhysicalTest()
     }
 
     std::cout << "========== HdrMerge Physical end ============" << std::endl;
+}
+
+// ============================================================
+// 鬼影抑制测试
+//   1) Mertens + diff
+//   2) Physical + diff（Drago）
+//   3) Mertens + flow+diff
+//   每次开启 saveMotionMask，便于人工核对检测结果
+// ============================================================
+inline void RunHdrMergeGhostSuppressionTest()
+{
+    const std::string dataDir    = EnvRootPath() + "/data/HdrMerge/";
+    const std::string lowPath    = dataDir + "low.jpg";
+    const std::string normalPath = dataDir + "normal.jpg";
+    const std::string highPath   = dataDir + "high.jpg";
+
+    std::cout << "========== HdrMerge Ghost-Suppression begin ==========" << std::endl;
+
+    const HdrConfig baseCfg = HdrConfig::LoadFromFile(HdrConfig::DefaultPath());
+
+    struct Case
+    {
+        std::string label;
+        std::string pipeline;
+        std::string ghostMode;
+    };
+
+    const std::vector<Case> cases = {
+        { "ghost_mertens_diff",  "mertens",  "diff" },
+        { "ghost_physical_diff", "physical", "diff" },
+        { "ghost_mertens_flowdiff", "mertens", "flow+diff" },
+    };
+
+    for (const auto& c : cases)
+    {
+        HdrConfig cfg = baseCfg;
+        cfg.pipelineMode           = c.pipeline;
+        cfg.enableGhostSuppression = true;
+        cfg.ghostDetectionMode     = c.ghostMode;
+        cfg.saveMotionMask         = true;
+        cfg.enableUnsharpMask      = false;   // 先看纯融合结果
+
+        const std::string outDir = dataDir + "result_" + c.label + "/";
+        std::cout << "\n--- [" << c.label
+                  << " | pipeline=" << c.pipeline
+                  << " | mode=" << c.ghostMode << "] ---" << std::endl;
+
+        int rc = hdr_merge::HdrMergeFromFiles(lowPath, normalPath, highPath, outDir, cfg);
+        std::cout << "[" << c.label << "] rc = " << rc << std::endl;
+    }
+
+    std::cout << "========== HdrMerge Ghost-Suppression end ============" << std::endl;
 }
 
 #endif // HDR_MERGE_TEST_H
