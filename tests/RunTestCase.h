@@ -40,7 +40,9 @@ inline void RunTest()
      //Upsample30To60();
      //RunHdrMergeTest();
     //CameraUtils::Exif2Test();
-    RunHdrMergePhysicalTest();
+    //RunHdrMergePhysicalTest();
+    RunHdrMergeGhostSuppressionTest();   // 鬼影抑制（Mertens+diff / Physical+diff / Mertens+flow+diff）
+
 }
 
 #endif
