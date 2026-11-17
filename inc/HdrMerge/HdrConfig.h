@@ -1,5 +1,5 @@
 /*
- * @Description: HDR 融合配置（支持 Mertens / 物理 HDR 双管线）
+ * @Description: HDR 融合配置（Mertens / 物理 HDR 双管线 + 鬼影抑制）
  */
 #ifndef HDR_CONFIG_H
 #define HDR_CONFIG_H
@@ -26,7 +26,6 @@ struct QualityPreset
     double unsharpThreshold    = 0.0;
     bool   enableDetailEnhance = false;
 
-    // _WITH_DEFAULT：JSON 缺失字段用类内默认值，兼容旧配置文件
     NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(QualityPreset,
         contrastWeight, saturationWeight, exposureWeight,
         enableUnsharpMask, unsharpAmount, unsharpRadius, unsharpThreshold,
@@ -39,9 +38,7 @@ struct QualityPreset
 struct HdrConfig
 {
     // ---- 管线模式 ----
-    //   "mertens"  : 现有 Mertens 曝光融合（默认，向后兼容）
-    //   "physical" : EXIF 曝光 + De-gamma + MergeDebevec + Tonemap
-    std::string pipelineMode = "mertens";
+    std::string pipelineMode = "mertens";   // "mertens" | "physical"
 
     // ---- 质量档位 ----
     int qualityLevel = 1;
@@ -73,22 +70,34 @@ struct HdrConfig
 
     // ---- 物理 HDR ----
     bool   readExposureFromExif = true;
-    std::vector<double> manualExposureTimes;  // 秒，size=3（EXIF 失败时回退）
-    std::vector<double> manualIsos;           // size=3
-    double baseIso = 100.0;                   // 等效曝光量归一化基准
+    std::vector<double> manualExposureTimes;
+    std::vector<double> manualIsos;
+    double baseIso = 100.0;
 
-    bool   calibrateResponse = false;         // 是否用 CalibrateDebevec 估计 CRF
-    std::string tonemapType  = "drago";       // "drago" | "reinhard"
+    bool   calibrateResponse = false;
+    std::string tonemapType  = "drago";
 
-    double dragoGamma        = 1.0;
-    double dragoSaturation   = 1.0;
-    double reinhardGamma     = 1.0;
-    double reinhardIntensity = 0.0;           // 0 = 自动
-    double reinhardLightAdapt = 0.0;          // 0 = 自动
+    double dragoGamma         = 1.0;
+    double dragoSaturation    = 1.0;
+    double reinhardGamma      = 1.0;
+    double reinhardIntensity  = 0.0;
+    double reinhardLightAdapt = 0.0;
+
+    // ---- 鬼影抑制 ----
+    //   ghostDetectionMode:
+    //     "diff"      : 亮度归一化帧差（默认，主力）
+    //     "flow"      : 双向 LK 反推不稳定点（补充）
+    //     "flow+diff" : 两者并集
+    bool        enableGhostSuppression = false;
+    std::string ghostDetectionMode     = "diff";
+    double      motionThreshold        = 15.0;   // Level 1 帧差阈值（0~255 灰度）
+    double      lkFbThreshold          = 1.5;    // Level 2 LK 前后向误差阈值（px）
+    int         motionDilateRadius     = 20;     // mask 稠密化/膨胀半径（px）
+    double      ghostSuppressStrength  = 1.0;    // 0~1，mask 回填强度
+    bool        saveMotionMask         = false;  // 输出 06_motion_mask.png
 
     bool   saveIntermediate = true;
 
-    // _WITH_DEFAULT：新增字段在旧 JSON 缺失时使用类内默认值，不会导致加载失败
     NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(HdrConfig,
         pipelineMode,
         qualityLevel,
@@ -101,6 +110,9 @@ struct HdrConfig
         calibrateResponse, tonemapType,
         dragoGamma, dragoSaturation,
         reinhardGamma, reinhardIntensity, reinhardLightAdapt,
+        enableGhostSuppression, ghostDetectionMode,
+        motionThreshold, lkFbThreshold, motionDilateRadius,
+        ghostSuppressStrength, saveMotionMask,
         saveIntermediate)
 
     static const std::string& DefaultPath()
@@ -109,7 +121,6 @@ struct HdrConfig
         return p;
     }
 
-    // 用 preset 覆盖受档位影响的 8 个字段
     void ApplyQualityLevel()
     {
         if (qualityLevel < 0)
@@ -147,10 +158,11 @@ struct HdrConfig
             HdrConfig cfg = opt.value();
             cfg.ApplyQualityLevel();
             std::printf("[HdrConfig] Loaded: %s (pipeline=%s, qualityLevel=%d, presets=%zu, "
-                        "tonemap=%s, effective contrast=%.2f, unsharpAmount=%.2f)\n",
+                        "tonemap=%s, ghost=%d/%s, effective contrast=%.2f)\n",
                         path.c_str(), cfg.pipelineMode.c_str(), cfg.qualityLevel,
                         cfg.qualityPresets.size(), cfg.tonemapType.c_str(),
-                        cfg.contrastWeight, cfg.unsharpAmount);
+                        static_cast<int>(cfg.enableGhostSuppression),
+                        cfg.ghostDetectionMode.c_str(), cfg.contrastWeight);
             return cfg;
         }
 
