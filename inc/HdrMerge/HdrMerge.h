@@ -1,5 +1,5 @@
 /*
- * @Description: HDR 融合（配准 + Mertens / 物理 HDR 双管线）
+ * @Description: HDR 融合（Mertens / 物理 HDR 双管线 + 鬼影抑制）
  */
 #ifndef HDR_MERGE_H
 #define HDR_MERGE_H
@@ -7,11 +7,13 @@
 #include "OpenCVCommon.h"
 #include "HdrMerge/HdrConfig.h"
 #include "LivePhotoSmoothPlay/ImageRegistrator.h"
+#include "OpticalFlow/BiDirectionalLkFilter.h"
 #include "Exiv2Common.h"
 #include "CommonEnv.h"
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <filesystem>
 #include <iostream>
 #include <string>
@@ -20,18 +22,24 @@
 namespace hdr_merge {
 
 // ============================================================
-// 配准（不变）
+// 配准（新增可选 outResult 输出配准质量指标）
 // ============================================================
 inline cv::Mat AlignToReference(
     const cv::Mat& reference,
     const cv::Mat& target,
     ImageRegistrator& registrator,
     FeatureDetectorType detector = FeatureDetectorType::ORB,
-    TransformType transform = TransformType::HOMOGRAPHY)
+    TransformType transform = TransformType::HOMOGRAPHY,
+    RegistrationResult* outResult = nullptr)
 {
     try
     {
         auto result = registrator.registerImages(reference, target, detector, transform);
+
+        if (outResult)
+        {
+            *outResult = result;
+        }
 
         if (result.registered_image.empty())
         {
@@ -60,6 +68,10 @@ inline cv::Mat AlignToReference(
     {
         std::cerr << "[HdrMerge] Align exception: " << e.what()
                   << ", use resized original" << std::endl;
+        if (outResult)
+        {
+            *outResult = RegistrationResult{};
+        }
         cv::Mat fallback;
         cv::resize(target, fallback, reference.size());
         return fallback;
@@ -248,8 +260,7 @@ inline cv::Mat MergeMertens(
 }
 
 // ============================================================
-// 物理 HDR：sRGB De-gamma LUT
-//   输入 8-bit sRGB，输出 [0,1] 线性浮点
+// 物理 HDR 基础：sRGB De-gamma LUT
 // ============================================================
 inline cv::Mat BuildSrgbDegammaLUT()
 {
@@ -269,7 +280,6 @@ inline cv::Mat BuildSrgbDegammaLUT()
     return lut;
 }
 
-// 单通道 LUT 对多通道输入逐通道应用，输出 CV_32FC3
 inline cv::Mat SrgbToLinear(const cv::Mat& bgr8u, const cv::Mat& lut)
 {
     cv::Mat linear;
@@ -278,11 +288,7 @@ inline cv::Mat SrgbToLinear(const cv::Mat& bgr8u, const cv::Mat& lut)
 }
 
 // ============================================================
-// 物理 HDR：解析等效曝光量
-//   effectiveExposure = timeSeconds * iso / baseIso
-//   - EXIF 三帧齐全 → 用 EXIF
-//   - 否则若手动配置了三对 time/iso → 用手动值
-//   - 都不可用 → 返回空 vector，调用方回退 Mertens
+// 物理 HDR：等效曝光量解析（不变）
 // ============================================================
 inline std::vector<float> ResolveEffectiveExposures(
     const std::string& lowPath,
@@ -346,8 +352,7 @@ inline std::vector<float> ResolveEffectiveExposures(
 }
 
 // ============================================================
-// 物理 HDR：色调映射
-//   hdr32f: CV_32FC3 线性辐射图 → CV_8UC3 LDR
+// 物理 HDR：色调映射（不变）
 // ============================================================
 inline cv::Mat TonemapHdr(const cv::Mat& hdr32f, const HdrConfig& cfg)
 {
@@ -398,8 +403,302 @@ inline cv::Mat TonemapHdr(const cv::Mat& hdr32f, const HdrConfig& cfg)
 }
 
 // ============================================================
-// 物理 HDR：完整子流程
-//   返回 0 = 成功；1/2/3 = 曝光信息/MergeDebevec/Tonemap 失败
+// 鬼影抑制：工具函数
+// ============================================================
+
+// 灰度图的中位数（用于亮度归一化）
+inline double ComputeGrayMedian(const cv::Mat& gray)
+{
+    if (gray.empty()) return 0.0;
+
+    cv::Mat flat = gray.reshape(1, 1);
+    if (!flat.isContinuous())
+    {
+        flat = flat.clone();
+    }
+    if (flat.total() == 0) return 0.0;
+
+    std::vector<uint8_t> data(flat.data, flat.data + flat.total());
+    const size_t mid = data.size() / 2;
+    std::nth_element(data.begin(), data.begin() + mid, data.end());
+    return static_cast<double>(data[mid]);
+}
+
+// 亮度归一化后的灰度差分
+inline cv::Mat NormalizedAbsDiff(
+    const cv::Mat& refBgr,
+    const cv::Mat& otherBgr)
+{
+    cv::Mat gRef, gOther;
+    cv::cvtColor(refBgr,   gRef,   cv::COLOR_BGR2GRAY);
+    cv::cvtColor(otherBgr, gOther, cv::COLOR_BGR2GRAY);
+
+    const double mRef   = ComputeGrayMedian(gRef);
+    const double mOther = ComputeGrayMedian(gOther);
+    double s = mRef / std::max(mOther, 1.0);
+    s = std::clamp(s, 0.2, 5.0);   // 防爆
+
+    cv::Mat scaled;
+    gOther.convertTo(scaled, CV_8U, s);
+
+    cv::Mat diff;
+    cv::absdiff(gRef, scaled, diff);
+    return diff;
+}
+
+// ============================================================
+// Level 1：亮度归一化帧差 → mask
+// ============================================================
+inline cv::Mat DetectMotionDiff(
+    const cv::Mat& lowCropped,
+    const cv::Mat& normalCropped,
+    const cv::Mat& highCropped,
+    const HdrConfig& cfg)
+{
+    cv::Mat diffLow  = NormalizedAbsDiff(normalCropped, lowCropped);
+    cv::Mat diffHigh = NormalizedAbsDiff(normalCropped, highCropped);
+    cv::Mat diff = cv::max(diffLow, diffHigh);
+
+    cv::Mat mask;
+    cv::threshold(diff, mask, cfg.motionThreshold, 255, cv::THRESH_BINARY);
+    return mask;
+}
+
+// ============================================================
+// Level 2：双向 LK 反推不稳定点 → mask
+// ============================================================
+inline cv::Mat DetectMotionLk(
+    const cv::Mat& lowCropped,
+    const cv::Mat& normalCropped,
+    const cv::Mat& highCropped,
+    const HdrConfig& cfg)
+{
+    cv::Mat gL, gN, gH;
+    cv::cvtColor(lowCropped,    gL, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(normalCropped, gN, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(highCropped,   gH, cv::COLOR_BGR2GRAY);
+
+    // 检测角点：按面积自适应，保持点密度合理
+    const int maxCorners = std::clamp(
+        static_cast<int>(gN.total() / 2000), 200, 800);
+
+    std::vector<cv::Point2f> pts;
+    cv::goodFeaturesToTrack(gN, pts, maxCorners, 0.01, 10.0);
+    if (pts.empty())
+    {
+        std::cerr << "[HdrMerge] LK ghost: no features detected" << std::endl;
+        return cv::Mat::zeros(gN.size(), CV_8UC1);
+    }
+
+    BiDirectionalLkFilter filter;
+    filter.SetFbThreshold(cfg.lkFbThreshold);
+
+    std::vector<cv::Point2f> stablePrevL, stableCurrL;
+    std::vector<float>       errL;
+    filter.Filter(gN, gL, pts, stablePrevL, stableCurrL, errL);
+
+    std::vector<cv::Point2f> stablePrevH, stableCurrH;
+    std::vector<float>       errH;
+    filter.Filter(gN, gH, pts, stablePrevH, stableCurrH, errH);
+
+    auto isStable = [](const cv::Point2f& p,
+                       const std::vector<cv::Point2f>& stable) -> bool
+    {
+        for (const auto& s : stable)
+        {
+            if (std::abs(p.x - s.x) < 1.0f &&
+                std::abs(p.y - s.y) < 1.0f)
+            {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    cv::Mat sparseMask = cv::Mat::zeros(gN.size(), CV_8UC1);
+    int unstableCount = 0;
+    for (const auto& p : pts)
+    {
+        if (!isStable(p, stablePrevL) || !isStable(p, stablePrevH))
+        {
+            cv::circle(sparseMask, p, 5, cv::Scalar(255), -1);
+            ++unstableCount;
+        }
+    }
+
+    std::cout << "[HdrMerge] LK ghost: " << pts.size() << " features, "
+              << unstableCount << " unstable" << std::endl;
+
+    // 稀疏 → 稠密
+    const int r = std::max(5, cfg.motionDilateRadius);
+    cv::Mat kernel = cv::getStructuringElement(
+        cv::MORPH_ELLIPSE, cv::Size(2 * r + 1, 2 * r + 1));
+    cv::dilate(sparseMask, sparseMask, kernel);
+
+    cv::Mat dense;
+    cv::GaussianBlur(sparseMask, dense, cv::Size(2 * r + 1, 2 * r + 1), 0);
+    return dense;
+}
+
+// ============================================================
+// 综合运动 mask 构建
+// ============================================================
+inline cv::Mat BuildMotionMask(
+    const cv::Mat& lowCropped,
+    const cv::Mat& normalCropped,
+    const cv::Mat& highCropped,
+    const RegistrationResult& regLow,
+    const RegistrationResult& regHigh,
+    const HdrConfig& cfg)
+{
+    // 配准质量门控
+    const bool poorLow  = regLow.num_inliers  < 100 || regLow.rms_error  > 3.0;
+    const bool poorHigh = regHigh.num_inliers < 100 || regHigh.rms_error > 3.0;
+    if (poorLow || poorHigh)
+    {
+        std::cerr << "[HdrMerge] Registration too poor for ghost suppression "
+                  << "(low: inliers=" << regLow.num_inliers
+                  << " rms=" << regLow.rms_error
+                  << "; high: inliers=" << regHigh.num_inliers
+                  << " rms=" << regHigh.rms_error
+                  << "), skip" << std::endl;
+        return cv::Mat::zeros(normalCropped.size(), CV_8UC1);
+    }
+
+    cv::Mat mask = cv::Mat::zeros(normalCropped.size(), CV_8UC1);
+    const std::string& mode = cfg.ghostDetectionMode;
+
+    bool useDiff = (mode == "diff" || mode == "flow+diff");
+    bool useFlow = (mode == "flow" || mode == "flow+diff");
+
+    if (!useDiff && !useFlow)
+    {
+        std::cerr << "[HdrMerge] Unknown ghostDetectionMode=\"" << mode
+                  << "\", fallback to diff" << std::endl;
+        useDiff = true;
+    }
+
+    if (useDiff)
+    {
+        cv::Mat diffMask = DetectMotionDiff(lowCropped, normalCropped, highCropped, cfg);
+        mask = cv::max(mask, diffMask);
+    }
+    if (useFlow)
+    {
+        cv::Mat flowMask = DetectMotionLk(lowCropped, normalCropped, highCropped, cfg);
+        mask = cv::max(mask, flowMask);
+    }
+
+    // 形态学清理
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+    cv::morphologyEx(mask, mask, cv::MORPH_OPEN,  kernel);
+    cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, kernel);
+
+    // 边缘平滑
+    const int r = std::max(3, cfg.motionDilateRadius);
+    cv::GaussianBlur(mask, mask, cv::Size(2 * r + 1, 2 * r + 1), 0);
+
+    const double nonzeroRatio =
+        static_cast<double>(cv::countNonZero(mask)) / mask.total();
+    std::cout << "[HdrMerge] Motion mask: "
+              << (nonzeroRatio * 100.0) << "% pixels non-zero" << std::endl;
+
+    return mask;
+}
+
+// ============================================================
+// 鬼影抑制：Mertens 路径（8UC3 亮度缩放回填）
+// ============================================================
+inline void ApplyGhostSuppressionMertens(
+    cv::Mat& lowCropped,
+    cv::Mat& normalCropped,
+    cv::Mat& highCropped,
+    const cv::Mat& motionMask,
+    const HdrConfig& cfg)
+{
+    if (motionMask.empty()) return;
+
+    cv::Mat gLow, gNormal, gHigh;
+    cv::cvtColor(lowCropped,    gLow,    cv::COLOR_BGR2GRAY);
+    cv::cvtColor(normalCropped, gNormal, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(highCropped,   gHigh,   cv::COLOR_BGR2GRAY);
+
+    const double mN = std::max(ComputeGrayMedian(gNormal), 1.0);
+    const double sLow  = std::clamp(ComputeGrayMedian(gLow)  / mN, 0.2, 5.0);
+    const double sHigh = std::clamp(ComputeGrayMedian(gHigh) / mN, 0.2, 5.0);
+
+    const float strength = static_cast<float>(
+        std::clamp(cfg.ghostSuppressStrength, 0.0, 1.0));
+
+    for (int y = 0; y < motionMask.rows; ++y)
+    {
+        const uint8_t* m = motionMask.ptr<uint8_t>(y);
+        cv::Vec3b* l = lowCropped.ptr<cv::Vec3b>(y);
+        cv::Vec3b* h = highCropped.ptr<cv::Vec3b>(y);
+        const cv::Vec3b* n = normalCropped.ptr<cv::Vec3b>(y);
+
+        for (int x = 0; x < motionMask.cols; ++x)
+        {
+            if (m[x] == 0) continue;
+
+            const float alpha = (m[x] / 255.0f) * strength;
+
+            for (int c = 0; c < 3; ++c)
+            {
+                const uint8_t fillL = cv::saturate_cast<uint8_t>(n[x][c] * sLow);
+                const uint8_t fillH = cv::saturate_cast<uint8_t>(n[x][c] * sHigh);
+                l[x][c] = cv::saturate_cast<uint8_t>(l[x][c] * (1.0f - alpha) + fillL * alpha);
+                h[x][c] = cv::saturate_cast<uint8_t>(h[x][c] * (1.0f - alpha) + fillH * alpha);
+            }
+        }
+    }
+
+    std::cout << "[HdrMerge] Ghost suppression applied (Mertens, scaleLow="
+              << sLow << ", scaleHigh=" << sHigh << ")" << std::endl;
+}
+
+// ============================================================
+// 鬼影抑制：物理路径（32FC3 线性域直接回填 normal 的辐射）
+// ============================================================
+inline void ApplyGhostSuppressionPhysicalLinear(
+    std::vector<cv::Mat>& linearImages,
+    const cv::Mat& motionMask,
+    const HdrConfig& cfg)
+{
+    if (motionMask.empty() || linearImages.size() != 3) return;
+
+    const float strength = static_cast<float>(
+        std::clamp(cfg.ghostSuppressStrength, 0.0, 1.0));
+
+    cv::Mat& linLow    = linearImages[0];
+    const cv::Mat& linNormal = linearImages[1];
+    cv::Mat& linHigh   = linearImages[2];
+
+    for (int y = 0; y < motionMask.rows; ++y)
+    {
+        const uint8_t* m = motionMask.ptr<uint8_t>(y);
+        cv::Vec3f* l = linLow.ptr<cv::Vec3f>(y);
+        cv::Vec3f* h = linHigh.ptr<cv::Vec3f>(y);
+        const cv::Vec3f* n = linNormal.ptr<cv::Vec3f>(y);
+
+        for (int x = 0; x < motionMask.cols; ++x)
+        {
+            if (m[x] == 0) continue;
+
+            const float alpha = (m[x] / 255.0f) * strength;
+            for (int c = 0; c < 3; ++c)
+            {
+                l[x][c] = l[x][c] * (1.0f - alpha) + n[x][c] * alpha;
+                h[x][c] = h[x][c] * (1.0f - alpha) + n[x][c] * alpha;
+            }
+        }
+    }
+
+    std::cout << "[HdrMerge] Ghost suppression applied (Physical linear)" << std::endl;
+}
+
+// ============================================================
+// 物理 HDR 子流程（新增 motionMask 参数）
 // ============================================================
 inline int MergePhysicalHdr(
     const cv::Mat& lowCropped,
@@ -409,10 +708,10 @@ inline int MergePhysicalHdr(
     const std::string& normalPath,
     const std::string& highPath,
     const HdrConfig& cfg,
+    const cv::Mat& motionMask,
     cv::Mat& outHdr32f,
     cv::Mat& outLdr8u)
 {
-    // 1. 等效曝光量
     std::vector<float> effectiveExposures =
         ResolveEffectiveExposures(lowPath, normalPath, highPath, cfg);
     if (effectiveExposures.size() != 3)
@@ -421,7 +720,6 @@ inline int MergePhysicalHdr(
         return 1;
     }
 
-    // 2. De-gamma 到线性域
     cv::Mat lut = BuildSrgbDegammaLUT();
     std::vector<cv::Mat> linearImages = {
         SrgbToLinear(lowCropped,    lut),
@@ -429,7 +727,11 @@ inline int MergePhysicalHdr(
         SrgbToLinear(highCropped,   lut)
     };
 
-    // 3. MergeDebevec
+    if (!motionMask.empty())
+    {
+        ApplyGhostSuppressionPhysicalLinear(linearImages, motionMask, cfg);
+    }
+
     try
     {
         cv::Ptr<cv::MergeDebevec> merge = cv::createMergeDebevec();
@@ -457,7 +759,6 @@ inline int MergePhysicalHdr(
         return 2;
     }
 
-    // 4. 色调映射
     outLdr8u = TonemapHdr(outHdr32f, cfg);
     if (outLdr8u.empty())
     {
@@ -492,13 +793,22 @@ inline int HdrMergeFromFiles(
     std::cout << "[HdrMerge] high   : " << high.cols   << "x" << high.rows   << std::endl;
     std::cout << "[HdrMerge] pipelineMode = " << cfg.pipelineMode << std::endl;
 
-    // 2. 配准
+    // 2. 配准（保留 RegistrationResult 用于鬼影门控）
     ImageRegistrator registrator;
+    RegistrationResult regLow;
+    RegistrationResult regHigh;
+
     std::cout << "[HdrMerge] Aligning low -> normal..." << std::endl;
-    cv::Mat alignedLow = AlignToReference(normal, low, registrator);
+    cv::Mat alignedLow = AlignToReference(normal, low, registrator,
+                                          FeatureDetectorType::ORB,
+                                          TransformType::HOMOGRAPHY,
+                                          &regLow);
 
     std::cout << "[HdrMerge] Aligning high -> normal..." << std::endl;
-    cv::Mat alignedHigh = AlignToReference(normal, high, registrator);
+    cv::Mat alignedHigh = AlignToReference(normal, high, registrator,
+                                           FeatureDetectorType::ORB,
+                                           TransformType::HOMOGRAPHY,
+                                           &regHigh);
 
     // 3. ROI 裁剪
     cv::Rect roi = ComputeCommonRoi(alignedLow, alignedHigh, normal, cfg);
@@ -515,11 +825,43 @@ inline int HdrMergeFromFiles(
     std::cout << "[HdrMerge] Cropped size: " << lowCropped.cols << "x"
               << lowCropped.rows << std::endl;
 
-    // 4. 融合分流
+    // 4. 建目录（写原始配准结果需要在融合之前）
+    std::error_code ec;
+    std::filesystem::create_directories(outDir, ec);
+    if (ec)
+    {
+        std::cerr << "[HdrMerge] Cannot create out dir: " << outDir
+                  << " (" << ec.message() << ")" << std::endl;
+        return 5;
+    }
+
+    // 原始配准结果（未回填）
+    cv::imwrite(outDir + "/01_low_registered.jpg",   lowCropped);
+    cv::imwrite(outDir + "/02_normal_reference.jpg", normalCropped);
+    cv::imwrite(outDir + "/03_high_registered.jpg",  highCropped);
+
+    // 5. 运动检测
+    cv::Mat motionMask;
+    if (cfg.enableGhostSuppression)
+    {
+        std::cout << "[HdrMerge] Ghost detection (mode="
+                  << cfg.ghostDetectionMode << ")..." << std::endl;
+        motionMask = BuildMotionMask(lowCropped, normalCropped, highCropped,
+                                     regLow, regHigh, cfg);
+
+        if (cfg.saveMotionMask && !motionMask.empty())
+        {
+            cv::imwrite(outDir + "/06_motion_mask.png", motionMask);
+            std::cout << "[HdrMerge] Wrote motion mask: "
+                      << outDir << "/06_motion_mask.png" << std::endl;
+        }
+    }
+
+    // 6. 融合分流
     cv::Mat finalResult;
-    cv::Mat hdr32f;          // 物理 HDR 线性辐射图
-    cv::Mat merged;          // Mertens 结果（仅 mertens 路径）
-    cv::Mat detailEnhanced;  // detailEnhance 结果（仅 mertens 路径）
+    cv::Mat hdr32f;
+    cv::Mat merged;
+    cv::Mat detailEnhanced;
     bool physicalUsed = false;
 
     if (cfg.pipelineMode == "physical")
@@ -528,7 +870,7 @@ inline int HdrMergeFromFiles(
         cv::Mat ldr8u;
         int rcPhys = MergePhysicalHdr(lowCropped, normalCropped, highCropped,
                                       lowPath, normalPath, highPath,
-                                      cfg, hdr32f, ldr8u);
+                                      cfg, motionMask, hdr32f, ldr8u);
         if (rcPhys == 0)
         {
             finalResult = ldr8u;
@@ -545,7 +887,19 @@ inline int HdrMergeFromFiles(
     if (!physicalUsed)
     {
         std::cout << "[HdrMerge] Mertens pipeline..." << std::endl;
-        std::vector<cv::Mat> inputs = { lowCropped, normalCropped, highCropped };
+
+        // 回填在副本上做，避免污染 01/02/03 的原始结果
+        cv::Mat lowFused    = lowCropped.clone();
+        cv::Mat normalFused = normalCropped.clone();
+        cv::Mat highFused   = highCropped.clone();
+
+        if (!motionMask.empty())
+        {
+            ApplyGhostSuppressionMertens(lowFused, normalFused, highFused,
+                                         motionMask, cfg);
+        }
+
+        std::vector<cv::Mat> inputs = { lowFused, normalFused, highFused };
         merged = MergeMertens(inputs, cfg);
         if (merged.empty())
         {
@@ -565,7 +919,7 @@ inline int HdrMergeFromFiles(
         finalResult = detailEnhanced;
     }
 
-    // 5. 可选 UnsharpMask（两条路径共用）
+    // 7. 可选 UnsharpMask（两条路径共用）
     if (cfg.enableUnsharpMask)
     {
         std::cout << "[HdrMerge] Unsharp Mask (amount=" << cfg.unsharpAmount
@@ -577,25 +931,11 @@ inline int HdrMergeFromFiles(
                                   cfg.unsharpThreshold);
     }
 
-    // 6. 保存
-    std::error_code ec;
-    std::filesystem::create_directories(outDir, ec);
-    if (ec)
-    {
-        std::cerr << "[HdrMerge] Cannot create out dir: " << outDir
-                  << " (" << ec.message() << ")" << std::endl;
-        return 5;
-    }
-
-    cv::imwrite(outDir + "/01_low_registered.jpg",   lowCropped);
-    cv::imwrite(outDir + "/02_normal_reference.jpg", normalCropped);
-    cv::imwrite(outDir + "/03_high_registered.jpg",  highCropped);
-
+    // 8. 中间产物
     if (cfg.saveIntermediate)
     {
         if (physicalUsed && !hdr32f.empty())
         {
-            // 物理 HDR：写 Radiance HDR（32F 线性辐射图）
             std::string hdrPath = outDir + "/04_hdr_linear_32f.hdr";
             if (cv::imwrite(hdrPath, hdr32f))
             {
@@ -620,8 +960,9 @@ inline int HdrMergeFromFiles(
     cv::imwrite(outDir + "/hdr_merged.jpg", finalResult);
 
     std::cout << "[HdrMerge] Done. Output: " << outDir
-              << " (pipeline=" << (physicalUsed ? "physical" : "mertens") << ")"
-              << std::endl;
+              << " (pipeline=" << (physicalUsed ? "physical" : "mertens")
+              << ", ghost=" << (cfg.enableGhostSuppression ? "on" : "off")
+              << ")" << std::endl;
     return 0;
 }
 
