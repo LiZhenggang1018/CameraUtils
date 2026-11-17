@@ -597,12 +597,13 @@ inline cv::Mat BuildMotionMask(
     // 边缘平滑
     const int r = std::max(3, cfg.motionDilateRadius);
     cv::GaussianBlur(mask, mask, cv::Size(2 * r + 1, 2 * r + 1), 0);
-
-    const double nonzeroRatio =
-        static_cast<double>(cv::countNonZero(mask)) / mask.total();
-    std::cout << "[HdrMerge] Motion mask: "
-              << (nonzeroRatio * 100.0) << "% pixels non-zero" << std::endl;
-
+    const double nonzeroRatio = static_cast<double>(cv::countNonZero(mask)) / mask.total();
+    if (nonzeroRatio > 0.5)
+    {
+        std::cerr << "[HdrMerge] Motion mask coverage too high ("
+                << (nonzeroRatio * 100.0) << "%), skip ghost suppression" << std::endl;
+        return cv::Mat::zeros(normalCropped.size(), CV_8UC1);
+    }
     return mask;
 }
 
