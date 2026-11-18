@@ -43,16 +43,17 @@ calcute its runing time;
 }
 print FuncName : 2000000 us
 */
-class ScopedTimer
-{
+class ScopedTimer {
 public:
     using ClockType = std::chrono::steady_clock;
 
     explicit ScopedTimer(const char* file, int line, const char* func)
-        : m_file(file), m_line(line), m_func(func), m_start{ClockType::now()}
+        : m_file(file),
+          m_line(line),
+          m_func(func),
+          m_start{ClockType::now()}
     {
-        if (m_file != nullptr && m_func != nullptr)
-        {
+        if (m_file != nullptr && m_func != nullptr) {
             PV(m_file, ": L", m_line, m_func, " () begin");
             // LOGI("%s:%d %s() begin", m_file, m_line, m_func);
         }
@@ -65,8 +66,7 @@ public:
 
     ~ScopedTimer()
     {
-        if (m_file != nullptr && m_func != nullptr)
-        {
+        if (m_file != nullptr && m_func != nullptr) {
             auto stop = ClockType::now();
             auto duration = stop - m_start;
             auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
@@ -88,14 +88,14 @@ private:
  * ScopedLogger sl{};   // log: enter default, exit default;
  * ScopedLogger sl{ "customFuncName" }; // log: enter customFuncName, exit customFuncName;
  */
-class ScopedLogger
-{
+class ScopedLogger {
 public:
     explicit ScopedLogger(const char* file, int line, const char* func)
-        : m_file(file), m_line(line), m_func(func)
+        : m_file(file),
+          m_line(line),
+          m_func(func)
     {
-        if (m_file != nullptr && m_func != nullptr)
-        {
+        if (m_file != nullptr && m_func != nullptr) {
             PV(m_file, ": L", m_line, m_func, " () enter");
             // LOGI("%s:%d %s() enter", m_file, m_line, m_func);
         }
@@ -108,8 +108,7 @@ public:
 
     ~ScopedLogger()
     {
-        if (m_file != nullptr && m_func != nullptr)
-        {
+        if (m_file != nullptr && m_func != nullptr) {
             PV(m_file, ": L", m_line, m_func, " () exit");
             // LOGI("%s:%d %s() exit", m_file, m_line, m_func);
         }
@@ -122,24 +121,20 @@ private:
 };
 
 template <typename Func>
-class ScopeGuard
-{
+class ScopeGuard {
 public:
-    ScopeGuard(Func&& fn) : m_fn(fn), m_active(true)
-    {
-    }
+    ScopeGuard(Func&& fn)
+        : m_fn(fn),
+          m_active(true)
+    {}
     ~ScopeGuard()
     {
-        if (m_active)
-        {
+        if (m_active) {
             m_fn();
         }
     }
 
-    void dismiss()
-    {
-        m_active = false;
-    }
+    void dismiss() { m_active = false; }
 
 private:
     Func m_fn;
@@ -147,9 +142,7 @@ private:
 };
 
 // tag dispatch
-struct ScopeGuardOnExit
-{
-};
+struct ScopeGuardOnExit {};
 template <typename Func>
 static inline ScopeGuard<Func> operator+(ScopeGuardOnExit, Func&& fn)
 {
