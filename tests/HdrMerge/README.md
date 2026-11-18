@@ -1,6 +1,6 @@
 # tests/HdrMerge · HDR 融合测试
 
-本目录存放 HDR 融合模块的测试入口，全部为 header-only 的 `inline` 函数，由 `tests/RunTestCase.h` 统一调用。`RunHdrMergeTest()` 是 HDR 融合功能 demo 的起始点；`RunHdrMergePhysicalTest()` 是新增的物理 HDR 双 tonemap 对比测试。
+本目录存放 HDR 融合模块的测试入口，全部为 header-only 的 `inline` 函数，由 `tests/cli/CommandTable.h` 注册为 CLI 子命令，CLI 与 `camera_utils_tests` 共用同一张命令表。`RunHdrMergeTest()` 是 HDR 融合功能 demo 的起始点；`RunHdrMergePhysicalTest()` 是新增的物理 HDR 双 tonemap 对比测试。
 
 ---
 
@@ -18,18 +18,19 @@
 | `inc/HdrMerge/HdrConfig.h` | 配置结构与 JSON 读写 |
 | `configs/HdrConfig.json` | 运行时配置，缺失时首次运行自动生成 |
 | `data/HdrMerge/{low,normal,high}.jpg` | 输入数据 |
-| `tests/RunTestCase.h` | 测试总入口，按顺序调用各测试函数 |
+| `tests/cli/CommandTable.h` | 命令注册表，HDR 用例在此登记为 `hdr-merge*` 子命令 |
 
 ---
 
 ## 2. 入口链
 
 ```text
-src/main.cpp
-  └─ tests/RunTestCase.h
-       ├─ RunHdrMergeTest()              // 单次，Mertens
-       ├─ RunHdrMergeMultiLevelTest()    // 多档位对比，Mertens
-       └─ RunHdrMergePhysicalTest()      // 物理 HDR，Drago + Reinhard
+src/main.cpp  (或 tests/TestMain.cpp)
+  └─ tests/cli/CommandTable.h
+       ├─ RunHdrMergeTest()              // hdr-merge，单次 Mertens
+       ├─ RunHdrMergeMultiLevelTest()    // hdr-merge-multilevel，多档位对比
+       ├─ RunHdrMergePhysicalTest()      // hdr-merge-physical，Drago + Reinhard
+       └─ RunHdrMergeGhostSuppressionTest() // hdr-merge-ghost，鬼影抑制
 ```
 
 ---
@@ -151,10 +152,10 @@ ctest --test-dir out/build/x64-release -C Release --output-on-failure
 ## 6. 新增测试的步骤
 
 1. 在 `tests/HdrMerge/` 下新增 `XxxTest.h`，写 `inline void XxxTest() { ... }`。
-2. 在 `tests/RunTestCase.h` 中 `#include "HdrMerge/XxxTest.h"`，并在总入口调用 `XxxTest();`。
+2. 在 `tests/cli/CommandTable.h` 的 `AllCommands()` 中加一条登记项（CLI 与测试自动可见）。
 3. 如需独立数据，放到 `data/HdrMerge/` 下，用 `EnvRootPath()` 拼路径。
-4. 重新配置 CMake（`tests/CMakeLists.txt` 只注册一个 CTest，新增头文件无需改 CMake）。
-5. 构建并运行。
+4. 若要纳入 CTest，在 `tests/CMakeLists.txt` 的 `_media_tests` 列表追加命令名。
+5. 构建并运行：`CameraUtils.exe <command>` 或 `camera_utils_tests.exe <command>`。
 
 ---
 
