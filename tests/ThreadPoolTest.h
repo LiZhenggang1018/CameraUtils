@@ -1,7 +1,8 @@
 #ifndef THREADPOOLTEST_H
 #define THREADPOOLTEST_H
 
-#include "Utils.h"
+#include "ThreadPool.h"
+#include "CustomLog.h"
 
 class ThreadPoolTest
 {
