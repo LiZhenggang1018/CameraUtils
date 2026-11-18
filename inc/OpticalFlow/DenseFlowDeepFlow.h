@@ -5,13 +5,10 @@
 
 class DenseFlowDeepFlow {
 public:
-    DenseFlowDeepFlow() {
-        m_deepFlow = cv::optflow::createOptFlow_DeepFlow();
-    }
+    DenseFlowDeepFlow() { m_deepFlow = cv::optflow::createOptFlow_DeepFlow(); }
 
-    [[nodiscard]] cv::Mat Compute(
-        const cv::Mat& prevGray,
-        const cv::Mat& gray) const {
+    [[nodiscard]] cv::Mat Compute(const cv::Mat& prevGray, const cv::Mat& gray) const
+    {
         cv::Mat flow;
         m_deepFlow->calc(prevGray, gray, flow);
         return flow;
