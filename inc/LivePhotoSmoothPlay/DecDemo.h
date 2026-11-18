@@ -5,9 +5,9 @@
 #ifndef DECDEMO_H_
 #define DECDEMO_H_
 
-#include "FFmpegDefine.h"
-#include "FFMpegUtils.h"
 #include "DecAndEnc.h"
+#include "FFMpegUtils.h"
+#include "FFmpegDefine.h"
 
 // 从bigLyf.mp4 解码生成yuv序列，选择最后一帧60.yuv作为后续使用的封面帧
 inline void DecodeCoverMp4ToYuvs()
@@ -33,18 +33,12 @@ inline void ReplaceAlhpaMergeToFovSmoothLp()
     std::vector<std::string> replaceYuvFiles;
     replaceYuvFiles.reserve(TransFrameNum);
     // 逆序：crop20 → crop1（FOV 从宽到窄，对应从视频帧过渡到封面帧）
-    for (int i = TransFrameNum; i >= 1; --i)
-    {
+    for (int i = TransFrameNum; i >= 1; --i) {
         replaceYuvFiles.push_back(CROP_COVER_DIR + "/crop" + std::to_string(i) + ".yuv");
     }
 
-    DecodeAndEncodeAndReplaceMultiYuvs(
-        LP_INIT_FILE.c_str(),
-        LP_OPT_FILE.c_str(),
-        TO_REPLACE_YUV_START_IDX,
-        TO_REPLACE_YUV_END_IDX,
-        replaceYuvFiles);
+    DecodeAndEncodeAndReplaceMultiYuvs(LP_INIT_FILE.c_str(), LP_OPT_FILE.c_str(), TO_REPLACE_YUV_START_IDX,
+                                       TO_REPLACE_YUV_END_IDX, replaceYuvFiles);
 }
-
 
 #endif // DECDEMO_H_
