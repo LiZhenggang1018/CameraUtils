@@ -23,16 +23,14 @@ inline void FactoryJsonTest()
 
     std::vector<std::string> names{};
     auto p = Dsrlz<std::vector<std::string>>(JsonPath()); // 从json文件中解析出子类的名称，存入names
-    if (p)                                              // 判断反序列化是否成功
+    if (p)                                                // 判断反序列化是否成功
     {
         names = *p;
     }
 
-    for (const auto& name : names)
-    {
+    for (const auto& name : names) {
         auto inst = ShapeFactory::Instance().Create(name, 5.0); // 根据子类名 依次创建各子类
-        if (inst)
-        {
+        if (inst) {
             inst->draw();
         }
     }
