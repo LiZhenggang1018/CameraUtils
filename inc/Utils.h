@@ -9,9 +9,9 @@
  *  - HdrMerge/HdrMergeAll.h
  */
 #include "CoreUtils.h"
-#include "OpticalFlow/OpticalFlowAll.h"
-#include "LivePhotoSmoothPlay/LivePhotoSmoothPlayAll.h"
-#include "HdrMerge/HdrMergeAll.h"
 #include "Exiv2Common.h"
+#include "HdrMerge/HdrMergeAll.h"
+#include "LivePhotoSmoothPlay/LivePhotoSmoothPlayAll.h"
+#include "OpticalFlow/OpticalFlowAll.h"
 
 #endif // UTILS_H
