@@ -9,6 +9,13 @@
 #include <string>
 #include <string_view>
 
+// Clang 16+ treats an out-of-range enum cast as a hard error (CWG 1766). Probing values
+// outside the declared enumerator range is intentional in this header, so suppress it.
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wenum-constexpr-conversion"
+#endif
+
 /* DO NOT INCLUDE THIS FILE INSIDE NAMESAPCE */
 enum ProbeEnum { PROBE_ENUM }; // for probe usage
 namespace EnumTraits {
@@ -199,5 +206,9 @@ std::optional<Enum> Str2Enum(std::string_view str)
         static_assert(begin < end, #Enum " enum range invalid"); \
     };                                                           \
     }
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 #endif // INC_ENUMSTRTRAITS_H
