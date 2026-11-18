@@ -1,5 +1,5 @@
-#ifndef VISUALIZATION_H
-#define VISUALIZATION_H
+#ifndef INC_OPTICALFLOW_VISUALIZATION_H
+#define INC_OPTICALFLOW_VISUALIZATION_H
 
 #include <vector>
 #include "OpenCVCommon.h"

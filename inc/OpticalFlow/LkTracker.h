@@ -1,5 +1,5 @@
-#ifndef INC_OPTICALFLOW_LKTRACKER_H_
-#define INC_OPTICALFLOW_LKTRACKER_H_
+#ifndef INC_OPTICALFLOW_LKTRACKER_H
+#define INC_OPTICALFLOW_LKTRACKER_H
 
 #include "BiDirectionalLkFilter.h"
 #include "OpenCVCommon.h"
@@ -71,4 +71,4 @@ private:
     BiDirectionalLkFilter m_fbFilter;
 };
 
-#endif // INC_OPTICALFLOW_LKTRACKER_H_
+#endif // INC_OPTICALFLOW_LKTRACKER_H

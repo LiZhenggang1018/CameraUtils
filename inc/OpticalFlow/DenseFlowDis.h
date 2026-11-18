@@ -1,5 +1,5 @@
-#ifndef DENSE_FLOW_DIS_H
-#define DENSE_FLOW_DIS_H
+#ifndef INC_OPTICALFLOW_DENSEFLOWDIS_H
+#define INC_OPTICALFLOW_DENSEFLOWDIS_H
 
 #include "OpenCVCommon.h"
 

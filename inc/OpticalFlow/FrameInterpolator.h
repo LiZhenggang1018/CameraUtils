@@ -1,5 +1,5 @@
-#ifndef FRAME_INTERPOLATOR_H
-#define FRAME_INTERPOLATOR_H
+#ifndef INC_OPTICALFLOW_FRAMEINTERPOLATOR_H
+#define INC_OPTICALFLOW_FRAMEINTERPOLATOR_H
 
 #include "OpenCVCommon.h"
 
@@ -52,4 +52,4 @@ private:
     mutable cv::Mat m_prevFlowFwd;
 };
 
-#endif // FRAME_INTERPOLATOR_H
+#endif // INC_OPTICALFLOW_FRAMEINTERPOLATOR_H

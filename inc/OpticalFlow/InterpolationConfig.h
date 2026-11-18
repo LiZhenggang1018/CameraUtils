@@ -1,5 +1,5 @@
-#ifndef INTERPOLATION_CONFIG_H
-#define INTERPOLATION_CONFIG_H
+#ifndef INC_OPTICALFLOW_INTERPOLATIONCONFIG_H
+#define INC_OPTICALFLOW_INTERPOLATIONCONFIG_H
 
 #include "CommonEnv.h"
 #include "JsonUtils.h"
@@ -141,4 +141,4 @@ struct InterpolationConfig {
     void SaveToFile(const std::string& path) const { Srlz(*this, path); }
 };
 
-#endif // INTERPOLATION_CONFIG_H
+#endif // INC_OPTICALFLOW_INTERPOLATIONCONFIG_H

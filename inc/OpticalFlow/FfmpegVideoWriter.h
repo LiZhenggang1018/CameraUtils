@@ -1,5 +1,5 @@
-#ifndef FFMPEG_VIDEO_WRITER_H
-#define FFMPEG_VIDEO_WRITER_H
+#ifndef INC_OPTICALFLOW_FFMPEGVIDEOWRITER_H
+#define INC_OPTICALFLOW_FFMPEGVIDEOWRITER_H
 
 #include "FFMpegCommon.h"
 #include "OpenCVCommon.h"
@@ -50,4 +50,4 @@ private:
     const char* m_encoderName = "";
 };
 
-#endif // FFMPEG_VIDEO_WRITER_H
+#endif // INC_OPTICALFLOW_FFMPEGVIDEOWRITER_H
