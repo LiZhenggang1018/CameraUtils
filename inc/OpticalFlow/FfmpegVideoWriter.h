@@ -16,8 +16,8 @@ class FfmpegVideoWriter {
 public:
     // 编码器可选参数
     struct EncoderParams {
-        std::string preset = "veryfast";   // libx264 preset：ultrafast/veryfast/fast/medium/slow...
-        int         crf    = -1;           // >= 0 时用 CRF 模式，忽略 bitrate；-1 时用 ABR
+        std::string preset = "veryfast"; // libx264 preset：ultrafast/veryfast/fast/medium/slow...
+        int crf = -1;                    // >= 0 时用 CRF 模式，忽略 bitrate；-1 时用 ABR
     };
 
     FfmpegVideoWriter() = default;
@@ -27,8 +27,7 @@ public:
     FfmpegVideoWriter& operator=(const FfmpegVideoWriter&) = delete;
 
     // bitrate 只在 crf < 0 时生效
-    bool Open(const std::string& path, int width, int height,
-              int fps, int bitrate = 8000000,
+    bool Open(const std::string& path, int width, int height, int fps, int bitrate = 8000000,
               const EncoderParams& enc = EncoderParams{});
 
     bool WriteFrame(const cv::Mat& bgr);
@@ -39,15 +38,15 @@ public:
     [[nodiscard]] const char* EncoderName() const { return m_encoderName; }
 
 private:
-    AVFormatContext* m_fmtCtx   = nullptr;
-    AVCodecContext*  m_codecCtx = nullptr;
-    AVStream*        m_stream   = nullptr;
-    SwsContext*      m_swsCtx   = nullptr;
-    AVFrame*         m_frame    = nullptr;
-    AVPacket*        m_packet   = nullptr;
+    AVFormatContext* m_fmtCtx = nullptr;
+    AVCodecContext* m_codecCtx = nullptr;
+    AVStream* m_stream = nullptr;
+    SwsContext* m_swsCtx = nullptr;
+    AVFrame* m_frame = nullptr;
+    AVPacket* m_packet = nullptr;
 
     int64_t m_pts = 0;
-    bool    m_opened = false;
+    bool m_opened = false;
     const char* m_encoderName = "";
 };
 
