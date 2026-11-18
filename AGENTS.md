@@ -28,6 +28,20 @@ ninja -C out\build\x64-debug
 
 注意：PowerShell 中直接写含空格的路径必须用调用运算符并正确加引号，复杂命令建议写成 `.bat` 脚本再执行。
 
+### 两套工具链并存（重要）
+
+本机装有两个 MSVC 工具集，两份构建产物各自独立，**告警与错误不一定互通**：
+
+| | 助手使用 | 开发者使用 |
+|---|---|---|
+| 配置目录 | `out/build/x64-debug` | `out/build/x64-release` |
+| 工具集 | `C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\VC\Tools\MSVC\14.52.37025` | `D:\Program Files\visual_studio\VC\Tools\MSVC\14.44.35207`（VS 2022 Enterprise 17.14） |
+| cl 版本 | 19.52 | 19.44 |
+| CMake | 4.2.3（`D:\Program Files\CMake`） | 3.31.6（VS 自带） |
+
+因此：**助手编译通过不等于开发者 VS 2022 编译通过**，反之亦然。报告构建/测试结果时须说明用的是哪套配置，
+不要声称已验证开发者那侧的构建。
+
 ## 测试
 
 ```bat
