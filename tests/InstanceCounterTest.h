@@ -4,31 +4,23 @@
 #include "InstanceCounter.h"
 
 // 示例类A
-class CounterA : public Counter<CounterA>
-{
+class CounterA : public Counter<CounterA> {
 public:
     CounterA() = default;
     CounterA(const CounterA&) = default;
     CounterA(CounterA&&) = default;
 
-    void print() const
-    {
-        std::cout << "A对象地址: " << this << std::endl;
-    }
+    void print() const { std::cout << "A对象地址: " << this << std::endl; }
 };
 
 // 示例类B
-class CounterB : public Counter<CounterB>
-{
+class CounterB : public Counter<CounterB> {
 public:
     CounterB() = default;
     CounterB(const CounterB&) = default;
     CounterB(CounterB&&) = default;
 
-    void show() const
-    {
-        std::cout << "B对象地址: " << this << std::endl;
-    }
+    void show() const { std::cout << "B对象地址: " << this << std::endl; }
 };
 
 // 测试函数
@@ -39,8 +31,8 @@ inline void testFunction()
     CounterA a3;
     CounterB b2;
 
-    std::cout << "函数内 - A实例数: " << CounterA::GetInstanceCount()
-              << ", B实例数: " << CounterB::GetInstanceCount() << std::endl;
+    std::cout << "函数内 - A实例数: " << CounterA::GetInstanceCount() << ", B实例数: " << CounterB::GetInstanceCount()
+              << std::endl;
 
     std::cout << "=== 离开testFunction ===" << std::endl;
 }
@@ -50,16 +42,16 @@ inline void InstanceCounterTest()
     std::cout << "=== 程序开始 ===" << std::endl;
 
     // 初始状态
-    std::cout << "初始 - A实例数: " << CounterA::GetInstanceCount()
-              << ", B实例数: " << CounterB::GetInstanceCount() << std::endl;
+    std::cout << "初始 - A实例数: " << CounterA::GetInstanceCount() << ", B实例数: " << CounterB::GetInstanceCount()
+              << std::endl;
 
     // 创建一些对象
     CounterA a1;
     CounterA a2;
     CounterB b1;
 
-    std::cout << "创建后 - A实例数: " << CounterA::GetInstanceCount()
-              << ", B实例数: " << CounterB::GetInstanceCount() << std::endl;
+    std::cout << "创建后 - A实例数: " << CounterA::GetInstanceCount() << ", B实例数: " << CounterB::GetInstanceCount()
+              << std::endl;
 
     // 测试拷贝构造
     std::cout << "\n--- 测试拷贝构造 ---" << std::endl;
