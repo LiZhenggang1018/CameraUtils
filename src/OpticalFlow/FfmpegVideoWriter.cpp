@@ -14,6 +14,11 @@ std::string AvErr(int err)
 
 } // namespace
 
+bool FfmpegVideoWriter::Open(const std::string& path, int width, int height, int fps, int bitrate)
+{
+    return Open(path, width, height, fps, bitrate, EncoderParams{});
+}
+
 bool FfmpegVideoWriter::Open(const std::string& path, int width, int height, int fps, int bitrate,
                              const EncoderParams& enc)
 {
