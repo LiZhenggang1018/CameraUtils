@@ -61,6 +61,25 @@ camera_utils_tests.exe magic-enum
 - 多文件场景下按上面的策略逐次提交、逐次推送。
 - 推送后确认同步状态：`git rev-list --left-right --count origin/main...main` 应输出 `0 0`。
 
+## 编码规范（必须遵守）
+
+编写或修改 C++ 代码前必须先阅读以下规范文档：
+
+- `documentation/OpenHarmony-cpp-coding-style-guide.md` —— 命名、格式、注释、头文件、类、函数、C++ 特性
+- `documentation/OpenHarmony-c-cpp-secure-coding-guide.md` —— C/C++ 安全编码（内存、资源、格式化字符串、路径校验等）
+- `documentation/OpenHarmony-compile-rule.md` —— 编译选项规范
+
+**执行要求**
+
+- 规范中标记为「规则」的条目为强制项，「建议」条目尽量遵守。
+- 格式由 `.clang-format` 落地，已按规范配置（K&R 大括号、行宽 120、4 空格缩进、`public:` 与 `class` 对齐）。
+  提交前务必执行：`clang-format -i --style=file <文件>`。
+- 命名由 `.clang-tidy` 的 `readability-identifier-naming` 落地：类型/函数用大驼峰，
+  变量用小驼峰，类成员变量带 `_` 后缀，全局变量带 `g_` 前缀，常量/枚举值/宏用全大写。
+- **约束范围：新增代码与本次修改的代码片段。存量代码不在本次范围内**，避免产生无关的大规模改动。
+- 注释：新增注释用英文；存量中文注释保持原样，不要主动翻译或改写。
+- 禁止在头文件中使用 `using namespace`（规范 6.1.1），新增代码一律用完整限定名（如 `cv::Mat`）。
+
 ## 编码约定
 
 - 源码与文档统一使用 **UTF-8**（带 BOM 的文件保持原样，如已有 `inc` 下若干头文件）。
