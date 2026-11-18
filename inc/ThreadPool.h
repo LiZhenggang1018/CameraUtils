@@ -17,8 +17,7 @@
 
 #include "CustomLog.h"
 
-class ThreadPool
-{
+class ThreadPool {
 public:
     explicit inline ThreadPool(size_t numThreads = std::thread::hardware_concurrency());
     inline ~ThreadPool();
@@ -58,14 +57,12 @@ private:
 // 实现
 inline ThreadPool::ThreadPool(size_t numThreads)
 {
-    if (numThreads == 0)
-    {
+    if (numThreads == 0) {
         numThreads = std::thread::hardware_concurrency();
     }
 
     workers_.reserve(numThreads);
-    for (size_t i = 0; i < numThreads; ++i)
-    {
+    for (size_t i = 0; i < numThreads; ++i) {
         workers_.emplace_back(&ThreadPool::WorkerThread, this);
     }
 }
@@ -80,16 +77,14 @@ auto ThreadPool::EnqueMsg(F&& f, Args&&... args) -> std::future<std::invoke_resu
 {
 
     using R = std::invoke_result_t<F, Args...>;
-    auto task = std::make_shared<std::packaged_task<R()>>(
-        std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+    auto task = std::make_shared<std::packaged_task<R()>>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 
     std::future<R> result = task->get_future();
 
     {
         std::unique_lock lock(queueMutex_);
 
-        if (stop_)
-        {
+        if (stop_) {
             // 处理日志
             // PV("error, call while threadPool is stopped");
             return std::future<R>{};
@@ -132,15 +127,13 @@ inline size_t ThreadPool::GetActiveTaskCount() const
 
 inline void ThreadPool::WorkerThread()
 {
-    while (true)
-    {
+    while (true) {
         std::function<void()> task;
         {
             std::unique_lock lock(queueMutex_);
             cond_.wait(lock, [this]() { return stop_ || !tasks_.empty(); });
 
-            if (stop_ && tasks_.empty())
-            {
+            if (stop_ && tasks_.empty()) {
                 return;
             }
 
@@ -169,10 +162,8 @@ inline void ThreadPool::Shutdown()
 
     cond_.notify_all();
 
-    for (std::thread& worker : workers_)
-    {
-        if (worker.joinable())
-        {
+    for (std::thread& worker : workers_) {
+        if (worker.joinable()) {
             worker.join();
         }
     }
