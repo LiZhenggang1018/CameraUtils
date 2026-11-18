@@ -22,12 +22,11 @@
 #endif
 
 #if VAS_HAS_STDEXEC
-#include <stdexec/execution.hpp>
 #include <exec/static_thread_pool.hpp>
+#include <stdexec/execution.hpp>
 // constexpr std::chrono::seconds SLEEP_DURATION{ 1 }; // 1s睡眠时间，每个Node处理一帧的模拟耗时1s
 
-struct NodeBase
-{
+struct NodeBase {
     virtual int ProcessFrame(int) = 0; // ProcessFrame表示一帧yuv处理，
     // 入参int表示输入数据（真实case下对应输入yuvBuffer，来自上一个Node），返回int表示处理结果（真实case下对应输出yuvBuffer，给到下一个Node）
     // 真实case下：shared_ptr<ICameraBuffer> ProcessFrame(shared_ptr<ICameraBuffer> inYuv)
@@ -43,8 +42,7 @@ struct NodeBase
 };
 
 // 派生类 Node1，对应VAS中负责第一步处理的Node（第一个Algo）
-struct Node1 : NodeBase
-{
+struct Node1 : NodeBase {
     int ProcessFrame(int x) override
     {
         TimeConsuming();
@@ -54,8 +52,7 @@ struct Node1 : NodeBase
     }
 };
 
-struct Node2 : NodeBase
-{
+struct Node2 : NodeBase {
     int ProcessFrame(int x) override
     {
         TimeConsuming();
@@ -65,8 +62,7 @@ struct Node2 : NodeBase
     }
 };
 
-struct Node3 : NodeBase
-{
+struct Node3 : NodeBase {
     int ProcessFrame(int x) override
     {
         TimeConsuming();
@@ -79,12 +75,10 @@ struct Node3 : NodeBase
 // CbFrameToVcf: 返回最终处理结果给VCF。在VAS中对应每帧处理完成后，结果回调给VCF的函数。
 auto CbFrameToVcf(int value)
 {
-    return stdexec::just(value) | stdexec::then(
-                                      [](int v)
-                                      {
-                                          std::printf("CbFrameToVcf received: %d\n", v);
-                                          return v;
-                                      });
+    return stdexec::just(value) | stdexec::then([](int v) {
+               std::printf("CbFrameToVcf received: %d\n", v);
+               return v;
+           });
 }
 
 inline void VasConcurrencyTest()
@@ -100,27 +94,19 @@ inline void VasConcurrencyTest()
         8); // 创建一个包含8个线程的线程池，exec::static_thread_pool是work_stealing线程池的一种实现。
     auto sched = pool.get_scheduler();
     // 辅助 lambda：根据初始值生成 processOneFrameTask sender（对应一次Node1→Node2→Node3的处理流）
-    auto processOneFrameTask = [&](int init)
-    {
-        return stdexec::just(init) |
-               stdexec::let_value(
-                   [&nodes, sched](int val)
-                   {
-                       return stdexec::on(sched, stdexec::just(val)) |
-                              stdexec::then([&nodes](int v) { return nodes[0]->ProcessFrame(v); });
-                   }) |
-               stdexec::let_value(
-                   [&nodes, sched](int val)
-                   {
-                       return stdexec::on(sched, stdexec::just(val)) |
-                              stdexec::then([&nodes](int v) { return nodes[1]->ProcessFrame(v); });
-                   }) |
-               stdexec::let_value(
-                   [&nodes, sched](int val)
-                   {
-                       return stdexec::on(sched, stdexec::just(val)) |
-                              stdexec::then([&nodes](int v) { return nodes[2]->ProcessFrame(v); });
-                   });
+    auto processOneFrameTask = [&](int init) {
+        return stdexec::just(init) | stdexec::let_value([&nodes, sched](int val) {
+                   return stdexec::on(sched, stdexec::just(val)) |
+                          stdexec::then([&nodes](int v) { return nodes[0]->ProcessFrame(v); });
+               }) |
+               stdexec::let_value([&nodes, sched](int val) {
+                   return stdexec::on(sched, stdexec::just(val)) |
+                          stdexec::then([&nodes](int v) { return nodes[1]->ProcessFrame(v); });
+               }) |
+               stdexec::let_value([&nodes, sched](int val) {
+                   return stdexec::on(sched, stdexec::just(val)) |
+                          stdexec::then([&nodes](int v) { return nodes[2]->ProcessFrame(v); });
+               });
     };
 
     // 3. 生成三个独立的 processFrame sender，对应处理3帧，每帧的初始值分别为
@@ -149,37 +135,28 @@ inline void VasConcurrencyTest()
         stdexec::just()
         // mutable保证lambda的operator() 变为非
         // const，从而允许修改（包括移动）捕获的变量。否则默认捕获的变量在lambda内部是不可修改的（const），无法实现移动语义std::move(s1)。
-        |
-        stdexec::let_value(
-            [s1 = std::move(split1)]() mutable
-            {
-                // 等待帧1结果，执行回调1
-                return std::move(s1) | stdexec::let_value([](int r1) { return CbFrameToVcf(r1); });
-            }) |
-        stdexec::let_value(
-            [s2 = std::move(split2)](auto) mutable
-            {
-                // 此时回调1已完成，再等待帧2结果，执行回调2
-                return std::move(s2) | stdexec::let_value([](int r2) { return CbFrameToVcf(r2); });
-            }) |
-        stdexec::let_value(
-            [s3 = std::move(split3)](auto) mutable
-            {
-                // 回调2已完成，再等待帧3结果，执行回调3
-                return std::move(s3) | stdexec::let_value([](int r3) { return CbFrameToVcf(r3); });
-            });
+        | stdexec::let_value([s1 = std::move(split1)]() mutable {
+              // 等待帧1结果，执行回调1
+              return std::move(s1) | stdexec::let_value([](int r1) { return CbFrameToVcf(r1); });
+          }) |
+        stdexec::let_value([s2 = std::move(split2)](auto) mutable {
+            // 此时回调1已完成，再等待帧2结果，执行回调2
+            return std::move(s2) | stdexec::let_value([](int r2) { return CbFrameToVcf(r2); });
+        }) |
+        stdexec::let_value([s3 = std::move(split3)](auto) mutable {
+            // 回调2已完成，再等待帧3结果，执行回调3
+            return std::move(s3) | stdexec::let_value([](int r3) { return CbFrameToVcf(r3); });
+        });
 
     // 同步等待整个回调链完成
     std::cout << "Waiting for ordered callbacks to complete...\n";
     auto result = stdexec::sync_wait(std::move(orderedCallbacks));
-    if (result)
-    {
+    if (result) {
         std::cout << "Final result after sync_wait: " << std::get<0>(*result) << std::endl;
     }
 
     auto main_end = std::chrono::steady_clock::now();
-    auto main_duration =
-        std::chrono::duration_cast<std::chrono::milliseconds>(main_end - main_start).count();
+    auto main_duration = std::chrono::duration_cast<std::chrono::milliseconds>(main_end - main_start).count();
     std::cout << "main() execution time: " << main_duration << " ms" << std::endl;
 
     return;
