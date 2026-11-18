@@ -9,27 +9,27 @@
 enum class IVEReqType { CAP, VID, AUD };
 
 // ---------- 场景1：Inst 由 Type 构造，同时继承单例 ----------
-class RequestManager : public Singleton<RequestManager>
-{
+class RequestManager : public Singleton<RequestManager> {
 public:
-    RequestManager() : m_type(IVEReqType::CAP) {}
-    explicit RequestManager(IVEReqType type) : m_type(type) {}
-    void RemoveRequestData() const
-    {
-        std::cout << "RemoveRequestData type=" << static_cast<int>(m_type) << '\n';
-    }
+    RequestManager()
+        : m_type(IVEReqType::CAP)
+    {}
+    explicit RequestManager(IVEReqType type)
+        : m_type(type)
+    {}
+    void RemoveRequestData() const { std::cout << "RemoveRequestData type=" << static_cast<int>(m_type) << '\n'; }
+
 private:
     IVEReqType m_type;
 };
 
-class DefaultMgr : public Singleton<DefaultMgr>
-{
+class DefaultMgr : public Singleton<DefaultMgr> {
 public:
     DefaultMgr() = default;
     void DoSomething() const { std::cout << "DefaultMgr::DoSomething\n"; }
 };
 
-using ReqMgrMap     = Type2InstMap<IVEReqType, RequestManager>;
+using ReqMgrMap = Type2InstMap<IVEReqType, RequestManager>;
 using DefaultMgrMap = Type2InstMap<IVEReqType, DefaultMgr>;
 
 inline void TestRequestManager()
@@ -44,8 +44,7 @@ inline void TestRequestManager()
     ReqMgrMap::GetMgr(IVEReqType::VID).RemoveRequestData();
 
     // 遍历池
-    ReqMgrMap::ForEachMgr(
-        [](RequestManager& mgr) { mgr.RemoveRequestData(); });
+    ReqMgrMap::ForEachMgr([](RequestManager& mgr) { mgr.RemoveRequestData(); });
 
     // 重复注册：应打印 "map insert error"
     ReqMgrMap::Register({IVEReqType::CAP});
