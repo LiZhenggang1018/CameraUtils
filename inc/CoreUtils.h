@@ -26,7 +26,7 @@
 #include "TimeoutMonitor.h"
 #include "Type2InstMap.h"
 
-#include "SplitCppFilesInDir.h"
 #include "ConcatCppFilesInDir.h"
+#include "SplitCppFilesInDir.h"
 
 #endif // COREUTILS_H
