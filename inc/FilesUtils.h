@@ -1,5 +1,5 @@
-#ifndef FILESUTILS_H
-#define FILESUTILS_H
+#ifndef INC_FILESUTILS_H
+#define INC_FILESUTILS_H
 
 #include <algorithm>
 #include <filesystem>
@@ -39,4 +39,4 @@ inline bool IsFileInDir(const std::string& file, const std::string& folder)
     return std::find(files.cbegin(), files.cend(), file) != files.cend();
 }
 
-#endif // FILESUTILS_H
+#endif // INC_FILESUTILS_H

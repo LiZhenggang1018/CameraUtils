@@ -2,8 +2,8 @@
  * @Description: TimeoutMonitor Impl
  */
 
-#ifndef TIMEOUTMONITOR_H
-#define TIMEOUTMONITOR_H
+#ifndef INC_TIMEOUTMONITOR_H
+#define INC_TIMEOUTMONITOR_H
 
 #include <atomic>
 #include <chrono>
@@ -74,4 +74,4 @@ decltype(auto) TimeoutAbortMonitor(std::string fName, int32_t timeout, Fn&& fn, 
     return TimeoutMonitor(fName, timeout, std::forward<Fn>(fn), abort, std::forward<Args>(args)...);
 }
 
-#endif // TIMEOUTMONITOR_H
+#endif // INC_TIMEOUTMONITOR_H

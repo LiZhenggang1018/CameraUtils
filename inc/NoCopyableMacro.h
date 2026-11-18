@@ -2,8 +2,8 @@
  * @Description: macro files to disallow copy or move segmantics for class
  */
 
-#ifndef NOCOPYABLEMACRO_H
-#define NOCOPYABLEMACRO_H
+#ifndef INC_NOCOPYABLEMACRO_H
+#define INC_NOCOPYABLEMACRO_H
 
 // 禁止拷贝与移动（在类体内使用：DISALLOW_COPY_AND_MOVE(TypeName)）
 #ifndef DISALLOW_COPY_AND_MOVE
@@ -46,4 +46,4 @@
 #define DISALLOW_MOVE_ASSIGN(TypeName) TypeName& operator=(const TypeName&&) = delete
 #endif
 
-#endif // NOCOPYABLEMACRO_H
+#endif // INC_NOCOPYABLEMACRO_H

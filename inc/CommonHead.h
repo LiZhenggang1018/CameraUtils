@@ -1,6 +1,6 @@
-#ifndef COMMONHEAD_H
-#define COMMONHEAD_H
+#ifndef INC_COMMONHEAD_H
+#define INC_COMMONHEAD_H
 
 #include "CoreUtils.h"
 
-#endif // COMMONHEAD_H
+#endif // INC_COMMONHEAD_H

@@ -1,5 +1,5 @@
-#ifndef ALLUSEDHEADFILES_H
-#define ALLUSEDHEADFILES_H
+#ifndef INC_ALLUSEDHEADFILES_H
+#define INC_ALLUSEDHEADFILES_H
 
 #include <algorithm>
 #include <cassert>
@@ -30,4 +30,4 @@
 #include <utility>
 #include <vector>
 
-#endif // ALLUSEDHEADFILES_H
+#endif // INC_ALLUSEDHEADFILES_H

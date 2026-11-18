@@ -1,8 +1,8 @@
 ﻿//@Description: Event Dispatcher Singleton used to dispatch events
 // EventDispatcher Sinlgeton impl should ensure only one instance(same addr) in different so files
 
-#ifndef EVENTDISPATCHER_H
-#define EVENTDISPATCHER_H
+#ifndef INC_EVENTDISPATCHER_H
+#define INC_EVENTDISPATCHER_H
 
 #include <atomic>
 #include <iostream>
@@ -181,4 +181,4 @@ private:
     }
 };
 
-#endif // EVENTDISPATCHER_H
+#endif // INC_EVENTDISPATCHER_H

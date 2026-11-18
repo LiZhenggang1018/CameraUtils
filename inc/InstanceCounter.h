@@ -2,8 +2,8 @@
  * @Description: CRTP pattern Counter impl which gets Instance count
  */
 
-#ifndef INSTANCECOUNTER_H
-#define INSTANCECOUNTER_H
+#ifndef INC_INSTANCECOUNTER_H
+#define INC_INSTANCECOUNTER_H
 
 #include <atomic>
 #include <iostream>
@@ -64,4 +64,4 @@ public:
     Counter& operator=(Counter&&) = delete;
 };
 
-#endif // INSTANCECOUNTER_H
+#endif // INC_INSTANCECOUNTER_H

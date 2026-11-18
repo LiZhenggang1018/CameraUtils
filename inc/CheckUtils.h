@@ -2,8 +2,8 @@
  * @Description: check utils header
  */
 
-#ifndef CHECKUTILS_H
-#define CHECKUTILS_H
+#ifndef INC_CHECKUTILS_H
+#define INC_CHECKUTILS_H
 
 #include <algorithm>
 #include <cmath>
@@ -114,4 +114,4 @@ void TupleForEach(Func&& func, std::tuple<Ts...>& tuple)
     TupleForEachImpl(std::forward<Func>(func), tuple, std::index_sequence_for<Ts...>{});
 }
 
-#endif // CHECKUTILS_H
+#endif // INC_CHECKUTILS_H

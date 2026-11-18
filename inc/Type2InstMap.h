@@ -2,8 +2,8 @@
  * @Description: Type2InstMap Impl which can expand Singleton to Singleton Pool
  */
 
-#ifndef TYPE2INSTMAP_H
-#define TYPE2INSTMAP_H
+#ifndef INC_TYPE2INSTMAP_H
+#define INC_TYPE2INSTMAP_H
 
 #include <functional>
 #include <memory>
@@ -100,4 +100,4 @@ private:
     inline static std::unordered_map<Type, Inst> m_mgrMap{};
 };
 
-#endif // TYPE2INSTMAP_H
+#endif // INC_TYPE2INSTMAP_H

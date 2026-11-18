@@ -1,8 +1,8 @@
 ﻿// @Description: event mechanism that allows two independent C++ modules to communicate through
 // events. sender sends events, and receiver registers to listen for and receive events.
 
-#ifndef EVENT_H
-#define EVENT_H
+#ifndef INC_EVENT_H
+#define INC_EVENT_H
 
 #include <atomic>
 #include <functional>
@@ -111,4 +111,4 @@ size_t GetEventTypeId()
 //     type"); return EventTypeId<EventType>::value;
 // }
 
-#endif // !EVENT_H
+#endif // !INC_EVENT_H

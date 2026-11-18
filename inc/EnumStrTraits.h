@@ -1,5 +1,5 @@
-#ifndef ENUM_STR_TRAITS_H
-#define ENUM_STR_TRAITS_H
+#ifndef INC_ENUMSTRTRAITS_H
+#define INC_ENUMSTRTRAITS_H
 
 #if !defined(__PRETTY_FUNCTION__) && !defined(__GNUC__)
 #define __PRETTY_FUNCTION__ __FUNCSIG__
@@ -200,4 +200,4 @@ std::optional<Enum> Str2Enum(std::string_view str)
     };                                                           \
     }
 
-#endif // ENUM_STR_TRAITS_H
+#endif // INC_ENUMSTRTRAITS_H

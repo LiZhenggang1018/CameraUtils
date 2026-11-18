@@ -1,7 +1,7 @@
 // @Description: simple thread-safe circular queue impl using ring buffer
 
-#ifndef CIRCULAR_QUEUE_H
-#define CIRCULAR_QUEUE_H
+#ifndef INC_CIRCULARQUEUE_H
+#define INC_CIRCULARQUEUE_H
 
 #include <chrono>
 #include <condition_variable>
@@ -177,4 +177,4 @@ using BlockingCircularQueue = CircularQueue<T, true>;
 template <typename T>
 using NonBlockingCircularQueue = CircularQueue<T, false>;
 
-#endif // CIRCULAR_QUEUE_H
+#endif // INC_CIRCULARQUEUE_H

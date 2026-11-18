@@ -1,5 +1,5 @@
-#ifndef SINGLETON_H
-#define SINGLETON_H
+#ifndef INC_SINGLETON_H
+#define INC_SINGLETON_H
 
 template <typename T>
 class Singleton {
@@ -16,4 +16,4 @@ protected:
     Singleton() = default;
 };
 
-#endif // SINGLETON_H
+#endif // INC_SINGLETON_H

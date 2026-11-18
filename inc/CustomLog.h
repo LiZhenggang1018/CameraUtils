@@ -2,8 +2,8 @@
  * @Description: print variable agrs with space between
  */
 
-#ifndef CUSTOM_LOG_H
-#define CUSTOM_LOG_H
+#ifndef INC_CUSTOMLOG_H
+#define INC_CUSTOMLOG_H
 
 #include <iostream>
 
@@ -32,4 +32,4 @@ void PV(Args&&... args)
 //     std::cout << std::endl;
 // }
 
-#endif // CUSTOM_LOG_H
+#endif // INC_CUSTOMLOG_H

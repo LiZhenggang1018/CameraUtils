@@ -1,7 +1,7 @@
 ﻿// @Description: ThreadPool Impl support EnqueMsg() and WaitSync()
 
-#ifndef THREADPOOL_H
-#define THREADPOOL_H
+#ifndef INC_THREADPOOL_H
+#define INC_THREADPOOL_H
 
 #include <atomic>
 #include <condition_variable>
@@ -169,4 +169,4 @@ inline void ThreadPool::Shutdown()
     }
 }
 
-#endif // THREADPOOL_H
+#endif // INC_THREADPOOL_H

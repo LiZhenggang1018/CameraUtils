@@ -1,5 +1,5 @@
-#ifndef OPENCV_COMMON_H
-#define OPENCV_COMMON_H
+#ifndef INC_OPENCVCOMMON_H
+#define INC_OPENCVCOMMON_H
 
 #include <opencv2/core.hpp>
 #include <opencv2/core/utility.hpp>
@@ -13,4 +13,4 @@
 
 #include <AllUsedHeadFiles.h>
 
-#endif // OPENCV_COMMON_H
+#endif // INC_OPENCVCOMMON_H

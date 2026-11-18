@@ -1,5 +1,5 @@
-#ifndef JSONUTILS_H
-#define JSONUTILS_H
+#ifndef INC_JSONUTILS_H
+#define INC_JSONUTILS_H
 
 #include <algorithm>
 #include <filesystem>
@@ -212,4 +212,4 @@ std::optional<T> Dsrlz(const std::string& jsonName)
 
 #endif // DEBUG
 
-#endif // JSONUTILS_H
+#endif // INC_JSONUTILS_H

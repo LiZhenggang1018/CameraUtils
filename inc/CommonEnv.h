@@ -1,5 +1,5 @@
-#ifndef INC_COMMONENV_H_
-#define INC_COMMONENV_H_
+#ifndef INC_COMMONENV_H
+#define INC_COMMONENV_H
 
 #include <string>
 
@@ -19,4 +19,4 @@ inline const std::string& EnvRootPath()
 #define CAMERAUTILS_HAS_DLFCN 0
 #endif
 
-#endif // INC_COMMONENV_H_
+#endif // INC_COMMONENV_H

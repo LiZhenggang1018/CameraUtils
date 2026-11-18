@@ -1,5 +1,5 @@
-﻿#ifndef FIND_AND_THEN_OR_ELSE_H
-#define FIND_AND_THEN_OR_ELSE_H
+﻿#ifndef INC_FINDANDTHENORELSE_H
+#define INC_FINDANDTHENORELSE_H
 
 #include <algorithm>
 #include <deque>
@@ -70,4 +70,4 @@ auto Find(const Container& c, const T& value)
     }
 }
 
-#endif // FIND_AND_THEN_OR_ELSE_H
+#endif // INC_FINDANDTHENORELSE_H

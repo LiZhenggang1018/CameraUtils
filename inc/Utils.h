@@ -1,5 +1,5 @@
-﻿#ifndef UTILS_H
-#define UTILS_H
+﻿#ifndef INC_UTILS_H
+#define INC_UTILS_H
 
 /**
  * @deprecated 兼容聚合头。新代码请按需直接 include 具体模块头，或使用：
@@ -14,4 +14,4 @@
 #include "LivePhotoSmoothPlay/LivePhotoSmoothPlayAll.h"
 #include "OpticalFlow/OpticalFlowAll.h"
 
-#endif // UTILS_H
+#endif // INC_UTILS_H

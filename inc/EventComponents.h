@@ -1,7 +1,7 @@
 // @Description: Event componets including: sender receiver
 
-#ifndef EVENTCOMPONENTS_H
-#define EVENTCOMPONENTS_H
+#ifndef INC_EVENTCOMPONENTS_H
+#define INC_EVENTCOMPONENTS_H
 
 #include <memory>
 #include <string>
@@ -59,4 +59,4 @@ private:
     ReceiverCb cb_{};
 };
 
-#endif // EVENTCOMPONENTS_H
+#endif // INC_EVENTCOMPONENTS_H

@@ -2,8 +2,8 @@
  * @Description: Scope Utils Header
  */
 
-#ifndef __SCOPED_UTILS_H__
-#define __SCOPED_UTILS_H__
+#ifndef INC_SCOPEDUTILS_H
+#define INC_SCOPEDUTILS_H
 
 #include <chrono>
 #include <deque>

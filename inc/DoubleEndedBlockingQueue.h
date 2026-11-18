@@ -2,8 +2,8 @@
  * @Description: BlockingDeque and NonBlockingDeque
  */
 
-#ifndef DOUBLE_ENDED_BLOCKING_QUEUE_H
-#define DOUBLE_ENDED_BLOCKING_QUEUE_H
+#ifndef INC_DOUBLEENDEDBLOCKINGQUEUE_H
+#define INC_DOUBLEENDEDBLOCKINGQUEUE_H
 
 #include <chrono>
 #include <condition_variable>
@@ -159,4 +159,4 @@ using BlockingDeque = OptionalBlockingDeque<T, true>;
 template <typename T>
 using NonBlockingDeque = OptionalBlockingDeque<T, false>;
 
-#endif // DOUBLE_ENDED_BLOCKING_QUEUE_H
+#endif // INC_DOUBLEENDEDBLOCKINGQUEUE_H

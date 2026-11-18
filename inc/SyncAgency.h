@@ -3,8 +3,8 @@
  * time dependence
  */
 
-#ifndef SYNCAGENCY_H
-#define SYNCAGENCY_H
+#ifndef INC_SYNCAGENCY_H
+#define INC_SYNCAGENCY_H
 
 #include <algorithm>
 #include <atomic>

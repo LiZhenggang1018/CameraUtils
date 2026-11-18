@@ -1,5 +1,5 @@
-#ifndef GENERALFACTORY_H
-#define GENERALFACTORY_H
+#ifndef INC_GENERALFACTORY_H
+#define INC_GENERALFACTORY_H
 
 #include <functional>
 #include <memory>
@@ -138,4 +138,4 @@ private:
 // #define TEST_FACTORY_DEMO 1 // 定义宏以启用 FactoryDemo.h
 // 中的测试代码；注释掉此行则运行FactoryDemo_1.h。不注释则运行FactoryDemo.h
 
-#endif // GENERALFACTORY_H
+#endif // INC_GENERALFACTORY_H

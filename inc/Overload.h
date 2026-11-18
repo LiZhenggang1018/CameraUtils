@@ -2,8 +2,8 @@
  * @Description: 2 kinds of Overload impl (support and not support implicit type conversion)
  */
 
-#ifndef OVERLOAD_H
-#define OVERLOAD_H
+#ifndef INC_OVERLOAD_H
+#define INC_OVERLOAD_H
 
 // Overload support implicit type conversion,
 // meanwhile visitor can add impl like auto/aut&& lambda
@@ -35,4 +35,4 @@ struct OverloadNoCvt : Ts... {
 template <typename... T>
 OverloadNoCvt(T...) -> OverloadNoCvt<T...>;
 
-#endif // OVERLOAD_H
+#endif // INC_OVERLOAD_H

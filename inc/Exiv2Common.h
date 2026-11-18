@@ -1,5 +1,5 @@
-#ifndef EXIV2COMMON_H
-#define EXIV2COMMON_H
+#ifndef INC_EXIV2COMMON_H
+#define INC_EXIV2COMMON_H
 
 #include <exiv2/exiv2.hpp>
 #include <string>
@@ -68,4 +68,4 @@ inline ExposureInfo ReadExposureInfo(const std::string& filePath)
 
 } // namespace CameraUtils
 
-#endif // EXIV2COMMON_H
+#endif // INC_EXIV2COMMON_H

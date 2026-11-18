@@ -1,5 +1,5 @@
-#ifndef CONCATCPPFILESINDIR_H
-#define CONCATCPPFILESINDIR_H
+#ifndef INC_CONCATCPPFILESINDIR_H
+#define INC_CONCATCPPFILESINDIR_H
 
 #include <algorithm>
 #include <cctype>
@@ -189,4 +189,4 @@ inline void ConcatCppFilesInDirTest()
     ConcatCppFilesInDir(std::string_view(inDir), std::string_view(outDir));
 }
 
-#endif // !CONCATCPPFILESINDIR_H
+#endif // !INC_CONCATCPPFILESINDIR_H

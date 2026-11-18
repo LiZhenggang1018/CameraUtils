@@ -1,5 +1,5 @@
-#ifndef SPLITFILESINDIR_H
-#define SPLITFILESINDIR_H
+#ifndef INC_SPLITCPPFILESINDIR_H
+#define INC_SPLITCPPFILESINDIR_H
 
 #include <algorithm>
 #include <cctype>
@@ -102,4 +102,4 @@ inline void SplitCppFilesInDirTest()
     std::string_view outDir = "D:/ThirdPartyLib/Split/out";
     SplitCppFilesInDir(std::string_view(inDir), std::string_view(outDir));
 }
-#endif // !SPLITFILESINDIR_H
+#endif // !INC_SPLITCPPFILESINDIR_H

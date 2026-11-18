@@ -1,5 +1,5 @@
-#ifndef COREUTILS_H
-#define COREUTILS_H
+#ifndef INC_COREUTILS_H
+#define INC_COREUTILS_H
 
 // 纯 C++ 标准库工具层：不依赖 OpenCV / FFmpeg / exiv2。
 #include "AllUsedHeadFiles.h"
@@ -29,4 +29,4 @@
 #include "ConcatCppFilesInDir.h"
 #include "SplitCppFilesInDir.h"
 
-#endif // COREUTILS_H
+#endif // INC_COREUTILS_H

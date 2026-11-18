@@ -1,5 +1,5 @@
-#ifndef FFMPEGCOMMON_H
-#define FFMPEGCOMMON_H
+#ifndef INC_FFMPEGCOMMON_H
+#define INC_FFMPEGCOMMON_H
 
 // 必须放在 extern "C" 之前，确保 <windows.h> 第一次以 C++ linkage 被包含
 #ifndef NOMINMAX
@@ -19,4 +19,4 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-#endif // !FFMPEGCOMMON_H
+#endif // !INC_FFMPEGCOMMON_H
