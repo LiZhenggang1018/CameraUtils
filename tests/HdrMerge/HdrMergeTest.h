@@ -12,17 +12,17 @@
 // ============================================================
 inline void RunHdrMergeTest()
 {
-    const std::string dataDir    = EnvRootPath() + "/data/HdrMerge/";
-    const std::string lowPath    = dataDir + "low.jpg";
+    const std::string dataDir = EnvRootPath() + "/data/HdrMerge/";
+    const std::string lowPath = dataDir + "low.jpg";
     const std::string normalPath = dataDir + "normal.jpg";
-    const std::string highPath   = dataDir + "high.jpg";
-    const std::string outDir     = dataDir + "result/";
+    const std::string highPath = dataDir + "high.jpg";
+    const std::string outDir = dataDir + "result/";
 
     std::cout << "========== HdrMerge begin ==========" << std::endl;
-    std::cout << "[HdrMerge] lowPath    = " << lowPath    << std::endl;
+    std::cout << "[HdrMerge] lowPath    = " << lowPath << std::endl;
     std::cout << "[HdrMerge] normalPath = " << normalPath << std::endl;
-    std::cout << "[HdrMerge] highPath   = " << highPath   << std::endl;
-    std::cout << "[HdrMerge] outDir     = " << outDir     << std::endl;
+    std::cout << "[HdrMerge] highPath   = " << highPath << std::endl;
+    std::cout << "[HdrMerge] outDir     = " << outDir << std::endl;
 
     const HdrConfig cfg = HdrConfig::LoadFromFile(HdrConfig::DefaultPath());
 
@@ -36,36 +36,30 @@ inline void RunHdrMergeTest()
 // ============================================================
 inline void RunHdrMergeMultiLevelTest()
 {
-    const std::string dataDir    = EnvRootPath() + "/data/HdrMerge/";
-    const std::string lowPath    = dataDir + "low.jpg";
+    const std::string dataDir = EnvRootPath() + "/data/HdrMerge/";
+    const std::string lowPath = dataDir + "low.jpg";
     const std::string normalPath = dataDir + "normal.jpg";
-    const std::string highPath   = dataDir + "high.jpg";
+    const std::string highPath = dataDir + "high.jpg";
 
     std::cout << "========== HdrMerge Multi-Level begin ==========" << std::endl;
 
     const HdrConfig baseCfg = HdrConfig::LoadFromFile(HdrConfig::DefaultPath());
 
-    if (baseCfg.qualityPresets.empty())
-    {
+    if (baseCfg.qualityPresets.empty()) {
         std::cerr << "[HdrMergeMultiLevel] No qualityPresets defined, skip" << std::endl;
         return;
     }
 
-    for (const auto& [key, preset] : baseCfg.qualityPresets)
-    {
+    for (const auto& [key, preset] : baseCfg.qualityPresets) {
         int level = 0;
-        try
-        {
+        try {
             level = std::stoi(key);
-        }
-        catch (...)
-        {
+        } catch (...) {
             std::cerr << "[HdrMergeMultiLevel] Skip non-integer key: " << key << std::endl;
             continue;
         }
 
-        std::cout << "\n--- [qualityLevel=" << level
-                  << " / key=\"" << key << "\"] ---" << std::endl;
+        std::cout << "\n--- [qualityLevel=" << level << " / key=\"" << key << "\"] ---" << std::endl;
 
         HdrConfig cfg = baseCfg;
         cfg.qualityLevel = level;
@@ -84,21 +78,20 @@ inline void RunHdrMergeMultiLevelTest()
 // ============================================================
 inline void RunHdrMergePhysicalTest()
 {
-    const std::string dataDir    = EnvRootPath() + "/data/HdrMerge/";
-    const std::string lowPath    = dataDir + "low.jpg";
+    const std::string dataDir = EnvRootPath() + "/data/HdrMerge/";
+    const std::string lowPath = dataDir + "low.jpg";
     const std::string normalPath = dataDir + "normal.jpg";
-    const std::string highPath   = dataDir + "high.jpg";
+    const std::string highPath = dataDir + "high.jpg";
 
     std::cout << "========== HdrMerge Physical begin ==========" << std::endl;
 
     const HdrConfig baseCfg = HdrConfig::LoadFromFile(HdrConfig::DefaultPath());
 
-    const std::vector<std::string> tonemapTypes = { "drago", "reinhard" };
-    for (const auto& type : tonemapTypes)
-    {
+    const std::vector<std::string> tonemapTypes = {"drago", "reinhard"};
+    for (const auto& type : tonemapTypes) {
         HdrConfig cfg = baseCfg;
-        cfg.pipelineMode      = "physical";
-        cfg.tonemapType       = type;
+        cfg.pipelineMode = "physical";
+        cfg.tonemapType = type;
         cfg.enableUnsharpMask = false;
 
         const std::string outDir = dataDir + "result_physical_" + type + "/";
@@ -120,41 +113,38 @@ inline void RunHdrMergePhysicalTest()
 // ============================================================
 inline void RunHdrMergeGhostSuppressionTest()
 {
-    const std::string dataDir    = EnvRootPath() + "/data/HdrMerge/";
-    const std::string lowPath    = dataDir + "low.jpg";
+    const std::string dataDir = EnvRootPath() + "/data/HdrMerge/";
+    const std::string lowPath = dataDir + "low.jpg";
     const std::string normalPath = dataDir + "normal.jpg";
-    const std::string highPath   = dataDir + "high.jpg";
+    const std::string highPath = dataDir + "high.jpg";
 
     std::cout << "========== HdrMerge Ghost-Suppression begin ==========" << std::endl;
 
     const HdrConfig baseCfg = HdrConfig::LoadFromFile(HdrConfig::DefaultPath());
 
-    struct Case
-    {
+    struct Case {
         std::string label;
         std::string pipeline;
         std::string ghostMode;
     };
 
     const std::vector<Case> cases = {
-        { "ghost_mertens_diff",  "mertens",  "diff" },
-        { "ghost_physical_diff", "physical", "diff" },
-        { "ghost_mertens_flowdiff", "mertens", "flow+diff" },
+        {"ghost_mertens_diff", "mertens", "diff"},
+        {"ghost_physical_diff", "physical", "diff"},
+        {"ghost_mertens_flowdiff", "mertens", "flow+diff"},
     };
 
-    for (const auto& c : cases)
-    {
+    for (const auto& c : cases) {
         HdrConfig cfg = baseCfg;
-        cfg.pipelineMode           = c.pipeline;
+        cfg.pipelineMode = c.pipeline;
         cfg.enableGhostSuppression = true;
-        cfg.ghostDetectionMode     = c.ghostMode;
-        cfg.saveMotionMask         = true;
-        cfg.enableUnsharpMask      = false;   // 先看纯融合结果
+        cfg.ghostDetectionMode = c.ghostMode;
+        cfg.saveMotionMask = true;
+        cfg.enableUnsharpMask = false; // 先看纯融合结果
 
         const std::string outDir = dataDir + "result_" + c.label + "/";
-        std::cout << "\n--- [" << c.label
-                  << " | pipeline=" << c.pipeline
-                  << " | mode=" << c.ghostMode << "] ---" << std::endl;
+        std::cout << "\n--- [" << c.label << " | pipeline=" << c.pipeline << " | mode=" << c.ghostMode << "] ---"
+                  << std::endl;
 
         int rc = hdr_merge::HdrMergeFromFiles(lowPath, normalPath, highPath, outDir, cfg);
         std::cout << "[" << c.label << "] rc = " << rc << std::endl;
