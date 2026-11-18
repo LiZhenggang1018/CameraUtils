@@ -2,7 +2,8 @@
 
 #include <vector>
 
-cv::Mat FlowToColor(const cv::Mat& flow) {
+cv::Mat FlowToColor(const cv::Mat& flow)
+{
     CV_Assert(flow.type() == CV_32FC2);
 
     cv::Mat flowParts[2];
@@ -10,12 +11,7 @@ cv::Mat FlowToColor(const cv::Mat& flow) {
 
     cv::Mat magnitude;
     cv::Mat angle;
-    cv::cartToPolar(
-        flowParts[0],
-        flowParts[1],
-        magnitude,
-        angle,
-        true);
+    cv::cartToPolar(flowParts[0], flowParts[1], magnitude, angle, true);
 
     double magMax = 0.0;
     cv::minMaxLoc(magnitude, nullptr, &magMax);
