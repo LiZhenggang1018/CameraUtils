@@ -5,8 +5,8 @@
 
 namespace CameraUtils {
 
-inline std::unordered_map<std::string, std::string>
-ReadExif(const std::string& filePath) {
+inline std::unordered_map<std::string, std::string> ReadExif(const std::string& filePath)
+{
     std::unordered_map<std::string, std::string> result;
 
     auto image = Exiv2::ImageFactory::open(filePath);
@@ -27,8 +27,8 @@ ReadExif(const std::string& filePath) {
 }
 
 // 按需取单个常用字段的便捷函数
-inline std::string GetExifValue(const std::string& filePath,
-                                const std::string& key) {
+inline std::string GetExifValue(const std::string& filePath, const std::string& key)
+{
     auto image = Exiv2::ImageFactory::open(filePath);
     if (!image.get()) {
         return {};
@@ -42,7 +42,8 @@ inline std::string GetExifValue(const std::string& filePath,
     return it->value().toString();
 }
 
-inline void Exif2Test() {
+inline void Exif2Test()
+{
     const std::string& filePath = Exif2Path();
     auto exifData = ReadExif(filePath);
     for (const auto& [key, value] : exifData) {
@@ -54,7 +55,6 @@ inline void Exif2Test() {
     std::cout << "DateTimeOriginal: " << dateTimeOriginal << std::endl;
 }
 
-
-}
+} // namespace CameraUtils
 
 #endif // TESTS_EXIV2TEST_H_
