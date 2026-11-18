@@ -6,15 +6,15 @@
 
 #include "HarrisDetect.h"
 
-#include "LkTracker.h"
-#include "MiddleburyColor.h"
-#include "Visualization.h"
-#include "DenseFlow.h"
 #include "BiDirectionalLkFilter.h"
-#include "FrameInterpolator.h"
+#include "DenseFlow.h"
 #include "DenseFlowDeepFlow.h"
 #include "DenseFlowDis.h"
 #include "FfmpegVideoWriter.h"
+#include "FrameInterpolator.h"
 #include "InterpolationConfig.h"
+#include "LkTracker.h"
+#include "MiddleburyColor.h"
+#include "Visualization.h"
 
 #endif // OPTICALFLOWALL_H
