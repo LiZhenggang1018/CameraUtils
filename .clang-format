@@ -1,32 +1,58 @@
 # .clang-format
+# 依据 documentation/OpenHarmony-cpp-coding-style-guide.md 制定
 ---
 Language:        Cpp
 BasedOnStyle:    LLVM
 
-# 缩进
+# 缩进：4 空格，禁用 Tab（规范 3.2.1）
 IndentWidth:     4
 TabWidth:        4
 UseTab:          Never
 ContinuationIndentWidth: 4
 AccessModifierOffset: -4
 
-# 行宽
-ColumnLimit:     100
+# 行宽：不超过 120 字符（规范 3.1.1）
+ColumnLimit:     120
 
-# 括号与换行
-BreakBeforeBraces: Allman
-AllowShortFunctionsOnASingleLine: None
+# 大括号：K&R 风格（规范 3.3.1）
+# 函数左大括号另起一行；if/for/while/class/struct/enum/namespace 跟随行末
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass:            false
+  AfterControlStatement: false
+  AfterEnum:             false
+  AfterFunction:         true
+  AfterNamespace:        false
+  AfterStruct:           false
+  AfterUnion:            false
+  AfterExternBlock:      false
+  BeforeCatch:           false
+  BeforeElse:            false
+  SplitEmptyFunction:    false
+  SplitEmptyRecord:      false
+  SplitEmptyNamespace:   false
+
+# 短函数：类内可单行，类外定义保持展开（规范 3.15.1 示例）
+AllowShortFunctionsOnASingleLine: InlineOnly
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
-AlwaysBreakTemplateDeclarations: Yes
-BinPackArguments: false
-BinPackParameters: false
-BreakConstructorInitializers: BeforeColon
+AllowShortBlocksOnASingleLine: Empty
 
-# 指针与引用
+# 声明与参数（规范 3.4.1、3.5.1）
+AlwaysBreakTemplateDeclarations: Yes
+BinPackArguments: true
+BinPackParameters: true
+AlignAfterOpenBracket: Align
+
+# 构造函数初始化列表：冒号置于行首，缩进 4 空格（规范 3.15.2）
+BreakConstructorInitializers: BeforeColon
+ConstructorInitializerIndentWidth: 4
+PackConstructorInitializers: Never
+
+# 指针与引用：紧靠数据类型（规范 3.12）
 PointerAlignment: Left
-ReferenceAlignment: Left
+ReferenceAlignment: Pointer
 DerivePointerAlignment: false
 
 # 空格
@@ -35,6 +61,13 @@ SpaceInEmptyParentheses: false
 SpacesInAngles: false
 SpacesInContainerLiterals: false
 SpaceBeforeAssignmentOperators: true
+SpaceBeforeRangeBasedForLoopColon: true
+
+# 预处理指令：# 位于行首（规范 3.13.1）
+IndentPPDirectives: None
+
+# 空行
+MaxEmptyLinesToKeep: 1
 
 # 排序与包含
 SortIncludes: CaseSensitive
@@ -48,10 +81,10 @@ IncludeCategories:
     Priority:        3
 
 # 其他
-AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: false
 AlignConsecutiveDeclarations: false
 AlignEscapedNewlines: Left
 AlignOperands: true
 AlignTrailingComments: true
 ReflowComments: true
+...
