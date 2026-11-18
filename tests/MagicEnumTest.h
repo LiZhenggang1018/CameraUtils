@@ -8,7 +8,7 @@
 
 namespace MagicEnumTest
 {
-// 瀹氫箟涓€涓祴璇曠敤鏋氫妇
+// 定义一个测试用枚举
 enum class Color : int
 {
     RED = -10,
@@ -33,7 +33,7 @@ inline void TestMagicEnum()
     CU_CHECK(color_opt.value() == Color::GREEN);
     std::cout << "enum_cast(\"GREEN\") -> Color::GREEN OK" << std::endl;
 
-    // 3. 閬嶅巻鏋氫妇鎵€鏈夊€?
+    // 3. 遍历枚举所有值
     std::cout << "all Color values: ";
     for (auto color : magic_enum::enum_values<Color>())
     {
@@ -45,7 +45,7 @@ inline void TestMagicEnum()
     CU_CHECK(magic_enum::enum_count<Color>() == 3);
     std::cout << "enum_count<Color>() = 3 OK" << std::endl;
 
-    // 5. 甯﹂粯璁ゅ€肩殑 enum_cast锛堝€间笉瀛樺湪鏃讹級
+    // 5. 带默认值的 enum_cast（值不存在时）
     auto invalid = magic_enum::enum_cast<Color>(999).value_or(Color::BLUE);
     CU_CHECK(invalid == Color::BLUE);
     std::cout << "enum_cast(999).value_or(BLUE) -> BLUE OK" << std::endl;
