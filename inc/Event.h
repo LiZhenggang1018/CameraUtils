@@ -32,8 +32,7 @@ using EventVariant = std::variant<std::monostate, // 占位，表示空事件
                                   >;
 
 // 事件发送者接口
-struct IEventSender
-{
+struct IEventSender {
 public:
     virtual ~IEventSender() = default;
     virtual void SendEvent(const EventVariant& event) = 0;
@@ -41,8 +40,7 @@ public:
 };
 
 // 事件监听器接口
-struct IEventReceiver
-{
+struct IEventReceiver {
     virtual ~IEventReceiver() = default;
     virtual void OnEvent(const EventVariant& event) = 0;
     virtual std::string GetName() const = 0;
@@ -51,8 +49,7 @@ struct IEventReceiver
 using ReceiverCb = std::function<void(const EventVariant& event)>;
 
 // 自定义事件类型定义
-struct MessageEvent
-{
+struct MessageEvent {
     std::string s_{};
 };
 
@@ -80,8 +77,7 @@ EventVariant MakeEvent(Args&&... args)
 // 使用函数模板实例的地址作为类型标识符
 template <typename T>
 void EventTypeTag()
-{
-}
+{}
 
 template <typename T>
 size_t GetEventTypeId()
@@ -106,9 +102,9 @@ size_t GetEventTypeId()
 //
 //// 获取事件类型的唯一标识符
 ////
-///利用variant的索引index()。因为EventVariant包含了所有的事件类型，所以每个类型在EventVariant中的索引是固定的，并且是编译时可知的。
+/// 利用variant的索引index()。因为EventVariant包含了所有的事件类型，所以每个类型在EventVariant中的索引是固定的，并且是编译时可知的。
 ////
-///标识是一个从0开始的小整数，易于阅读，且编译时确定。如果EventVariant改变，则所有类型的标识都会改变。
+/// 标识是一个从0开始的小整数，易于阅读，且编译时确定。如果EventVariant改变，则所有类型的标识都会改变。
 // template<typename EventType>
 // constexpr size_t GetEventTypeId() {
 //     static_assert(!std::is_same_v<EventType, std::monostate>, "Cannot use monostate as event
