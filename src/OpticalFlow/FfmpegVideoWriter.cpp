@@ -243,7 +243,7 @@ bool FfmpegVideoWriter::WriteFrame(const cv::Mat& bgr)
 
 void FfmpegVideoWriter::Close()
 {
-    if (m_codecCtx != nullptr && m_opened) {
+    if (m_codecCtx != nullptr && m_packet != nullptr && m_stream != nullptr && m_opened) {
         // flush 编码器
         int ret = avcodec_send_frame(m_codecCtx, nullptr);
         if (ret < 0 && ret != AVERROR_EOF) {
