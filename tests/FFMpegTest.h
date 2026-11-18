@@ -14,13 +14,11 @@ inline void TestFFMpeg()
 
     // 2. 尝试打开一个媒体文件（视频或图片都可以）
     // 用你已有的 data 目录下的文件，或者换成任意一个 mp4/avi
-    const std::string file =
-        EnvRootPath() + "/data/lhc.jpg"; // 如果没有视频，jpg 也能被 avformat 识别
+    const std::string file = EnvRootPath() + "/data/lhc.jpg"; // 如果没有视频，jpg 也能被 avformat 识别
 
     AVFormatContext* fmtCtx = nullptr;
     int ret = avformat_open_input(&fmtCtx, file.c_str(), nullptr, nullptr);
-    if (ret < 0)
-    {
+    if (ret < 0) {
         char errBuf[AV_ERROR_MAX_STRING_SIZE] = {};
         av_strerror(ret, errBuf, sizeof(errBuf));
         std::cerr << "avformat_open_input failed: " << errBuf << std::endl;
@@ -28,8 +26,7 @@ inline void TestFFMpeg()
     }
 
     ret = avformat_find_stream_info(fmtCtx, nullptr);
-    if (ret < 0)
-    {
+    if (ret < 0) {
         std::cerr << "avformat_find_stream_info failed" << std::endl;
         avformat_close_input(&fmtCtx);
         return;
@@ -40,12 +37,11 @@ inline void TestFFMpeg()
     std::cout << "Duration: " << fmtCtx->duration / AV_TIME_BASE << " s" << std::endl;
     std::cout << "Streams: " << fmtCtx->nb_streams << std::endl;
 
-    for (unsigned i = 0; i < fmtCtx->nb_streams; ++i)
-    {
+    for (unsigned i = 0; i < fmtCtx->nb_streams; ++i) {
         AVStream* st = fmtCtx->streams[i];
         const char* type = av_get_media_type_string(st->codecpar->codec_type);
-        std::cout << "  stream " << i << ": " << (type ? type : "unknown")
-                  << ", codec_id=" << st->codecpar->codec_id << std::endl;
+        std::cout << "  stream " << i << ": " << (type ? type : "unknown") << ", codec_id=" << st->codecpar->codec_id
+                  << std::endl;
     }
 
     avformat_close_input(&fmtCtx);
