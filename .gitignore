@@ -106,6 +106,9 @@ docs/latex/
 docs/xml/
 Doxyfile.bak
 
+# ---------- 外部参考资料（本地留存，不入库） ----------
+references/
+
 # ---------- 系统文件 ----------
 .DS_Store
 Thumbs.db
