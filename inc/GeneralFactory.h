@@ -13,20 +13,17 @@
 // 通用工厂模式（General
 // Factory），允许根据一个键（通常是字符串）动态创建实现了某个接口（Intf）的派生类对象。
 
-namespace detail
-{
+namespace detail {
 
 // CreatorTraits: 根据 Intf（接口类型）、KType（键类型）、PassName（是否传递名称）以及实际构造参数
 // Args...，生成一个创建器（Creator）。 创建器是一个可调用对象，接受 Args... 参数，返回
 // std::shared_ptr<Intf>。
 template <typename Intf, typename KType, bool PassName, typename = void>
-struct CreatorTraits
-{
+struct CreatorTraits {
     using type = std::shared_ptr<Intf>;
 
     template <typename... Args>
-    struct CreatorGenerator
-    {
+    struct CreatorGenerator {
         using CreatorType = std::function<type(Args...)>;
 
         template <typename U>
@@ -34,24 +31,18 @@ struct CreatorTraits
         {
             static_assert(std::is_base_of_v<Intf, U>,
                           "U must be derived from Intf"); // U必须是Intf的派生类
-            if constexpr (PassName)
-            {
-                return [name](auto&&... args) -> type
-                {
+            if constexpr (PassName) {
+                return [name](auto&&... args) -> type {
                     return std::make_shared<U>(
                         name,
-                        std::forward<decltype(args)>(
-                            args)...); // 当 PassName == true 时，U的构造函数必须接受 (KType name,
-                                       // Args... args) 形式的参数。
+                        std::forward<decltype(args)>(args)...); // 当 PassName == true 时，U的构造函数必须接受 (KType
+                                                                // name, Args... args) 形式的参数。
                 };
-            }
-            else
-            {
-                return [](auto&&... args) -> type
-                {
-                    return std::make_shared<U>(std::forward<decltype(args)>(
-                        args)...); // 当 PassName == false 时，U的构造函数必须接受 (Args... args)
-                                   // 形式的参数。
+            } else {
+                return [](auto&&... args) -> type {
+                    return std::make_shared<U>(
+                        std::forward<decltype(args)>(args)...); // 当 PassName == false 时，U的构造函数必须接受 (Args...
+                                                                // args) 形式的参数。
                 };
             }
         }
@@ -63,17 +54,14 @@ struct CreatorTraits
 // PassName：是否将注册键传递给构造函数，默认为 true。
 // Args...：构造函数的额外参数类型包（不包含可能存在的名称参数）。
 template <typename Intf, typename KType = std::string, bool PassName = true, typename... Args>
-class GeneralFactory
-{
-    using CreatorGenerator =
-        typename CreatorTraits<Intf, KType, PassName>::template CreatorGenerator<Args...>;
+class GeneralFactory {
+    using CreatorGenerator = typename CreatorTraits<Intf, KType, PassName>::template CreatorGenerator<Args...>;
     using CreatorType = typename CreatorGenerator::CreatorType;
     using ProductPtr = std::shared_ptr<Intf>;
 
     // 编译期断言：不支持工厂的 Args...类型中包含 非const的左值引用（非const的T&）。 //
     // 目前不支持，后期待定 TBD：这里待确认 当构造函数包含非const的 T&形参时 是否支持
-    static_assert((... && (!std::is_lvalue_reference_v<Args> ||
-                           std::is_const_v<std::remove_reference_t<Args>>)),
+    static_assert((... && (!std::is_lvalue_reference_v<Args> || std::is_const_v<std::remove_reference_t<Args>>)),
                   "GeneralFactory: non-const lvalue reference types in Args... are unsupported; "
                   "use value or const& instead.");
 
@@ -91,8 +79,7 @@ public:
     {
         std::lock_guard<std::mutex> lk(m_creatorTblMutex);
         auto creatorIter = m_creatorTbl.find(name);
-        if (creatorIter == m_creatorTbl.end())
-        {
+        if (creatorIter == m_creatorTbl.end()) {
             std::stringstream kname;
             kname << name;
             // LOGE("create %s not found!", kname.str().c_str());
@@ -107,11 +94,9 @@ public:
     {
         std::lock_guard<std::mutex> lk(m_creatorTblMutex);
         std::vector<ProductPtr> typeVec{};
-        for (const auto& pair : m_creatorTbl)
-        {
+        for (const auto& pair : m_creatorTbl) {
             auto obj = pair.second(std::forward<TArgs>(args)...);
-            if (obj != nullptr)
-            {
+            if (obj != nullptr) {
                 std::stringstream kname;
                 kname << pair.first;
                 // LOGI("create %s success", kname.str().c_str());
@@ -130,18 +115,14 @@ public:
         return 0;
     }
 
-    bool CheckNameExists(const KType& name) const
-    {
-        return m_creatorTbl.count(name) != 0;
-    }
+    bool CheckNameExists(const KType& name) const { return m_creatorTbl.count(name) != 0; }
 
 private:
     void CheckNameExists(const KType& name)
     {
         std::stringstream kname;
         kname << name;
-        if (m_creatorTbl.count(name) != 0)
-        {
+        if (m_creatorTbl.count(name) != 0) {
             // LOGE("found same type! type=%s", kname.str().c_str());
         }
     }
