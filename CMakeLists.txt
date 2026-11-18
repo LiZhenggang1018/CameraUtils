@@ -352,10 +352,10 @@ message(STATUS "EXIV2_LIBS = ${EXIV2_LIBS}")
 
 # ============================================================
 # Optional feature: VAS concurrency demo (requires stdexec)
-# Disabled by default; enable with -DCAMERA_UTILS_ENABLE_VAS_CONCURRENCY=ON
+# Enabled by default; disable with -DCAMERA_UTILS_ENABLE_VAS_CONCURRENCY=OFF
 # ============================================================
 option(CAMERA_UTILS_ENABLE_VAS_CONCURRENCY
-    "Build the stdexec based VAS concurrency demo" OFF)
+    "Build the stdexec based VAS concurrency demo" ON)
 message(STATUS "CAMERA_UTILS_ENABLE_VAS_CONCURRENCY = ${CAMERA_UTILS_ENABLE_VAS_CONCURRENCY}")
 
 # ============================================================
