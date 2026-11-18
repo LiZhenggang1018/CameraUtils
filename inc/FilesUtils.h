@@ -15,22 +15,15 @@ inline std::vector<std::string> GetFilesInDir(const std::string& dir, bool recur
     std::filesystem::path folderPath(dir);
     CHECK_AND_RETURN_RET(!std::filesystem::exists(folderPath), filePaths);
     CHECK_AND_RETURN_RET(!std::filesystem::is_directory(folderPath), filePaths);
-    if (recursive)
-    {
-        for (const auto& entry : std::filesystem::recursive_directory_iterator(folderPath))
-        {
-            if (entry.is_regular_file())
-            {
+    if (recursive) {
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(folderPath)) {
+            if (entry.is_regular_file()) {
                 filePaths.push_back(entry.path().filename().string());
             }
         }
-    }
-    else
-    {
-        for (const auto& entry : std::filesystem::directory_iterator(folderPath))
-        {
-            if (entry.is_regular_file())
-            {
+    } else {
+        for (const auto& entry : std::filesystem::directory_iterator(folderPath)) {
+            if (entry.is_regular_file()) {
                 filePaths.push_back(entry.path().filename().string());
             }
         }
