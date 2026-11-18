@@ -9,15 +9,13 @@ target_include_directories(camera_utils_tests PRIVATE
 
 target_link_libraries(camera_utils_tests PRIVATE
     CameraUtils::core
+    CameraUtils::build_options
 )
 
-target_compile_options(camera_utils_tests PRIVATE
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall>
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wextra>
-    $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    $<$<CXX_COMPILER_ID:MSVC>:/permissive->
-    $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
-)
+# Link stdexec only when the VAS demo is enabled
+if(CAMERA_UTILS_ENABLE_VAS_CONCURRENCY)
+    target_link_libraries(camera_utils_tests PRIVATE STDEXEC::stdexec)
+endif()
 
 set_target_properties(camera_utils_tests PROPERTIES
     CXX_STANDARD 20
@@ -50,6 +48,11 @@ set(_unit_tests
     magic-enum
     exif
 )
+
+# The vas-concurrency case only exists when the option is enabled
+if(CAMERA_UTILS_ENABLE_VAS_CONCURRENCY)
+    list(APPEND _unit_tests vas-concurrency)
+endif()
 
 foreach(_t IN LISTS _unit_tests)
     add_test(NAME "unit.${_t}" COMMAND camera_utils_tests ${_t})
