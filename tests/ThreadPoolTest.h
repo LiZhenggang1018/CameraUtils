@@ -1,11 +1,10 @@
 #ifndef THREADPOOLTEST_H
 #define THREADPOOLTEST_H
 
-#include "ThreadPool.h"
 #include "CustomLog.h"
+#include "ThreadPool.h"
 
-class ThreadPoolTest
-{
+class ThreadPoolTest {
 public:
     static void RunAllTests()
     {
@@ -35,21 +34,15 @@ private:
         int result1 = future1.get();
         int result2 = future2.get();
 
-        if (result1 == 42)
-        {
+        if (result1 == 42) {
             PV("t1 ok");
-        }
-        else
-        {
+        } else {
             PV("t1 err");
         }
 
-        if (result2 == 30)
-        {
+        if (result2 == 30) {
             PV("t2 ok");
-        }
-        else
-        {
+        } else {
             PV("t2 err");
         }
     }
@@ -58,13 +51,11 @@ private:
     {
         PV("TestCustom");
         ThreadPool pool(3);
-        auto f = pool.EnqueMsg(
-            []()
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                PV("done");
-                return;
-            });
+        auto f = pool.EnqueMsg([]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            PV("done");
+            return;
+        });
         pool.WaitSync(f);
         PV("TestCustom done");
     }
@@ -75,27 +66,21 @@ private:
         ThreadPool pool(1);
 
         std::atomic<bool> taskCompleted{};
-        auto future = pool.EnqueMsg(
-            [&taskCompleted]()
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                taskCompleted = true;
-                return "completed";
-            });
+        auto future = pool.EnqueMsg([&taskCompleted]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            taskCompleted = true;
+            return "completed";
+        });
 
-        if (!taskCompleted)
-        {
+        if (!taskCompleted) {
             PV("task not begin yet");
         }
 
         pool.WaitSync(future);
 
-        if (taskCompleted)
-        {
+        if (taskCompleted) {
             PV("taskCompleted after WaitSync");
-        }
-        else
-        {
+        } else {
             PV("not taskCompleted after WaitSync");
         }
 
@@ -112,41 +97,32 @@ private:
         std::vector<std::future<int>> futures;
         std::atomic<int> completedCount{0};
 
-        for (int i = 0; i < taskCount; ++i)
-        {
-            futures.emplace_back(pool.EnqueMsg(
-                [i, &completedCount]()
-                {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-                    ++completedCount;
-                    return i * i;
-                }));
+        for (int i = 0; i < taskCount; ++i) {
+            futures.emplace_back(pool.EnqueMsg([i, &completedCount]() {
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                ++completedCount;
+                return i * i;
+            }));
         }
 
         pool.WaitAll();
 
-        if (completedCount == taskCount)
-        {
+        if (completedCount == taskCount) {
             PV(taskCount, "tasks done");
-        }
-        else
-        {
+        } else {
             PV("err,completed tasks is expected", taskCount, ", but only", completedCount);
         }
 
         bool allCorrect = true;
-        for (int i = 0; i < taskCount; ++i)
-        {
+        for (int i = 0; i < taskCount; ++i) {
             int result = futures[i].get();
-            if (result != i * i)
-            {
+            if (result != i * i) {
                 PV("err at", i);
                 allCorrect = false;
             }
         }
 
-        if (allCorrect)
-        {
+        if (allCorrect) {
             PV("All pass");
         }
     }
@@ -162,12 +138,10 @@ private:
         }
 
         ThreadPool pool(1);
-        auto future = pool.EnqueMsg(
-            []() -> int
-            {
-                PV("ok");
-                return 42;
-            });
+        auto future = pool.EnqueMsg([]() -> int {
+            PV("ok");
+            return 42;
+        });
 
         pool.WaitSync(future);
         int result = future.get();
@@ -185,8 +159,7 @@ private:
 
         auto startTime = std::chrono::steady_clock::now();
 
-        for (int i = 0; i < taskCount; ++i)
-        {
+        for (int i = 0; i < taskCount; ++i) {
             futures.emplace_back(pool.EnqueMsg([i]() { return i * i; }));
         }
 
@@ -197,22 +170,17 @@ private:
 
         // 验证所有结果正确
         bool allCorrect = true;
-        for (int i = 0; i < taskCount; ++i)
-        {
+        for (int i = 0; i < taskCount; ++i) {
             int result = futures[i].get();
-            if (result != i * i)
-            {
+            if (result != i * i) {
                 allCorrect = false;
                 break;
             }
         }
 
-        if (allCorrect)
-        {
+        if (allCorrect) {
             PV("ok, done", taskCount, "tasks at", duration.count(), "ms");
-        }
-        else
-        {
+        } else {
             PV("err");
         }
     }
@@ -223,26 +191,20 @@ private:
         // 在此处添加自定义测试逻辑
         ThreadPool pool;
         // 并行处理一些计算任务
-        auto future1 = pool.EnqueMsg(
-            []()
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(200));
-                return "task1 done";
-            });
+        auto future1 = pool.EnqueMsg([]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            return "task1 done";
+        });
 
-        auto future2 = pool.EnqueMsg(
-            []()
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                return 3.14159;
-            });
+        auto future2 = pool.EnqueMsg([]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            return 3.14159;
+        });
 
-        auto future3 = pool.EnqueMsg(
-            []()
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(150));
-                return std::vector<int>{1, 2, 3, 4, 5};
-            });
+        auto future3 = pool.EnqueMsg([]() {
+            std::this_thread::sleep_for(std::chrono::milliseconds(150));
+            return std::vector<int>{1, 2, 3, 4, 5};
+        });
 
         // 等待特定任务
         pool.WaitSync(future2);
@@ -255,11 +217,7 @@ private:
         auto vec = future3.get();
         PV("task3 done", vec.size());
 
-        PV(pool.GetThreadCount(),
-           "threads,",
-           pool.GetPendingTaskCount(),
-           "pending tasks,",
-           pool.GetActiveTaskCount(),
+        PV(pool.GetThreadCount(), "threads,", pool.GetPendingTaskCount(), "pending tasks,", pool.GetActiveTaskCount(),
            "active tasks");
     }
 };
@@ -268,7 +226,7 @@ private:
 inline void ThreadPoolTest()
 {
     ThreadPoolTest::RunAllTests();
-    return ;
+    return;
 }
 
 #endif // !THREADPOOLTEST_H
