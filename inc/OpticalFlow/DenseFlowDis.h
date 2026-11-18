@@ -5,26 +5,23 @@
 
 class DenseFlowDis {
 public:
-    enum class Preset {
-        UltraFast,
-        Fast,
-        Medium
-    };
+    enum class Preset { UltraFast, Fast, Medium };
 
     explicit DenseFlowDis(Preset preset = Preset::Fast)
-        : m_preset(preset) {
+        : m_preset(preset)
+    {
         Recreate();
     }
 
-    [[nodiscard]] cv::Mat Compute(
-        const cv::Mat& prevGray,
-        const cv::Mat& gray) const {
+    [[nodiscard]] cv::Mat Compute(const cv::Mat& prevGray, const cv::Mat& gray) const
+    {
         cv::Mat flow;
         m_dis->calc(prevGray, gray, flow);
         return flow;
     }
 
-    void SetPreset(Preset preset) {
+    void SetPreset(Preset preset)
+    {
         if (m_preset == preset) {
             return;
         }
@@ -32,29 +29,39 @@ public:
         Recreate();
     }
 
-    [[nodiscard]] Preset GetPreset() const {
-        return m_preset;
-    }
+    [[nodiscard]] Preset GetPreset() const { return m_preset; }
 
-    [[nodiscard]] const char* PresetName() const {
+    [[nodiscard]] const char* PresetName() const
+    {
         switch (m_preset) {
-            case Preset::UltraFast: return "UltraFast";
-            case Preset::Fast:      return "Fast";
-            case Preset::Medium:    return "Medium";
+        case Preset::UltraFast:
+            return "UltraFast";
+        case Preset::Fast:
+            return "Fast";
+        case Preset::Medium:
+            return "Medium";
         }
         return "Unknown";
     }
 
-    void CyclePreset() {
+    void CyclePreset()
+    {
         switch (m_preset) {
-            case Preset::UltraFast: SetPreset(Preset::Fast);      break;
-            case Preset::Fast:      SetPreset(Preset::Medium);    break;
-            case Preset::Medium:    SetPreset(Preset::UltraFast); break;
+        case Preset::UltraFast:
+            SetPreset(Preset::Fast);
+            break;
+        case Preset::Fast:
+            SetPreset(Preset::Medium);
+            break;
+        case Preset::Medium:
+            SetPreset(Preset::UltraFast);
+            break;
         }
     }
 
 private:
-    void Recreate() {
+    void Recreate()
+    {
         int presetFlag = cv::DISOpticalFlow::PRESET_FAST;
         if (m_preset == Preset::UltraFast) {
             presetFlag = cv::DISOpticalFlow::PRESET_ULTRAFAST;
