@@ -1,7 +1,7 @@
 #ifndef TESTCASE_H
 #define TESTCASE_H
 
-#include "CommonHead.h"
+#include "CoreUtils.h"
 
 #include "EventTest.h"
 #include "FactoryAndJson.h"
