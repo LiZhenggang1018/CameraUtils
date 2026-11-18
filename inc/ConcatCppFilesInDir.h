@@ -15,8 +15,7 @@
 
 namespace fs = std::filesystem;
 
-namespace
-{
+namespace {
 
 inline std::string ToLower(std::string s)
 {
@@ -40,8 +39,7 @@ inline bool ParsePartSuffix(const std::string& stem, std::string& base, int& par
         return false; // 不允许 _01
 
     int n = 0;
-    for (char c : numStr)
-    {
+    for (char c : numStr) {
         if (!std::isdigit(static_cast<unsigned char>(c)))
             return false;
         n = n * 10 + (c - '0');
@@ -67,8 +65,7 @@ inline void ConcatCppFilesInDir(std::string_view inDir, std::string_view outDir)
     fs::create_directories(outPath, ec);
 
     // 1) 收集 inDir 下所有 .h / .cpp 文件
-    struct Entry
-    {
+    struct Entry {
         fs::path path;
         std::string stem;     // 不含扩展名的文件名
         std::string ext;      // 原始扩展名（含点）
@@ -78,8 +75,7 @@ inline void ConcatCppFilesInDir(std::string_view inDir, std::string_view outDir)
     };
 
     std::vector<Entry> entries;
-    for (const auto& de : fs::directory_iterator(inPath, ec))
-    {
+    for (const auto& de : fs::directory_iterator(inPath, ec)) {
         if (ec)
             break;
         if (!de.is_regular_file(ec))
@@ -109,25 +105,20 @@ inline void ConcatCppFilesInDir(std::string_view inDir, std::string_view outDir)
     //    否则视为独立文件（baseStem = 自身 stem, part = 0）。
     //    这样既能正确处理 My.h / My_1.h / My_2.h，
     //    也能正确处理原文件名本来就以 "_数字" 结尾（如 Foo_1.h）被分割后的情况。
-    for (auto& e : entries)
-    {
+    for (auto& e : entries) {
         std::string base;
         int part = 0;
-        if (ParsePartSuffix(e.stem, base, part) && stemSet.count(e.extLower + "\x01" + base))
-        {
+        if (ParsePartSuffix(e.stem, base, part) && stemSet.count(e.extLower + "\x01" + base)) {
             e.baseStem = base;
             e.part = part;
-        }
-        else
-        {
+        } else {
             e.baseStem = e.stem;
             e.part = 0;
         }
     }
 
     // 4) 按 (extLower, baseStem) 分组
-    struct Group
-    {
+    struct Group {
         std::string extLower;
         std::string baseStem;
         std::string outExt; // 输出时使用的扩展名（取 part0 的）
@@ -135,21 +126,17 @@ inline void ConcatCppFilesInDir(std::string_view inDir, std::string_view outDir)
     };
     std::unordered_map<std::string, Group> groups;
 
-    for (auto& e : entries)
-    {
+    for (auto& e : entries) {
         std::string key = e.extLower + "\x01" + e.baseStem;
         auto it = groups.find(key);
-        if (it == groups.end())
-        {
+        if (it == groups.end()) {
             Group g;
             g.extLower = e.extLower;
             g.baseStem = e.baseStem;
             g.outExt = e.ext;
             g.parts.push_back(&e);
             groups.emplace(std::move(key), std::move(g));
-        }
-        else
-        {
+        } else {
             it->second.parts.push_back(&e);
             if (e.part == 0)
                 it->second.outExt = e.ext;
@@ -157,17 +144,13 @@ inline void ConcatCppFilesInDir(std::string_view inDir, std::string_view outDir)
     }
 
     // 5) 逐组处理
-    for (auto& [key, g] : groups)
-    {
-        std::sort(g.parts.begin(),
-                  g.parts.end(),
-                  [](const Entry* a, const Entry* b) { return a->part < b->part; });
+    for (auto& [key, g] : groups) {
+        std::sort(g.parts.begin(), g.parts.end(), [](const Entry* a, const Entry* b) { return a->part < b->part; });
 
         const fs::path target = outPath / (g.baseStem + g.outExt);
 
         // 未分割（只有一个 part0 文件）→ 直接拷贝
-        if (g.parts.size() == 1 && g.parts[0]->part == 0)
-        {
+        if (g.parts.size() == 1 && g.parts[0]->part == 0) {
             std::error_code eqEc;
             if (fs::equivalent(g.parts[0]->path, target, eqEc) && !eqEc)
                 continue; // inDir == outDir，源和目标是同一文件
@@ -180,11 +163,9 @@ inline void ConcatCppFilesInDir(std::string_view inDir, std::string_view outDir)
         // 已分割 → 按 part 顺序拼接（先全部读入内存，避免 inDir==outDir 时覆盖 part0）
         std::string merged;
         bool readOk = true;
-        for (auto* p : g.parts)
-        {
+        for (auto* p : g.parts) {
             std::ifstream in(p->path, std::ios::binary);
-            if (!in)
-            {
+            if (!in) {
                 readOk = false;
                 break;
             }
