@@ -94,3 +94,6 @@ jobs:
 
       - name: Build
         run: cmake --build --preset x64-debug --target ${{ inputs.build_target || 'CameraUtils' }}
+
+      - name: Test (unit)
+        run: ctest --test-dir out/build/x64-debug -C Debug -L unit --output-on-failure
