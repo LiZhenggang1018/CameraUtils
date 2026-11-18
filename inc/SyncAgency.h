@@ -22,25 +22,21 @@
 
 #include "NoCopyableMacro.h"
 
-namespace
-{
+namespace {
 constexpr int64_t TIMEOUT_5S = 5000;
 }
 
-enum class SyncId : int32_t
-{
+enum class SyncId : int32_t {
     CUSTOM_SIGNAL = 1,
     // add custom signal below
 };
 
-enum class SyncState : uint8_t
-{
+enum class SyncState : uint8_t {
     RUNNABLE,
     DONE,
 };
 
-namespace SyncUtils
-{
+namespace SyncUtils {
 // dump func to print SyncId as string
 static const char* ToString(SyncId id)
 {
@@ -53,24 +49,21 @@ static const char* ToString(SyncId id)
 }
 }; // namespace SyncUtils
 
-class SyncNotifier final
-{
+class SyncNotifier final {
 public:
-    explicit SyncNotifier(SyncId syncId) : m_syncId(syncId) {};
+    explicit SyncNotifier(SyncId syncId)
+        : m_syncId(syncId) {};
     ~SyncNotifier() = default;
     DISALLOW_COPY_AND_MOVE(SyncNotifier);
 
     void SetState(SyncState state)
     {
         std::unique_lock<std::mutex> lock(m_mutex);
-        if (state == SyncState::DONE)
-        {
+        if (state == SyncState::DONE) {
             PV(SyncUtils::ToString(m_syncId), "Done");
             m_isReady = true;
             m_cv.notify_all();
-        }
-        else
-        {
+        } else {
             m_isReady = false;
         }
     }
@@ -89,8 +82,7 @@ private:
     std::condition_variable m_cv{};
 };
 
-class SyncAgency final : public Singleton<SyncAgency>
-{
+class SyncAgency final : public Singleton<SyncAgency> {
 public:
     std::shared_ptr<SyncNotifier> Register(SyncId syncId)
     {
@@ -107,10 +99,8 @@ public:
         CAR(!notifier);
         // UnRegister中会 先强制设置SyncState::DONE
         notifier->SetState(SyncState::DONE); // unexpected stop, we should notify done
-        for (auto iter = m_notifiers.begin(); iter != m_notifiers.end(); ++iter)
-        {
-            if (iter->first == syncId && iter->second == notifier)
-            {
+        for (auto iter = m_notifiers.begin(); iter != m_notifiers.end(); ++iter) {
+            if (iter->first == syncId && iter->second == notifier) {
                 m_notifiers.erase(iter);
                 break;
             }
@@ -127,36 +117,31 @@ public:
         lock.unlock();
 
         // 遍历multimap中所有key为syncId的value/syncNotifier项,依次调用每个syncNotifier的Wait()接口
-        for (auto&& i = range.first; i != range.second; ++i)
-        {
-            if (timeLeft <= 0)
-            {
+        for (auto&& i = range.first; i != range.second; ++i) {
+            if (timeLeft <= 0) {
                 PV("timeLeft <= 0");
                 continue;
             }
             auto&& syncNotifier = i->second;
-            if (!syncNotifier)
-            {
+            if (!syncNotifier) {
                 PV("!syncNotifier");
                 continue;
             }
             auto begin = std::chrono::steady_clock::now();
             syncNotifier->Wait(timeLeft);
 
-            auto elapsedOnce = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - begin);
+            auto elapsedOnce =
+                std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - begin);
             timeLeft -= elapsedOnce.count(); // 下一次次loop的超时阈值，减去本次Wait消耗的时间
         }
     }
 
     void PrintNotifiers() const
     {
-        if (m_notifiers.empty())
-        {
+        if (m_notifiers.empty()) {
             PV("notifiers.empty()");
         }
-        for (auto&& [id, sp] : m_notifiers)
-        {
+        for (auto&& [id, sp] : m_notifiers) {
             PV("syncId:", static_cast<int>(id), "sync Notifier addr:", sp.get());
         }
     }
