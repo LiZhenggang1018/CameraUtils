@@ -54,6 +54,32 @@ ninja -C out\build\x64-debug
 同理，本工程 Debug 目标为 `/Ob0 /Od /RTC1 -MDd`（标准 Debug），不存在 `/Ox` 优化；
 看到 `/Ox` 说明取到的是第三方目标。
 
+### clang-tidy 与 MSVC 工具集必须配对（重要）
+
+MSVC STL 会在 `yvals_core.h` 里硬性校验 Clang 版本，版本不足时报 `STL1000`
+（错误位置落在 STL 头里，看起来像代码问题，实则工具链不匹配）：
+
+| MSVC 工具集 | `yvals_core.h` 要求的最低 Clang |
+|---|---|
+| 14.44（`out/build/x64-release`） | **19** |
+| 14.52（`out/build/x64-debug`） | **22** |
+
+本机只有 `D:\Program Files\visual_studio\VC\Tools\Llvm\x64\bin\clang-tidy.exe`（LLVM 19.1.5），
+所以**跑 clang-tidy 必须配合 x64-release 的 14.44 环境**：
+
+```bat
+call "D:\Program Files\visual_studio\VC\Auxiliary\Build\vcvars64.bat"
+"D:\Program Files\visual_studio\VC\Tools\Llvm\x64\bin\clang-tidy.exe" -p out/build/x64-release <文件>
+```
+
+用 14.52 的 vcvars 去跑会得到满屏 `STL1000` 与 magic_enum 断言错误，**这不是代码缺陷**。
+
+另一个坑：clang-cl 同时定义 `__clang__` 与 `_MSC_VER`，magic_enum v0.9.8 的宏判断按
+`__clang__` 优先分支取偏移，而 clang-cl 下 `__PRETTY_FUNCTION__` 实为 MSVC 格式
+（`sizeof` 为 42，与 `__FUNCTION__` 的 25 不同），导致枚举反射范围为空、触发
+`is_reflected_v` 断言。`tidy.yml` 仅对 `src/main.cpp` 追加
+`-DMAGIC_ENUM_NO_CHECK_REFLECTED_ENUM` 绕过该断言，**该宏绝不可用于真实构建**。
+
 ## 测试
 
 ```bat
