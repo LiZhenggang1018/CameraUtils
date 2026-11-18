@@ -17,10 +17,8 @@ inline void TestBasicEventDelivery()
     auto receiver = std::make_shared<EventReceiver>("R");
 
     // 使用variant后，回调中可通过std::visit或std::get<>来处理具体事件，此处示例使用std::get<>
-    auto cb = [](const EventVariant& event)
-    {
-        if (auto messageEvent = GetEvent<MessageEvent>(event))
-        {
+    auto cb = [](const EventVariant& event) {
+        if (auto messageEvent = GetEvent<MessageEvent>(event)) {
             PV("Rcv:", messageEvent->s_);
         }
     };
@@ -39,13 +37,9 @@ inline void TestBasicEventDelivery()
 }
 
 // example 2: shows sender receiver in different module/class
-struct S : public Counter<S>
-{
+struct S : public Counter<S> {
 public:
-    S()
-    {
-        m_s = std::make_shared<EventSender>("S");
-    };
+    S() { m_s = std::make_shared<EventSender>("S"); };
 
     void Send()
     {
@@ -62,8 +56,7 @@ private:
     std::shared_ptr<EventSender> m_s{};
 };
 
-struct R : public Counter<R>
-{
+struct R : public Counter<R> {
 public:
     R()
     {
@@ -73,8 +66,7 @@ public:
 
     void Cb(const EventVariant& event)
     {
-        if (auto messageEvent = GetEvent<MessageEvent>(event))
-        {
+        if (auto messageEvent = GetEvent<MessageEvent>(event)) {
             PV("Rcv:", messageEvent->s_);
         }
     }
@@ -84,10 +76,7 @@ public:
         m_r->RegEvent<MessageEvent>([this](const EventVariant& event) { Cb(event); });
     }
 
-    ~R()
-    {
-        m_r->UnregEvent<MessageEvent>();
-    };
+    ~R() { m_r->UnregEvent<MessageEvent>(); };
 
 private:
     std::shared_ptr<EventReceiver> m_r{};
