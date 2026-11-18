@@ -1,9 +1,8 @@
 #ifndef LIVEPHOTOSMOOTHPLAYTEST_H_
 #define LIVEPHOTOSMOOTHPLAYTEST_H_
 
-#include "LivePhotoSmoothPlay/LpFovTransitionOpt.h"
 #include "LivePhotoSmoothPlay/ImageRegistrator.h"
-
+#include "LivePhotoSmoothPlay/LpFovTransitionOpt.h"
 
 inline void RunLivePhotoSmoothPlayTest()
 {
@@ -17,21 +16,15 @@ inline void RegTest()
     //    直接复用 FFmpegDefine.h 里已有的绝对路径宏，
     //    避免手写相对路径依赖 CWD。
     // ------------------------------------------------------------
-    const std::string refYuvPath = LAST_VID_FRAME_YUV;   // = .../LpJpg/275.yuv
-    const std::string curYuvPath = COVER_FRAME_YUV;      // = .../LpJpg/296.yuv
-    const std::string yuvOutDir  = LP_SMOOTH_PLAY_DATA_PATH + "reg_yuv_demo";
+    const std::string refYuvPath = LAST_VID_FRAME_YUV; // = .../LpJpg/275.yuv
+    const std::string curYuvPath = COVER_FRAME_YUV;    // = .../LpJpg/296.yuv
+    const std::string yuvOutDir = LP_SMOOTH_PLAY_DATA_PATH + "reg_yuv_demo";
 
     std::cout << "[RegTest] refYuv = " << refYuvPath << std::endl;
     std::cout << "[RegTest] curYuv = " << curYuvPath << std::endl;
-    std::cout << "[RegTest] outDir = " << yuvOutDir  << std::endl;
+    std::cout << "[RegTest] outDir = " << yuvOutDir << std::endl;
 
-    int rc = RegYuv(
-        curYuvPath,
-        refYuvPath,
-        yuvOutDir,
-        720, 1584,
-        FeatureDetectorType::ORB,
-        TransformType::HOMOGRAPHY);
+    int rc = RegYuv(curYuvPath, refYuvPath, yuvOutDir, 720, 1584, FeatureDetectorType::ORB, TransformType::HOMOGRAPHY);
     std::cout << "RegYuv return code = " << rc << std::endl;
 
     // ------------------------------------------------------------
@@ -40,18 +33,13 @@ inline void RegTest()
     // ------------------------------------------------------------
     const std::string refImgPath = REG_IMG_REF_FILE();
     const std::string curImgPath = REG_IMG_CUR_FILE();
-    const std::string imgOutDir  = LP_SMOOTH_PLAY_DATA_PATH + "reg_img_demo";
+    const std::string imgOutDir = LP_SMOOTH_PLAY_DATA_PATH + "reg_img_demo";
 
     std::cout << "[RegTest] refImg = " << refImgPath << std::endl;
     std::cout << "[RegTest] curImg = " << curImgPath << std::endl;
     std::cout << "[RegTest] outDir = " << imgOutDir << std::endl;
 
-    int rc2 = RegImg(
-        curImgPath,
-        refImgPath,
-        imgOutDir,
-        FeatureDetectorType::SIFT,
-        TransformType::HOMOGRAPHY);
+    int rc2 = RegImg(curImgPath, refImgPath, imgOutDir, FeatureDetectorType::SIFT, TransformType::HOMOGRAPHY);
     std::cout << "RegImg return code = " << rc2 << std::endl;
 }
 
