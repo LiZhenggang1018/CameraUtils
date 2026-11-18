@@ -31,8 +31,48 @@ jobs:
           }
           echo "CLANG_TIDY=$($clangTidy.FullName)" >> $env:GITHUB_ENV
 
+      - name: Check clang-tidy matches MSVC STL
+        shell: pwsh
+        run: |
+          # Every MSVC STL release enforces a minimum Clang version (yvals_core.h):
+          #   14.44 -> Clang 19,  14.52 -> Clang 22
+          # A mismatch fails with STL1000 deep inside the STL, which is hard to diagnose.
+          $raw = & $env:CLANG_TIDY --version
+          $clangMajor = [int](([regex]::Match($raw, 'version (\d+)\.')).Groups[1].Value)
+          $msvcVersion = [version]$env:VCToolsVersion.Trim().Split('-')[0]
+          $required = if ($msvcVersion -ge [version]'14.50') { 22 } else { 19 }
+          Write-Host "clang-tidy $clangMajor / MSVC $msvcVersion (requires Clang >= $required)"
+          if ($clangMajor -lt $required) {
+            Write-Error "clang-tidy $clangMajor cannot parse the MSVC $msvcVersion STL (needs Clang $required+). Pin VCToolsVersion or upgrade LLVM."
+            exit 1
+          }
+
       - name: Run clang-tidy
         shell: pwsh
         run: |
+          # Headers must report no analyzer findings; bugprone and style checks are still
+          # triaged as warnings until the existing backlog is cleared.
           $files = Get-ChildItem -Path src -Recurse -Include *.cpp
-          & $env:CLANG_TIDY -p out/build/x64-release $files.FullName
+          $failed = @()
+          foreach ($f in $files) {
+            # magic_enum v0.9.8 picks its enum-name branch with `#elif defined(__clang__)`,
+            # but clang-cl also defines _MSC_VER and formats __PRETTY_FUNCTION__ like
+            # __FUNCSIG__, so the clang offsets yield a zero reflected range. The guard only
+            # relaxes that static_assert; clang-cl cannot reflect enums correctly here, so
+            # this flag must never be used for a real build.
+            $extra = @()
+            if ($f.Name -eq 'main.cpp') {
+              $extra = @('--extra-arg=-DMAGIC_ENUM_NO_CHECK_REFLECTED_ENUM')
+            }
+            $output = & $env:CLANG_TIDY -p out/build/x64-release $f.FullName --quiet `
+              --warnings-as-errors='clang-analyzer-*' @extra 2>&1
+            $output | ForEach-Object { Write-Host $_ }
+            if ($LASTEXITCODE -ne 0) {
+              $failed += $f.Name
+            }
+          }
+          if ($failed.Count -gt 0) {
+            Write-Error "clang-tidy failed: $($failed -join ', ')"
+            exit 1
+          }
+          Write-Host "clang-tidy: $($files.Count) translation units clean"
