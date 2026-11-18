@@ -48,8 +48,8 @@ LpFovTransitionOpt.h::GenFromLpToOptLp()
  * @Description: Simple Image Registration Header
  */
 
-#ifndef IMAGEREGISTRATOR_H_
-#define IMAGEREGISTRATOR_H_
+#ifndef INC_LIVEPHOTOSMOOTHPLAY_IMAGEREGISTRATOR_H
+#define INC_LIVEPHOTOSMOOTHPLAY_IMAGEREGISTRATOR_H
 
 #include "OpenCVCommon.h"
 
@@ -206,4 +206,4 @@ int RegImg(const std::string& curImgFile, const std::string& refImgFile, const s
            FeatureDetectorType detector = FeatureDetectorType::ORB,
            TransformType transform = TransformType::HOMOGRAPHY);
 
-#endif // IMAGEREGISTRATOR_H_
+#endif // INC_LIVEPHOTOSMOOTHPLAY_IMAGEREGISTRATOR_H

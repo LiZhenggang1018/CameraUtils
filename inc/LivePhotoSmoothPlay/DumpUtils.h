@@ -1,5 +1,5 @@
-#ifndef DUMPUTILS_H
-#define DUMPUTILS_H
+#ifndef INC_LIVEPHOTOSMOOTHPLAY_DUMPUTILS_H
+#define INC_LIVEPHOTOSMOOTHPLAY_DUMPUTILS_H
 
 #include <filesystem>
 #include <fstream>
@@ -251,4 +251,4 @@ inline void TestDumpUtils()
     //     "End");
 }
 
-#endif // !DUMPUTILS_H
+#endif // !INC_LIVEPHOTOSMOOTHPLAY_DUMPUTILS_H

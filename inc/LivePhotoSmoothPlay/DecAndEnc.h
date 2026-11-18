@@ -2,8 +2,8 @@
  * @Description: 用于执行FFmpeg编解码操作。且编码时根据使用场景决定在视频结尾插入封面帧 或者 FOV过渡帧
  */
 
-#ifndef DECANDENC_H_
-#define DECANDENC_H_
+#ifndef INC_LIVEPHOTOSMOOTHPLAY_DECANDENC_H
+#define INC_LIVEPHOTOSMOOTHPLAY_DECANDENC_H
 
 // 用于执行FFmpeg编解码操作。且编码时根据使用场景决定在视频结尾插入封面帧 或者 FOV过渡帧
 #include <filesystem>
@@ -1537,4 +1537,4 @@ inline void DecodeCropEncode(const char* input_filename, const char* output_file
     // 自动清理由 RAII 处理
 }
 
-#endif // DECANDENC_H_
+#endif // INC_LIVEPHOTOSMOOTHPLAY_DECANDENC_H

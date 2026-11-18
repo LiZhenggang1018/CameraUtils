@@ -7,8 +7,8 @@
  * @FilePath: \OpenCV101\YUVImageReader.h
  */
 
-#ifndef YUVIMAGEREADER_H_
-#define YUVIMAGEREADER_H_
+#ifndef INC_LIVEPHOTOSMOOTHPLAY_YUVIMAGEREADER_H
+#define INC_LIVEPHOTOSMOOTHPLAY_YUVIMAGEREADER_H
 
 #include "OpenCVCommon.h"
 
@@ -50,4 +50,4 @@ private:
     void convertBGRtoYUV420P(const cv::Mat& bgr_image, std::vector<uint8_t>& yuv_data) const;
 };
 
-#endif // YUVIMAGEREADER_H_
+#endif // INC_LIVEPHOTOSMOOTHPLAY_YUVIMAGEREADER_H

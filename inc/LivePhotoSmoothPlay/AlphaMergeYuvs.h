@@ -1,5 +1,5 @@
-#ifndef ALPHAMERGEYUV_H
-#define ALPHAMERGEYUV_H
+#ifndef INC_LIVEPHOTOSMOOTHPLAY_ALPHAMERGEYUVS_H
+#define INC_LIVEPHOTOSMOOTHPLAY_ALPHAMERGEYUVS_H
 
 #include "FFmpegDefine.h"
 #include "OpenCVCommon.h"
@@ -543,4 +543,4 @@ inline void TestAlphaMergeYuvs()
     return;
 }
 
-#endif // !ALPHAMERGEYUV_H
+#endif // !INC_LIVEPHOTOSMOOTHPLAY_ALPHAMERGEYUVS_H

@@ -2,8 +2,8 @@
  * @Description: 用于生成原始LP文件 以及 生成优化后的LP文件
  */
 
-#ifndef DECDEMO_H_
-#define DECDEMO_H_
+#ifndef INC_LIVEPHOTOSMOOTHPLAY_DECDEMO_H
+#define INC_LIVEPHOTOSMOOTHPLAY_DECDEMO_H
 
 #include "DecAndEnc.h"
 #include "FFMpegUtils.h"
@@ -41,4 +41,4 @@ inline void ReplaceAlhpaMergeToFovSmoothLp()
                                        TO_REPLACE_YUV_END_IDX, replaceYuvFiles);
 }
 
-#endif // DECDEMO_H_
+#endif // INC_LIVEPHOTOSMOOTHPLAY_DECDEMO_H

@@ -2,8 +2,8 @@
  * @Description: FFMpeg公用定义头文件
  */
 
-#ifndef FFMPEGDEFINE_H_
-#define FFMPEGDEFINE_H_
+#ifndef INC_LIVEPHOTOSMOOTHPLAY_FFMPEGDEFINE_H
+#define INC_LIVEPHOTOSMOOTHPLAY_FFMPEGDEFINE_H
 
 #include <cstdio>
 #include <memory>
@@ -239,4 +239,4 @@ using AVFramePtr = std::unique_ptr<AVFrame, AVFrameDeleter>;
 using SwsCtxPtr = std::unique_ptr<SwsContext, SwsContextDeleter>;
 using FilePtr = std::unique_ptr<FILE, FileDeleter>;
 
-#endif // FFMPEGDEFINE_H_
+#endif // INC_LIVEPHOTOSMOOTHPLAY_FFMPEGDEFINE_H

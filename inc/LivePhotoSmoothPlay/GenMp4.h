@@ -2,8 +2,8 @@
  * @Description: demo展示：生成300帧yuv图像内容，然后通过H.264编码器将这些yuv图像全部编入MP4文件，且帧率为30fps
  */
 
-#ifndef GENMP4_H_
-#define GENMP4_H_
+#ifndef INC_LIVEPHOTOSMOOTHPLAY_GENMP4_H
+#define INC_LIVEPHOTOSMOOTHPLAY_GENMP4_H
 
 #include "FFmpegDefine.h"
 
@@ -197,4 +197,4 @@ inline int GenSimpleMp4()
     return 0;
 }
 
-#endif // GENMP4_H_
+#endif // INC_LIVEPHOTOSMOOTHPLAY_GENMP4_H

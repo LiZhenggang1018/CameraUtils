@@ -2,8 +2,8 @@
  * @Description: Reg CoverFrame or TransitionFrame to LastVidFrame in LivePhoto
  */
 
-#ifndef LPREG_H_
-#define LPREG_H_
+#ifndef INC_LIVEPHOTOSMOOTHPLAY_LPREG_H
+#define INC_LIVEPHOTOSMOOTHPLAY_LPREG_H
 
 #include <filesystem>
 
@@ -421,4 +421,4 @@ inline void DecodeCropEncodeInputVid()
     DecodeCropEncode(LP_INIT_FILE.c_str(), LP_CROP_FILE.c_str(), xCropRatio, yCropRatio);
 }
 
-#endif // LPREG_H_
+#endif // INC_LIVEPHOTOSMOOTHPLAY_LPREG_H

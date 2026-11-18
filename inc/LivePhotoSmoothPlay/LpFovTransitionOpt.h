@@ -2,8 +2,8 @@
  * @Description: LpFovtTransitionOpt 头文件合集
  */
 
-#ifndef LPFOVTRANSITIONOPT_H_
-#define LPFOVTRANSITIONOPT_H_
+#ifndef INC_LIVEPHOTOSMOOTHPLAY_LPFOVTRANSITIONOPT_H
+#define INC_LIVEPHOTOSMOOTHPLAY_LPFOVTRANSITIONOPT_H
 
 // #include <windows.h> // 用于SetConsoleOutputCP
 
@@ -46,4 +46,4 @@ inline void LpFovTransitionOptTest()
     GenFromLpToOptLp();
 }
 
-#endif // LPFOVTRANSITIONOPT_H_
+#endif // INC_LIVEPHOTOSMOOTHPLAY_LPFOVTRANSITIONOPT_H

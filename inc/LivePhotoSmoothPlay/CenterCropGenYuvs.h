@@ -1,5 +1,5 @@
-#ifndef CENTERCROPGENYUVS_H_
-#define CENTERCROPGENYUVS_H_
+#ifndef INC_LIVEPHOTOSMOOTHPLAY_CENTERCROPGENYUVS_H
+#define INC_LIVEPHOTOSMOOTHPLAY_CENTERCROPGENYUVS_H
 
 #include <filesystem>
 
@@ -337,4 +337,4 @@ inline void GenDiffFovYuvsFromCoverFrame()
                       CROP_COVER_DIR); // crop1 FOV接近封面，cropLast FOV接近视频帧
 }
 
-#endif // CENTERCROPGENYUVS_H_
+#endif // INC_LIVEPHOTOSMOOTHPLAY_CENTERCROPGENYUVS_H

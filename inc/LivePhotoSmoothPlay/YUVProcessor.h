@@ -7,8 +7,8 @@
  * @FilePath: \OpenCV101\YUVProcessor.h
  */
 
-#ifndef YUVPROCESSOR_H_
-#define YUVPROCESSOR_H_
+#ifndef INC_LIVEPHOTOSMOOTHPLAY_YUVPROCESSOR_H
+#define INC_LIVEPHOTOSMOOTHPLAY_YUVPROCESSOR_H
 
 #include <algorithm>
 #include <fstream>
@@ -159,4 +159,4 @@ private:
     }
 };
 
-#endif // YUVPROCESSOR_H_
+#endif // INC_LIVEPHOTOSMOOTHPLAY_YUVPROCESSOR_H

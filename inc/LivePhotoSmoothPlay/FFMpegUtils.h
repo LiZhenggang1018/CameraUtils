@@ -2,8 +2,8 @@
  * @Description: 用于打印视频文件的I P B 帧数
  */
 
-#ifndef FFMPEGUTILS_H_
-#define FFMPEGUTILS_H_
+#ifndef INC_LIVEPHOTOSMOOTHPLAY_FFMPEGUTILS_H
+#define INC_LIVEPHOTOSMOOTHPLAY_FFMPEGUTILS_H
 
 #include "DumpUtils.h"
 #include "FFmpegDefine.h"
@@ -144,4 +144,4 @@ inline std::tuple<int, int, int> CountFrames(const std::string& input_file)
     return std::make_tuple(iFrameCnt, pFrameCnt, bFrameCnt);
 }
 
-#endif // FFMPEGUTILS_H_
+#endif // INC_LIVEPHOTOSMOOTHPLAY_FFMPEGUTILS_H
