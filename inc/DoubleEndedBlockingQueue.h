@@ -16,13 +16,12 @@
 
 // 线程安全的 支持阻塞/非阻塞式的生产者/消费者 双端队列
 template <typename T, bool IS_BLOCKING>
-class OptionalBlockingDeque
-{
+class OptionalBlockingDeque {
 public:
     explicit OptionalBlockingDeque(int maxSize, int timeoutMs = DEFAULT_TIMEOUT_MS)
-        : m_size{maxSize}, m_timeoutMs{std::chrono::milliseconds{timeoutMs}}
-    {
-    }
+        : m_size{maxSize},
+          m_timeoutMs{std::chrono::milliseconds{timeoutMs}}
+    {}
 
     DISALLOW_COPY_AND_MOVE(OptionalBlockingDeque);
 
@@ -68,28 +67,16 @@ public:
     }
 
     // 入队操作（从队尾入队）
-    bool PushBack(const T& t)
-    {
-        return Enqueue(t, true);
-    }
+    bool PushBack(const T& t) { return Enqueue(t, true); }
 
     // 入队操作（从队首入队）
-    bool PushFront(const T& t)
-    {
-        return Enqueue(t, false);
-    }
+    bool PushFront(const T& t) { return Enqueue(t, false); }
 
     // 出队操作（从队尾出队）
-    bool PopBack(T& t)
-    {
-        return Dequeue(t, true);
-    }
+    bool PopBack(T& t) { return Dequeue(t, true); }
 
     // 出队操作（从队首出队）
-    bool PopFront(T& t)
-    {
-        return Dequeue(t, false);
-    }
+    bool PopFront(T& t) { return Dequeue(t, false); }
 
 private:
     std::deque<T> m_deque{};
@@ -103,38 +90,26 @@ private:
     // 通用入队操作
     bool Enqueue(const T& value, bool back)
     {
-        if constexpr (IS_BLOCKING)
-        {
+        if constexpr (IS_BLOCKING) {
             std::unique_lock lock(m_mtx);
-            if (!m_cond.wait_for(
-                    lock, m_timeoutMs, [this] { return m_isRunning && m_deque.size() < m_size; }))
-            {
+            if (!m_cond.wait_for(lock, m_timeoutMs, [this] { return m_isRunning && m_deque.size() < m_size; })) {
                 return false; // 超时，返回false
             }
-            if (back)
-            {
+            if (back) {
                 m_deque.push_back(value);
-            }
-            else
-            {
+            } else {
                 m_deque.push_front(value);
             }
             m_cond.notify_all();
             return true;
-        }
-        else
-        {
+        } else {
             std::lock_guard lock(m_mtx);
-            if (m_deque.size() >= m_size)
-            {
+            if (m_deque.size() >= m_size) {
                 return false; // 队列已满，返回false
             }
-            if (back)
-            {
+            if (back) {
                 m_deque.push_back(value);
-            }
-            else
-            {
+            } else {
                 m_deque.push_front(value);
             }
             m_cond.notify_all();
@@ -145,44 +120,31 @@ private:
     // 通用出队操作
     bool Dequeue(T& value, bool back)
     {
-        if constexpr (IS_BLOCKING)
-        {
+        if constexpr (IS_BLOCKING) {
             std::unique_lock lock(m_mtx);
-            if (!m_cond.wait_for(
-                    lock, m_timeoutMs, [this] { return !m_deque.empty() || !m_isRunning; }))
-            {
+            if (!m_cond.wait_for(lock, m_timeoutMs, [this] { return !m_deque.empty() || !m_isRunning; })) {
                 return false; // 超时，返回false
             }
-            if (!m_deque.empty())
-            {
+            if (!m_deque.empty()) {
                 value = back ? std::move(m_deque.back()) : std::move(m_deque.front());
-                if (back)
-                {
+                if (back) {
                     m_deque.pop_back();
-                }
-                else
-                {
+                } else {
                     m_deque.pop_front();
                 }
                 m_cond.notify_all();
                 return true;
             }
             return false;
-        }
-        else
-        {
+        } else {
             std::lock_guard lock(m_mtx);
-            if (m_deque.empty())
-            {
+            if (m_deque.empty()) {
                 return false; // 队列为空，返回false
             }
             value = back ? std::move(m_deque.back()) : std::move(m_deque.front());
-            if (back)
-            {
+            if (back) {
                 m_deque.pop_back();
-            }
-            else
-            {
+            } else {
                 m_deque.pop_front();
             }
             m_cond.notify_all();
