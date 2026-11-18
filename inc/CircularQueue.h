@@ -14,17 +14,14 @@
 
 // T:元素类型; Block:队列阻塞行为模板参数
 template <typename T, bool Block>
-class CircularQueue
-{
+class CircularQueue {
 public:
-    explicit CircularQueue(size_t capacity) : capacity_(capacity), buffer_(new T[capacity])
-    {
-    }
+    explicit CircularQueue(size_t capacity)
+        : capacity_(capacity),
+          buffer_(new T[capacity])
+    {}
 
-    ~CircularQueue()
-    {
-        delete[] buffer_;
-    }
+    ~CircularQueue() { delete[] buffer_; }
 
     bool Empty()
     {
@@ -44,17 +41,13 @@ public:
         return size_;
     }
 
-    size_t Capacity()
-    {
-        return capacity_;
-    }
+    size_t Capacity() { return capacity_; }
 
     // 覆盖最旧元素的Push实现
     bool Push(const T& value)
     {
         std::unique_lock lock(mutex_);
-        if (size_ == capacity_)
-        {
+        if (size_ == capacity_) {
             // 队列已满，覆盖最旧元素
             buffer_[tail_] = value;
             tail_ = (tail_ + 1) % capacity_;
@@ -88,8 +81,7 @@ public:
     bool Push(T&& value)
     {
         std::unique_lock lock(mutex_);
-        if (size_ == capacity_)
-        {
+        if (size_ == capacity_) {
             buffer_[tail_] = std::move(value);
             tail_ = (tail_ + 1) % capacity_;
             head_ = (head_ + 1) % capacity_;
@@ -118,17 +110,12 @@ public:
     bool Pop(T& value)
     {
         std::unique_lock lock(mutex_);
-        if constexpr (Block)
-        {
-            while (size_ == 0)
-            {
+        if constexpr (Block) {
+            while (size_ == 0) {
                 not_empty_.wait(lock);
             }
-        }
-        else
-        {
-            if (size_ == 0)
-            {
+        } else {
+            if (size_ == 0) {
                 return false;
             }
         }
@@ -143,8 +130,7 @@ public:
     bool Front(T& value)
     {
         std::unique_lock lock(mutex_);
-        if (size_ == 0)
-        {
+        if (size_ == 0) {
             return false;
         }
         value = buffer_[head_];
@@ -155,8 +141,7 @@ public:
     bool Back(T& value)
     {
         std::unique_lock lock(mutex_);
-        if (size_ == 0)
-        {
+        if (size_ == 0) {
             return false;
         }
         value = buffer_[(tail_ + capacity_ - 1) % capacity_];
