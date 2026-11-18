@@ -41,16 +41,7 @@ target_link_libraries(camera_utils_core PUBLIC
 )
 target_link_libraries(camera_utils_core PRIVATE
     STDEXEC::stdexec
-)
-
-target_compile_options(camera_utils_core PRIVATE
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall>
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wextra>
-    $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    $<$<CXX_COMPILER_ID:MSVC>:/permissive->
-    $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
-    $<$<AND:$<CXX_COMPILER_ID:GNU,Clang>,$<CONFIG:Release>>:-O3>
-    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2>
+    CameraUtils::build_options
 )
 
 set_target_properties(camera_utils_core PROPERTIES
@@ -75,17 +66,13 @@ target_include_directories(CameraUtils PRIVATE
 
 target_link_libraries(CameraUtils PRIVATE
     CameraUtils::core
+    CameraUtils::build_options
 )
 
-target_compile_options(CameraUtils PRIVATE
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall>
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wextra>
-    $<$<CXX_COMPILER_ID:MSVC>:/W4>
-    $<$<CXX_COMPILER_ID:MSVC>:/permissive->
-    $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
-    $<$<AND:$<CXX_COMPILER_ID:GNU,Clang>,$<CONFIG:Release>>:-O3>
-    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2>
-)
+# VasConcurrencyDemo.h is reached via tests/cli/CommandTable.h
+if(CAMERA_UTILS_ENABLE_VAS_CONCURRENCY)
+    target_link_libraries(CameraUtils PRIVATE STDEXEC::stdexec)
+endif()
 
 set_target_properties(CameraUtils PROPERTIES
     CXX_STANDARD 20
