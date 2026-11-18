@@ -15,18 +15,16 @@
 #include "ScopedUtils.h"
 
 template <class Fn, class TimeoutCb, class... Args>
-decltype(auto)
-TimeoutImpl(std::string fName, int32_t timeMs, Fn&& fn, TimeoutCb&& timeoutCb, Args&&... args)
+decltype(auto) TimeoutImpl(std::string fName, int32_t timeMs, Fn&& fn, TimeoutCb&& timeoutCb, Args&&... args)
 {
     using R = std::invoke_result_t<Fn, Args...>;
     // always capture by reference [&] and forward arguments to avoid template args' cvr(const
     // reference volitile) attribute is decayed
-    std::future<R> fu = std::async(
-        std::launch::async, [&] { return std::forward<Fn>(fn)(std::forward<Args>(args)...); });
+    std::future<R> fu =
+        std::async(std::launch::async, [&] { return std::forward<Fn>(fn)(std::forward<Args>(args)...); });
     std::future_status status = fu.wait_for(std::chrono::milliseconds(timeMs));
 
-    switch (status)
-    {
+    switch (status) {
     case std::future_status::ready:
         return fu.get(); // get the result of the function in time
     case std::future_status::timeout:
@@ -40,16 +38,11 @@ TimeoutImpl(std::string fName, int32_t timeMs, Fn&& fn, TimeoutCb&& timeoutCb, A
 
     // when timeout happens, we return a default value. which requires the return type to be default
     // constructible.
-    if constexpr (std::is_same_v<R, void>)
-    {
+    if constexpr (std::is_same_v<R, void>) {
         return;
-    }
-    else if constexpr (std::is_integral_v<R>)
-    {
+    } else if constexpr (std::is_integral_v<R>) {
         return static_cast<R>(-1);
-    }
-    else
-    {
+    } else {
         static_assert(std::is_default_constructible_v<R>, "Type R must be default constructible");
         return R{};
     }
@@ -63,16 +56,12 @@ TimeoutImpl(std::string fName, int32_t timeMs, Fn&& fn, TimeoutCb&& timeoutCb, A
 // timeoutCb: timeout callback function when timeout happens;
 // args: parameter of the function fn.
 template <class Fn, class TimeoutCb, class... Args>
-decltype(auto)
-TimeoutMonitor(std::string fName, int32_t timeMs, Fn&& fn, TimeoutCb&& timeoutCb, Args&&... args)
+decltype(auto) TimeoutMonitor(std::string fName, int32_t timeMs, Fn&& fn, TimeoutCb&& timeoutCb, Args&&... args)
 {
     static_assert(std::is_invocable_v<Fn, Args...>);
     static_assert(std::is_invocable_v<TimeoutCb>);
     SCOPED_TIMER();
-    return TimeoutImpl(fName,
-                       timeMs,
-                       std::forward<Fn>(fn),
-                       std::forward<TimeoutCb>(timeoutCb),
+    return TimeoutImpl(fName, timeMs, std::forward<Fn>(fn), std::forward<TimeoutCb>(timeoutCb),
                        std::forward<Args>(args)...);
 }
 
