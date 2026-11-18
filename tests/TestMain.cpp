@@ -15,41 +15,34 @@
 #include "cli/CommandTable.h"
 #include "cli/TestAssert.h"
 
-namespace
-{
+namespace {
 
 void PrintList()
 {
-    for (const auto& cmd : cli::AllCommands())
-    {
+    for (const auto& cmd : cli::AllCommands()) {
         std::cout << cli::LabelName(cmd.label) << "\t" << cmd.name << "\n";
     }
 }
 
 int RunOne(const std::string& name)
 {
-    for (const auto& cmd : cli::AllCommands())
-    {
-        if (cmd.name != name)
-        {
+    for (const auto& cmd : cli::AllCommands()) {
+        if (cmd.name != name) {
             continue;
         }
 
-        if (cmd.label == cli::Label::Media && !cli::MediaDataAvailable())
-        {
+        if (cmd.label == cli::Label::Media && !cli::MediaDataAvailable()) {
             std::cerr << "[SKIP] " << name << " 需要 data/ 目录\n";
             return 77; // CTest 约定的 skip 码
         }
 
         cu::ResetFailures();
         const int rc = cmd.run();
-        if (rc != 0)
-        {
+        if (rc != 0) {
             std::cerr << "[FAIL] " << name << " 返回 " << rc << "\n";
             return rc;
         }
-        if (cu::FailureCount() != 0)
-        {
+        if (cu::FailureCount() != 0) {
             std::cerr << "[FAIL] " << name << " 断言失败 " << cu::FailureCount() << " 处\n";
             return 1;
         }
@@ -67,15 +60,13 @@ int main(int argc, char** argv)
 {
     SetConsoleOutputCP(65001);
 
-    if (argc < 2)
-    {
+    if (argc < 2) {
         std::cerr << "Usage: camera_utils_tests <test-name> | --list\n";
         return 2;
     }
 
     const std::string arg = argv[1];
-    if (arg == "--list")
-    {
+    if (arg == "--list") {
         PrintList();
         return 0;
     }
