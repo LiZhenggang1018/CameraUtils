@@ -27,8 +27,7 @@ void SplitCppFilesInDir(std::string_view inDir, std::string_view outDir)
     // 确保输出目录存在
     fs::create_directories(outPath, ec);
 
-    for (const auto& entry : fs::directory_iterator(inPath, ec))
-    {
+    for (const auto& entry : fs::directory_iterator(inPath, ec)) {
         if (ec)
             break;
         if (!entry.is_regular_file(ec))
@@ -52,11 +51,9 @@ void SplitCppFilesInDir(std::string_view inDir, std::string_view outDir)
         std::vector<std::string> lines;
         lines.reserve(content.size() / 32 + 1);
         std::size_t pos = 0;
-        while (pos < content.size())
-        {
+        while (pos < content.size()) {
             auto nl = content.find('\n', pos);
-            if (nl == std::string::npos)
-            {
+            if (nl == std::string::npos) {
                 lines.emplace_back(content.substr(pos));
                 break;
             }
@@ -69,8 +66,7 @@ void SplitCppFilesInDir(std::string_view inDir, std::string_view outDir)
         const std::string extStr = originalPath.extension().string();
 
         // 场景 1：≤150 行 —— 原样拷贝到输出目录
-        if (lines.size() <= kMaxLines)
-        {
+        if (lines.size() <= kMaxLines) {
             const fs::path target = outPath / originalPath.filename();
 
             // inDir == outDir 时会指向同一文件，直接跳过以免自我覆盖
@@ -85,11 +81,9 @@ void SplitCppFilesInDir(std::string_view inDir, std::string_view outDir)
 
         // 场景 2：>150 行 —— 按 150 行分片写入输出目录
         std::size_t partIndex = 0;
-        for (std::size_t start = 0; start < lines.size(); start += kMaxLines, ++partIndex)
-        {
-            const fs::path target =
-                (partIndex == 0) ? outPath / originalPath.filename() // My.h（前 150 行）
-                                 : outPath / (stem + "_" + std::to_string(partIndex) + extStr);
+        for (std::size_t start = 0; start < lines.size(); start += kMaxLines, ++partIndex) {
+            const fs::path target = (partIndex == 0) ? outPath / originalPath.filename() // My.h（前 150 行）
+                                                     : outPath / (stem + "_" + std::to_string(partIndex) + extStr);
 
             std::ofstream out(target, std::ios::binary | std::ios::trunc);
             if (!out)
