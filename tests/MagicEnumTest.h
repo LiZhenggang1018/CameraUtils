@@ -1,20 +1,14 @@
 ﻿#ifndef TESTS_MAGICENUMTEST_H_
 #define TESTS_MAGICENUMTEST_H_
 
-#include "MagicEnumCommon.h"
-#include "cli/TestAssert.h"
 #include <iostream>
 #include <string>
+#include "MagicEnumCommon.h"
+#include "cli/TestAssert.h"
 
-namespace MagicEnumTest
-{
+namespace MagicEnumTest {
 // 定义一个测试用枚举
-enum class Color : int
-{
-    RED = -10,
-    BLUE = 0,
-    GREEN = 10
-};
+enum class Color : int { RED = -10, BLUE = 0, GREEN = 10 };
 
 inline void TestMagicEnum()
 {
@@ -35,8 +29,7 @@ inline void TestMagicEnum()
 
     // 3. 遍历枚举所有值
     std::cout << "all Color values: ";
-    for (auto color : magic_enum::enum_values<Color>())
-    {
+    for (auto color : magic_enum::enum_values<Color>()) {
         std::cout << magic_enum::enum_name(color) << " ";
     }
     std::cout << std::endl;
