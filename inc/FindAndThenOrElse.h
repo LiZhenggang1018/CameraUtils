@@ -24,21 +24,19 @@ constexpr bool is_sequence_container_v =
      std::is_same_v<typename T::allocator_type, std::allocator<typename T::value_type>>);
 
 template <typename T>
-class FindResult
-{
+class FindResult {
 public:
     FindResult() = default;
-    explicit FindResult(T value) : m_value{value}
-    {
-    }
+    explicit FindResult(T value)
+        : m_value{value}
+    {}
 
     // AndThen()接受一个回调函数
     template <typename Func>
     const FindResult<T>& AndThen(Func&& func) const
     {
         // 只有当我们有值时才调用回调函数
-        if (m_value.has_value())
-        {
+        if (m_value.has_value()) {
             std::forward<Func>(func)(m_value.value());
         }
         return *this;
@@ -48,8 +46,7 @@ public:
     template <typename Func>
     void OrElse(Func&& func) const
     {
-        if (!m_value.has_value())
-        {
+        if (!m_value.has_value()) {
             std::forward<Func>(func)();
         }
     }
@@ -65,12 +62,9 @@ auto Find(const Container& c, const T& value)
     static_assert(is_sequence_container_v<Container>, "Container must be a sequence container");
     auto it = std::find(std::begin(c), std::end(c), value);
     // 如果没有找到值，返回默认构造的 find_result
-    if (it == std::end(c))
-    {
+    if (it == std::end(c)) {
         return FindResult<T>();
-    }
-    else
-    {
+    } else {
         // 否则返回找到的值
         return FindResult<T>(*it);
     }
