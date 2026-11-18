@@ -1,5 +1,5 @@
-﻿#ifndef TESTS_MAGICENUMTEST_H_
-#define TESTS_MAGICENUMTEST_H_
+﻿#ifndef TESTS_MAGICENUMTEST_H
+#define TESTS_MAGICENUMTEST_H
 
 #include <iostream>
 #include <string>
@@ -47,4 +47,4 @@ inline void TestMagicEnum()
 }
 } // namespace MagicEnumTest
 
-#endif // TESTS_MAGICENUMTEST_H_
+#endif // TESTS_MAGICENUMTEST_H

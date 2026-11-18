@@ -1,5 +1,5 @@
-#ifndef SYCNAGENCYTEST_H
-#define SYCNAGENCYTEST_H
+#ifndef TESTS_SYNCAGENCYTEST_H
+#define TESTS_SYNCAGENCYTEST_H
 
 #include "AllUsedHeadFiles.h"
 #include "CustomLog.h"

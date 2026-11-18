@@ -1,5 +1,5 @@
-#ifndef TESTS_OPTICALFLOWTEST_H_
-#define TESTS_OPTICALFLOWTEST_H_
+#ifndef TESTS_OPTICALFLOWTEST_H
+#define TESTS_OPTICALFLOWTEST_H
 
 #include "OpenCVCommon.h"
 
@@ -444,4 +444,4 @@ inline int Upsample30To60()
     return UpsampleVideo(inputPath, outputPath, cfg);
 }
 
-#endif // TESTS_OPTICALFLOWTEST_H_
+#endif // TESTS_OPTICALFLOWTEST_H

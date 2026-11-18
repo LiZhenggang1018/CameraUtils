@@ -1,5 +1,5 @@
-#ifndef TESTS_TYPE2INSTMAPTEST_H_
-#define TESTS_TYPE2INSTMAPTEST_H_
+#ifndef TESTS_TYPE2INSTMAPTEST_H
+#define TESTS_TYPE2INSTMAPTEST_H
 
 #include <cassert>
 #include <iostream>
@@ -68,4 +68,4 @@ inline void Type2InstMapTest()
     std::cout << "All tests passed.\n";
 }
 
-#endif // TESTS_TYPE2INSTMAPTEST_H_
+#endif // TESTS_TYPE2INSTMAPTEST_H

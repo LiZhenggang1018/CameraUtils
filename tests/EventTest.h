@@ -1,5 +1,5 @@
-#ifndef EVENTTEST_H
-#define EVENTTEST_H
+#ifndef TESTS_EVENTTEST_H
+#define TESTS_EVENTTEST_H
 
 #include <cassert>
 #include <chrono>
@@ -96,4 +96,4 @@ inline void TestEvent()
     TestEventInTwoModule();
 }
 
-#endif // !EVENTTEST_H
+#endif // !TESTS_EVENTTEST_H

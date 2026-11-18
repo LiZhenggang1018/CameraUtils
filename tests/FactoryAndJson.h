@@ -1,5 +1,5 @@
-#ifndef FACTORY_AND_JSON_H
-#define FACTORY_AND_JSON_H
+#ifndef TESTS_FACTORYANDJSON_H
+#define TESTS_FACTORYANDJSON_H
 
 #include "JsonUtils.h"
 
@@ -38,4 +38,4 @@ inline void FactoryJsonTest()
     return;
 }
 
-#endif // !FACTORY_AND_JSON_H
+#endif // !TESTS_FACTORYANDJSON_H

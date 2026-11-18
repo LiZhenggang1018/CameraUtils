@@ -1,5 +1,5 @@
-#ifndef TESTCASE_H
-#define TESTCASE_H
+#ifndef TESTS_TESTCASE_H
+#define TESTS_TESTCASE_H
 
 #include "CoreUtils.h"
 
@@ -474,4 +474,4 @@ inline void MsgQueueTest()
     return;
 }
 
-#endif // !TESTCASE_H
+#endif // !TESTS_TESTCASE_H

@@ -1,5 +1,5 @@
-#ifndef INSTANCECOUNTERTEST_H
-#define INSTANCECOUNTERTEST_H
+#ifndef TESTS_INSTANCECOUNTERTEST_H
+#define TESTS_INSTANCECOUNTERTEST_H
 
 #include "InstanceCounter.h"
 
@@ -85,4 +85,4 @@ inline void InstanceCounterTest()
     return;
 }
 
-#endif // INSTANCECOUNTERTEST_H
+#endif // TESTS_INSTANCECOUNTERTEST_H

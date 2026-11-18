@@ -1,5 +1,5 @@
-#ifndef NEWTEMP_H
-#define NEWTEMP_H
+#ifndef TESTS_VASCONCURRENCYDEMO_H
+#define TESTS_VASCONCURRENCYDEMO_H
 
 // 本demo基于C++20标准，使用了stdexec库（C++26std::execution标准库的前身）来实现异步任务的编排和执行。
 // 用于模拟VAS中多帧处理的场景，展示如何创建多个Node对象，使用线程池并发执行任务，并保证回调任务的顺序执行（每帧异步处理的结果按照帧号顺序回给VCF）。
@@ -171,4 +171,4 @@ inline void VasConcurrencyTest()
     return;
 }
 #endif // VAS_HAS_STDEXEC
-#endif // NEWTEMP_H
+#endif // TESTS_VASCONCURRENCYDEMO_H

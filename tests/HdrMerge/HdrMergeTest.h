@@ -1,5 +1,5 @@
-#ifndef HDR_MERGE_TEST_H
-#define HDR_MERGE_TEST_H
+#ifndef TESTS_HDRMERGE_HDRMERGETEST_H
+#define TESTS_HDRMERGE_HDRMERGETEST_H
 
 #include "HdrMerge/HdrMerge.h"
 
@@ -153,4 +153,4 @@ inline void RunHdrMergeGhostSuppressionTest()
     std::cout << "========== HdrMerge Ghost-Suppression end ============" << std::endl;
 }
 
-#endif // HDR_MERGE_TEST_H
+#endif // TESTS_HDRMERGE_HDRMERGETEST_H

@@ -1,5 +1,5 @@
-#ifndef FFMPEGTEST_H
-#define FFMPEGTEST_H
+#ifndef TESTS_FFMPEGTEST_H
+#define TESTS_FFMPEGTEST_H
 
 #include <iostream>
 #include <string>
@@ -47,4 +47,4 @@ inline void TestFFMpeg()
     avformat_close_input(&fmtCtx);
 }
 
-#endif // !FFMPEGTEST_H
+#endif // !TESTS_FFMPEGTEST_H

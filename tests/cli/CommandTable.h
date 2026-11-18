@@ -1,5 +1,5 @@
-#ifndef CLI_COMMANDTABLE_H
-#define CLI_COMMANDTABLE_H
+#ifndef TESTS_CLI_COMMANDTABLE_H
+#define TESTS_CLI_COMMANDTABLE_H
 
 #include <functional>
 #include <string>
@@ -210,4 +210,4 @@ inline const std::vector<Command>& AllCommands()
 
 } // namespace cli
 
-#endif // CLI_COMMANDTABLE_H
+#endif // TESTS_CLI_COMMANDTABLE_H

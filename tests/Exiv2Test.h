@@ -1,5 +1,5 @@
-#ifndef TESTS_EXIV2TEST_H_
-#define TESTS_EXIV2TEST_H_
+#ifndef TESTS_EXIV2TEST_H
+#define TESTS_EXIV2TEST_H
 
 #include "Exiv2Common.h"
 
@@ -57,4 +57,4 @@ inline void Exif2Test()
 
 } // namespace CameraUtils
 
-#endif // TESTS_EXIV2TEST_H_
+#endif // TESTS_EXIV2TEST_H

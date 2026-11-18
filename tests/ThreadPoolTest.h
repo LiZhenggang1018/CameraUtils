@@ -1,5 +1,5 @@
-#ifndef THREADPOOLTEST_H
-#define THREADPOOLTEST_H
+#ifndef TESTS_THREADPOOLTEST_H
+#define TESTS_THREADPOOLTEST_H
 
 #include "CustomLog.h"
 #include "ThreadPool.h"
@@ -229,4 +229,4 @@ inline void ThreadPoolTest()
     return;
 }
 
-#endif // !THREADPOOLTEST_H
+#endif // !TESTS_THREADPOOLTEST_H

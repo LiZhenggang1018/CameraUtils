@@ -1,5 +1,5 @@
-#ifndef FACTORY_DEMO_1_H
-#define FACTORY_DEMO_1_H
+#ifndef TESTS_FACTORYDEMO_1_H
+#define TESTS_FACTORYDEMO_1_H
 
 #include "AllUsedHeadFiles.h"
 
@@ -93,4 +93,4 @@ inline void FactoryTest()
 
 #endif // TEST_FACTORY_DEMO
 
-#endif // FACTORY_DEMO_1_H
+#endif // TESTS_FACTORYDEMO_1_H

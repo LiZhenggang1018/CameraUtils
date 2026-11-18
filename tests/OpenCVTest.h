@@ -1,5 +1,5 @@
-#ifndef OPENCVTEST_H
-#define OPENCVTEST_H
+#ifndef TESTS_OPENCVTEST_H
+#define TESTS_OPENCVTEST_H
 
 #include <iostream>
 #include <string>
@@ -28,4 +28,4 @@ inline void OpenCVTest()
     cv::destroyAllWindows();
 }
 
-#endif // !OPENCVTEST_H
+#endif // !TESTS_OPENCVTEST_H
