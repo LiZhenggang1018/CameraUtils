@@ -8,8 +8,7 @@
 // Overload support implicit type conversion,
 // meanwhile visitor can add impl like auto/aut&& lambda
 template <typename... T>
-struct Overload : T...
-{
+struct Overload : T... {
     using T::operator()...;
 };
 
@@ -22,8 +21,7 @@ template <typename...>
 constexpr bool ALWAYS_FALSE_VAL{false};
 
 template <typename... Ts>
-struct OverloadNoCvt : Ts...
-{
+struct OverloadNoCvt : Ts... {
     using Ts::operator()...;
 
     // Prevent implicit type conversions
