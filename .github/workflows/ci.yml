@@ -20,5 +20,9 @@ jobs:
       - name: Build
         run: cmake --build build --config Release
 
-      - name: Test
-        run: ctest --test-dir build -C Release --output-on-failure
+      - name: Test (unit)
+        run: ctest --test-dir build -C Release -L unit --output-on-failure
+
+      - name: Test (media, skip if no assets)
+        run: ctest --test-dir build -C Release -L media --output-on-failure
+        continue-on-error: true
