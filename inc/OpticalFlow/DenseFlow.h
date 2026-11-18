@@ -18,35 +18,22 @@ public:
     DenseFlowFarneback() = default;
 
     explicit DenseFlowFarneback(const Params& params)
-        : m_params(params) {}
+        : m_params(params)
+    {}
 
-    [[nodiscard]] cv::Mat Compute(
-        const cv::Mat& prevGray,
-        const cv::Mat& gray) const {
+    [[nodiscard]] cv::Mat Compute(const cv::Mat& prevGray, const cv::Mat& gray) const
+    {
         cv::Mat flow;
 
-        cv::calcOpticalFlowFarneback(
-            prevGray,
-            gray,
-            flow,
-            m_params.m_pyrScale,
-            m_params.m_levels,
-            m_params.m_winsize,
-            m_params.m_iterations,
-            m_params.m_polyN,
-            m_params.m_polySigma,
-            m_params.m_flags);
+        cv::calcOpticalFlowFarneback(prevGray, gray, flow, m_params.m_pyrScale, m_params.m_levels, m_params.m_winsize,
+                                     m_params.m_iterations, m_params.m_polyN, m_params.m_polySigma, m_params.m_flags);
 
         return flow;
     }
 
-    void SetWinsize(int winsize) {
-        m_params.m_winsize = winsize;
-    }
+    void SetWinsize(int winsize) { m_params.m_winsize = winsize; }
 
-    [[nodiscard]] int Winsize() const {
-        return m_params.m_winsize;
-    }
+    [[nodiscard]] int Winsize() const { return m_params.m_winsize; }
 
 private:
     Params m_params;
