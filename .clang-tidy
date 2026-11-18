@@ -1,4 +1,5 @@
 # .clang-tidy
+# 命名规则依据 documentation/OpenHarmony-cpp-coding-style-guide.md 第 2 章
 ---
 Checks: >
   -*,
@@ -16,22 +17,63 @@ Checks: >
   -readability-identifier-length
 
 WarningsAsErrors: ''
-HeaderFilterRegex: '^(?!.*third_party).*$'
-HeaderFilterRegex: '.*'
+HeaderFilterRegex: '^(?!.*(third_party|\.cpm-cache)).*$'
 FormatStyle: file
 
 CheckOptions:
+  # 类型与作用域名：大驼峰（规则 2.1）
   - key: readability-identifier-naming.ClassCase
     value: CamelCase
   - key: readability-identifier-naming.StructCase
     value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.UnionCase
+    value: CamelCase
+  - key: readability-identifier-naming.NamespaceCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+
+  # 函数：大驼峰（规则 2.1）
   - key: readability-identifier-naming.FunctionCase
-    value: camelBack
+    value: CamelCase
+
+  # 变量：小驼峰（规则 2.5）
   - key: readability-identifier-naming.VariableCase
     value: camelBack
+  - key: readability-identifier-naming.ParameterCase
+    value: camelBack
+
+  # 类成员变量：小驼峰 + 后下划线（规则 2.5.2）
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: camelBack
+  - key: readability-identifier-naming.PrivateMemberSuffix
+    value: '_'
+  - key: readability-identifier-naming.ProtectedMemberCase
+    value: camelBack
+  - key: readability-identifier-naming.ProtectedMemberSuffix
+    value: '_'
+  - key: readability-identifier-naming.PublicMemberCase
+    value: camelBack
+  - key: readability-identifier-naming.PublicMemberSuffix
+    value: '_'
+
+  # 全局变量：g_ 前缀（规则 2.5.1）
+  - key: readability-identifier-naming.GlobalVariableCase
+    value: camelBack
+  - key: readability-identifier-naming.GlobalVariablePrefix
+    value: 'g_'
+
+  # 常量、枚举值、宏：全大写 + 下划线（规则 2.6）
   - key: readability-identifier-naming.ConstantCase
     value: UPPER_CASE
-  - key: readability-identifier-naming.NamespaceCase
-    value: lower_case
+  - key: readability-identifier-naming.EnumConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+
   - key: modernize-use-nullptr.NullMacros
     value: 'NULL'
