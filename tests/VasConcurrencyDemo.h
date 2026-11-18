@@ -11,8 +11,15 @@
 #include <thread>
 #include <vector>
 
-#if defined(__has_include)
-#if __has_include(<exec/static_thread_pool.hpp>) && __has_include(<stdexec/execution.hpp>) && false
+// Controlled by CMake option CAMERA_UTILS_ENABLE_VAS_CONCURRENCY,
+// which passes VAS_ENABLE_STDEXEC as 0 or 1.
+#ifndef VAS_ENABLE_STDEXEC
+#define VAS_ENABLE_STDEXEC 0
+#endif
+
+#if VAS_ENABLE_STDEXEC && defined(__has_include)
+#if __has_include(<exec/split.hpp>) && __has_include(<exec/start_detached.hpp>) && \
+    __has_include(<exec/static_thread_pool.hpp>) && __has_include(<stdexec/execution.hpp>)
 #define VAS_HAS_STDEXEC 1
 #else
 #define VAS_HAS_STDEXEC 0
@@ -22,6 +29,8 @@
 #endif
 
 #if VAS_HAS_STDEXEC
+#include <exec/split.hpp>
+#include <exec/start_detached.hpp>
 #include <exec/static_thread_pool.hpp>
 #include <stdexec/execution.hpp>
 // constexpr std::chrono::seconds SLEEP_DURATION{ 1 }; // 1s睡眠时间，每个Node处理一帧的模拟耗时1s
@@ -96,15 +105,15 @@ inline void VasConcurrencyTest()
     // 辅助 lambda：根据初始值生成 processOneFrameTask sender（对应一次Node1→Node2→Node3的处理流）
     auto processOneFrameTask = [&](int init) {
         return stdexec::just(init) | stdexec::let_value([&nodes, sched](int val) {
-                   return stdexec::on(sched, stdexec::just(val)) |
+                   return stdexec::starts_on(sched, stdexec::just(val)) |
                           stdexec::then([&nodes](int v) { return nodes[0]->ProcessFrame(v); });
                }) |
                stdexec::let_value([&nodes, sched](int val) {
-                   return stdexec::on(sched, stdexec::just(val)) |
+                   return stdexec::starts_on(sched, stdexec::just(val)) |
                           stdexec::then([&nodes](int v) { return nodes[1]->ProcessFrame(v); });
                }) |
                stdexec::let_value([&nodes, sched](int val) {
-                   return stdexec::on(sched, stdexec::just(val)) |
+                   return stdexec::starts_on(sched, stdexec::just(val)) |
                           stdexec::then([&nodes](int v) { return nodes[2]->ProcessFrame(v); });
                });
     };
@@ -118,16 +127,16 @@ inline void VasConcurrencyTest()
     // ===== 并发启动三个帧处理 =====
     // 用 split 得到可共享结果的 sender，
     // split 将一次性异步操作转换为可共享的、可被多次等待的异步句柄，常见于“先启动后等待”或“多消费者等待同一结果”场景。
-    auto split1 = stdexec::split(std::move(processFrame_1));
-    auto split2 = stdexec::split(std::move(processFrame_2));
-    auto split3 = stdexec::split(std::move(processFrame_3));
+    auto split1 = exec::split(std::move(processFrame_1));
+    auto split2 = exec::split(std::move(processFrame_2));
+    auto split3 = exec::split(std::move(processFrame_3));
 
     // 拷贝一份用于启动，原始对象保留给回调链
     std::cout << "Starting frame processing tasks...\n";
-    stdexec::start_detached(split1); // 线程池上立即开始执行帧1，前面的split（）保证了这里processFrame_1
-                                     // 在被 start_detached 消费后，后面的回调仍然可以等待到结果。
-    stdexec::start_detached(split2); // 帧2
-    stdexec::start_detached(split3); // 帧3
+    exec::start_detached(split1); // 线程池上立即开始执行帧1，前面的split（）保证了这里processFrame_1
+                                  // 在被 start_detached 消费后，后面的回调仍然可以等待到结果。
+    exec::start_detached(split2); // 帧2
+    exec::start_detached(split3); // 帧3
 
     // ===== 构造顺序回调链 =====
     // 依次等待帧结果，并执行回调，回调之间严格顺序（CbFrame1 -> CbFrame2 ->CbFrame3）
