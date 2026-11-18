@@ -350,6 +350,36 @@ endif()
 message(STATUS "EXIV2_INCLUDE_DIR = ${EXIV2_INCLUDE_DIR}")
 message(STATUS "EXIV2_LIBS = ${EXIV2_LIBS}")
 
+# ============================================================
+# Optional feature: VAS concurrency demo (requires stdexec)
+# Disabled by default; enable with -DCAMERA_UTILS_ENABLE_VAS_CONCURRENCY=ON
+# ============================================================
+option(CAMERA_UTILS_ENABLE_VAS_CONCURRENCY
+    "Build the stdexec based VAS concurrency demo" OFF)
+message(STATUS "CAMERA_UTILS_ENABLE_VAS_CONCURRENCY = ${CAMERA_UTILS_ENABLE_VAS_CONCURRENCY}")
+
+# ============================================================
+# camera_utils_build_options: shared warning level / optimization options
+# Used by camera_utils_core, CameraUtils and camera_utils_tests
+# ============================================================
+add_library(camera_utils_build_options INTERFACE)
+add_library(CameraUtils::build_options ALIAS camera_utils_build_options)
+
+target_compile_options(camera_utils_build_options INTERFACE
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall>
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wextra>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+    $<$<CXX_COMPILER_ID:MSVC>:/permissive->
+    $<$<CXX_COMPILER_ID:MSVC>:/utf-8>
+    $<$<AND:$<CXX_COMPILER_ID:GNU,Clang>,$<CONFIG:Release>>:-O3>
+    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Release>>:/O2>
+)
+
+# Feature switch consumed by VasConcurrencyDemo.h
+target_compile_definitions(camera_utils_build_options INTERFACE
+    VAS_ENABLE_STDEXEC=$<BOOL:${CAMERA_UTILS_ENABLE_VAS_CONCURRENCY}>
+)
+
 enable_testing()
 add_subdirectory(src)
 add_subdirectory(tests)
