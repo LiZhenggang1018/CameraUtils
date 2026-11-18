@@ -1,5 +1,5 @@
 # .clang-tidy
-# 命名规则依据 documentation/OpenHarmony-cpp-coding-style-guide.md 第 2 章
+# 命名规则依据 references/OpenHarmony-cpp-coding-style-guide.md 第 2 章
 ---
 Checks: >
   -*,
