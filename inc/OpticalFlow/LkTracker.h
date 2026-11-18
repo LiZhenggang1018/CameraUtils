@@ -27,7 +27,9 @@ public:
         double fbThreshold = 1.5;
     };
 
-    explicit LkTracker(const Params& params = Params());
+    LkTracker() : LkTracker(Params{}) {}
+
+    explicit LkTracker(const Params& params);
 
     void Reset();
 
