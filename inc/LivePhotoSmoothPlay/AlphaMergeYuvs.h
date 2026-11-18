@@ -1,9 +1,8 @@
 #ifndef ALPHAMERGEYUV_H
 #define ALPHAMERGEYUV_H
 
-#include "OpenCVCommon.h"
 #include "FFmpegDefine.h"
-
+#include "OpenCVCommon.h"
 
 // YUV内存数据结构
 struct YuvInfo {
@@ -14,7 +13,8 @@ struct YuvInfo {
 };
 
 // 1. 将YUV数据直接保存到文件
-inline void DumpYuv(const YuvInfo& in, const std::string& out) {
+inline void DumpYuv(const YuvInfo& in, const std::string& out)
+{
     // 参数验证
     if (!in.pData) {
         throw std::invalid_argument("YUV data pointer cannot be null");
@@ -31,7 +31,7 @@ inline void DumpYuv(const YuvInfo& in, const std::string& out) {
     // 计算YUV420文件大小
     size_t ySize = static_cast<size_t>(in.stride) * in.height;
     size_t uvSize = static_cast<size_t>(in.stride / 2) * (in.height / 2);
-    size_t totalSize = ySize + uvSize * 2;  // Y + U + V
+    size_t totalSize = ySize + uvSize * 2; // Y + U + V
 
     // 打开输出文件
     std::ofstream outFile(out, std::ios::binary);
@@ -51,7 +51,8 @@ inline void DumpYuv(const YuvInfo& in, const std::string& out) {
 }
 
 // 2. 将YUV数据转换为高质量JPEG并保存
-inline void DumpYuv2Jpg(const YuvInfo& in, const std::string& out) {
+inline void DumpYuv2Jpg(const YuvInfo& in, const std::string& out)
+{
     // 参数验证
     if (!in.pData) {
         throw std::invalid_argument("YUV data pointer cannot be null");
@@ -87,20 +88,18 @@ inline void DumpYuv2Jpg(const YuvInfo& in, const std::string& out) {
         // 保存为高质量JPEG
         std::vector<int> compression_params;
         compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
-        compression_params.push_back(95);  // 高质量，0-100，95是很好的质量
+        compression_params.push_back(95); // 高质量，0-100，95是很好的质量
         compression_params.push_back(cv::IMWRITE_JPEG_PROGRESSIVE);
-        compression_params.push_back(1);  // 启用渐进式JPEG
+        compression_params.push_back(1); // 启用渐进式JPEG
         compression_params.push_back(cv::IMWRITE_JPEG_OPTIMIZE);
-        compression_params.push_back(1);  // 启用优化
+        compression_params.push_back(1); // 启用优化
 
         if (!cv::imwrite(out, bgrMat, compression_params)) {
             throw std::runtime_error("Failed to save JPEG image: " + out);
-        }
-        else {
+        } else {
             PV("succeed to save jpg image to", out);
         }
-    }
-    else {
+    } else {
         // 方法2：如果stride > width，需要去除padding
         // 创建一个连续的YUV数据（无padding）
         cv::Mat yuvContinuous(h + h / 2, w, CV_8UC1);
@@ -139,11 +138,11 @@ inline void DumpYuv2Jpg(const YuvInfo& in, const std::string& out) {
         // 保存为高质量JPEG
         std::vector<int> compression_params;
         compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
-        compression_params.push_back(95);  // 高质量
+        compression_params.push_back(95); // 高质量
         compression_params.push_back(cv::IMWRITE_JPEG_PROGRESSIVE);
-        compression_params.push_back(1);    // 渐进式
+        compression_params.push_back(1); // 渐进式
         compression_params.push_back(cv::IMWRITE_JPEG_OPTIMIZE);
-        compression_params.push_back(1);    // 优化
+        compression_params.push_back(1); // 优化
 
         if (!cv::imwrite(out, bgrMat, compression_params)) {
             throw std::runtime_error("Failed to save JPEG image: " + out);
@@ -152,7 +151,8 @@ inline void DumpYuv2Jpg(const YuvInfo& in, const std::string& out) {
 }
 
 // 3. 将YUV数据转换为BGR Mat（方便进一步处理）
-inline cv::Mat Yuv2BgrMat(const YuvInfo& in) {
+inline cv::Mat Yuv2BgrMat(const YuvInfo& in)
+{
     // 参数验证
     if (!in.pData) {
         throw std::invalid_argument("YUV data pointer cannot be null");
@@ -176,8 +176,7 @@ inline cv::Mat Yuv2BgrMat(const YuvInfo& in) {
     if (stride == w) {
         // 如果stride等于width，直接使用
         yuvContinuous = cv::Mat(h + h / 2, w, CV_8UC1, in.pData);
-    }
-    else {
+    } else {
         // 否则需要去除padding
         yuvContinuous = cv::Mat(h + h / 2, w, CV_8UC1);
 
@@ -218,7 +217,8 @@ inline cv::Mat Yuv2BgrMat(const YuvInfo& in) {
 }
 
 // 4. 使用OpenCV的高效方法（适用于stride > width的情况）
-inline void DumpYuv2JpgOptimized(const YuvInfo& in, const std::string& out) {
+inline void DumpYuv2JpgOptimized(const YuvInfo& in, const std::string& out)
+{
     // 参数验证
     if (!in.pData) {
         throw std::invalid_argument("YUV data pointer cannot be null");
@@ -245,7 +245,7 @@ inline void DumpYuv2JpgOptimized(const YuvInfo& in, const std::string& out) {
     cv::Rect yRoi(0, 0, w, h);
     cv::Rect uvRoi(0, 0, w / 2, h / 2);
 
-    cv::Mat yValid = yPlane(yRoi).clone();  // 需要克隆，因为原始数据有padding
+    cv::Mat yValid = yPlane(yRoi).clone(); // 需要克隆，因为原始数据有padding
     cv::Mat uvValid = uvPlane(uvRoi).clone();
 
     // 合并YUV平面
@@ -257,8 +257,8 @@ inline void DumpYuv2JpgOptimized(const YuvInfo& in, const std::string& out) {
     cv::split(uvValid, uvChannels);
 
     yuvPlanes.push_back(yValid);
-    yuvPlanes.push_back(uvChannels[0]);  // U平面
-    yuvPlanes.push_back(uvChannels[1]);  // V平面
+    yuvPlanes.push_back(uvChannels[0]); // U平面
+    yuvPlanes.push_back(uvChannels[1]); // V平面
 
     cv::vconcat(yuvPlanes, yuv420);
 
@@ -268,10 +268,8 @@ inline void DumpYuv2JpgOptimized(const YuvInfo& in, const std::string& out) {
 
     // 保存为高质量JPEG
     std::vector<int> compression_params = {
-        cv::IMWRITE_JPEG_QUALITY, 95,
-        cv::IMWRITE_JPEG_PROGRESSIVE, 1,
-        cv::IMWRITE_JPEG_OPTIMIZE, 1,
-        cv::IMWRITE_JPEG_CHROMA_QUALITY, 95  // 色度质量
+        cv::IMWRITE_JPEG_QUALITY,  95, cv::IMWRITE_JPEG_PROGRESSIVE,    1,
+        cv::IMWRITE_JPEG_OPTIMIZE, 1,  cv::IMWRITE_JPEG_CHROMA_QUALITY, 95 // 色度质量
     };
 
     if (!cv::imwrite(out, bgrMat, compression_params)) {
@@ -280,17 +278,17 @@ inline void DumpYuv2JpgOptimized(const YuvInfo& in, const std::string& out) {
 }
 
 // 纯C++实现，从内存YUV数据混合
-inline void AlphaMergeYuvs(const YuvInfo& yuv1, const YuvInfo& yuv2,double yuv1AlphaRatio, std::string_view outYuv) {
+inline void AlphaMergeYuvs(const YuvInfo& yuv1, const YuvInfo& yuv2, double yuv1AlphaRatio, std::string_view outYuv)
+{
 
     // 参数验证
-    if (yuv1.width <= 0 || yuv1.height <= 0 || yuv1.stride <= 0 ||
-        yuv2.width <= 0 || yuv2.height <= 0 || yuv2.stride <= 0) {
+    if (yuv1.width <= 0 || yuv1.height <= 0 || yuv1.stride <= 0 || yuv2.width <= 0 || yuv2.height <= 0 ||
+        yuv2.stride <= 0) {
         throw std::invalid_argument("Invalid YuvInfo parameters");
     }
 
     // 确保两个YUV数据尺寸一致
-    if (yuv1.width != yuv2.width || yuv1.height != yuv2.height ||
-        yuv1.stride != yuv2.stride) {
+    if (yuv1.width != yuv2.width || yuv1.height != yuv2.height || yuv1.stride != yuv2.stride) {
         throw std::invalid_argument("YUV data dimensions must match");
     }
 
@@ -309,7 +307,7 @@ inline void AlphaMergeYuvs(const YuvInfo& yuv1, const YuvInfo& yuv2,double yuv1A
 
     size_t ySize = static_cast<size_t>(stride) * h;
     size_t uvSize = static_cast<size_t>(stride / 2) * (h / 2);
-    size_t totalSize = ySize + uvSize * 2;  // Y + U + V
+    size_t totalSize = ySize + uvSize * 2; // Y + U + V
 
     // 验证数据大小
     if (stride < w) {
@@ -327,8 +325,7 @@ inline void AlphaMergeYuvs(const YuvInfo& yuv1, const YuvInfo& yuv2,double yuv1A
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
             size_t idx = yOffset + x;
-            double mixed = yuv1.pData[idx] * yuv1AlphaRatio +
-                yuv2.pData[idx] * yuv2AlphaRatio;
+            double mixed = yuv1.pData[idx] * yuv1AlphaRatio + yuv2.pData[idx] * yuv2AlphaRatio;
             outData[idx] = static_cast<unsigned char>(std::clamp(mixed, 0.0, 255.0));
         }
         yOffset += stride;
@@ -346,8 +343,7 @@ inline void AlphaMergeYuvs(const YuvInfo& yuv1, const YuvInfo& yuv2,double yuv1A
     for (int y = 0; y < uvHeight; ++y) {
         for (int x = 0; x < uvWidth; ++x) {
             size_t idx = uStart + uOffset + x;
-            double mixed = yuv1.pData[idx] * yuv1AlphaRatio +
-                yuv2.pData[idx] * yuv2AlphaRatio;
+            double mixed = yuv1.pData[idx] * yuv1AlphaRatio + yuv2.pData[idx] * yuv2AlphaRatio;
             outData[idx] = static_cast<unsigned char>(std::clamp(mixed, 0.0, 255.0));
         }
         uOffset += uvStride;
@@ -358,8 +354,7 @@ inline void AlphaMergeYuvs(const YuvInfo& yuv1, const YuvInfo& yuv2,double yuv1A
     for (int y = 0; y < uvHeight; ++y) {
         for (int x = 0; x < uvWidth; ++x) {
             size_t idx = vStart + vOffset + x;
-            double mixed = yuv1.pData[idx] * yuv1AlphaRatio +
-                yuv2.pData[idx] * yuv2AlphaRatio;
+            double mixed = yuv1.pData[idx] * yuv1AlphaRatio + yuv2.pData[idx] * yuv2AlphaRatio;
             outData[idx] = static_cast<unsigned char>(std::clamp(mixed, 0.0, 255.0));
         }
         vOffset += uvStride;
@@ -376,17 +371,18 @@ inline void AlphaMergeYuvs(const YuvInfo& yuv1, const YuvInfo& yuv2,double yuv1A
 }
 
 // OpenCV实现，从内存YUV数据混合
-inline void AlphaMergeYuvsOpenCV(const YuvInfo& yuv1, const YuvInfo& yuv2,double yuv1AlphaRatio, std::string_view outYuv) {
+inline void AlphaMergeYuvsOpenCV(const YuvInfo& yuv1, const YuvInfo& yuv2, double yuv1AlphaRatio,
+                                 std::string_view outYuv)
+{
 
     // 参数验证
-    if (yuv1.width <= 0 || yuv1.height <= 0 || yuv1.stride <= 0 ||
-        yuv2.width <= 0 || yuv2.height <= 0 || yuv2.stride <= 0) {
+    if (yuv1.width <= 0 || yuv1.height <= 0 || yuv1.stride <= 0 || yuv2.width <= 0 || yuv2.height <= 0 ||
+        yuv2.stride <= 0) {
         throw std::invalid_argument("Invalid YuvInfo parameters");
     }
 
     // 确保两个YUV数据尺寸一致
-    if (yuv1.width != yuv2.width || yuv1.height != yuv2.height ||
-        yuv1.stride != yuv2.stride) {
+    if (yuv1.width != yuv2.width || yuv1.height != yuv2.height || yuv1.stride != yuv2.stride) {
         throw std::invalid_argument("YUV data dimensions must match");
     }
 
@@ -442,7 +438,7 @@ inline void AlphaMergeYuvsOpenCV(const YuvInfo& yuv1, const YuvInfo& yuv2,double
     cv::addWeighted(vPlane1, yuv1AlphaRatio, vPlane2, 1.0 - yuv1AlphaRatio, 0.0, vMixed);
 
     // 重新合并UV平面
-    cv::Mat uvChannelsMixed[2] = { uMixed, vMixed };
+    cv::Mat uvChannelsMixed[2] = {uMixed, vMixed};
     cv::Mat uvMixed;
     cv::merge(uvChannelsMixed, 2, uvMixed);
 
@@ -471,7 +467,8 @@ inline void AlphaMergeYuvsOpenCV(const YuvInfo& yuv1, const YuvInfo& yuv2,double
 }
 
 // 辅助函数：从文件加载YUV数据到YuvInfo结构
-inline YuvInfo LoadYuvFromFile(const std::string& filename, int width, int height, int stride) {
+inline YuvInfo LoadYuvFromFile(const std::string& filename, int width, int height, int stride)
+{
     // 计算YUV420文件大小
     size_t ySize = static_cast<size_t>(stride) * height;
     size_t uvSize = static_cast<size_t>(stride / 2) * (height / 2);
@@ -496,11 +493,12 @@ inline YuvInfo LoadYuvFromFile(const std::string& filename, int width, int heigh
     file.close();
 
     // 返回YuvInfo结构
-    return YuvInfo{ data, width, height, stride };
+    return YuvInfo{data, width, height, stride};
 }
 
 // 辅助函数：释放YuvInfo中的内存
-inline void FreeYuvInfo(YuvInfo& yuvInfo) {
+inline void FreeYuvInfo(YuvInfo& yuvInfo)
+{
     if (yuvInfo.pData) {
         delete[] yuvInfo.pData;
         yuvInfo.pData = nullptr;
@@ -508,7 +506,7 @@ inline void FreeYuvInfo(YuvInfo& yuvInfo) {
 }
 
 // 使用示例
-inline void TestAlphaMergeYuvs() 
+inline void TestAlphaMergeYuvs()
 {
     try {
         constexpr int width = YUV_W;
@@ -537,8 +535,7 @@ inline void TestAlphaMergeYuvs()
 
         std::cout << "YUV memory data merged successfully!" << std::endl;
 
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return;
     }
