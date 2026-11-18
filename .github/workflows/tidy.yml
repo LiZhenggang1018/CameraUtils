@@ -13,8 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up MSVC environment
+        uses: TheMrMilchmann/setup-msvc-dev@v4
+        with:
+          arch: x64
+
       - name: Configure with compile commands
-        run: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        run: cmake --preset x64-release
 
       - name: Locate clang-tidy
         shell: pwsh
@@ -30,4 +35,4 @@ jobs:
         shell: pwsh
         run: |
           $files = Get-ChildItem -Path src -Recurse -Include *.cpp
-          & $env:CLANG_TIDY -p build $files.FullName
+          & $env:CLANG_TIDY -p out/build/x64-release $files.FullName
