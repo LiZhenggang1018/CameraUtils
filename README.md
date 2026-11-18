@@ -12,7 +12,7 @@ windows11 OS + visual studio 2022 本地计算机 x64Debug/Release,
 C++20
 
 构建依赖：\
-cmake 构建，通过 CPM 下载 3 方依赖库：opencv(含contrib模块) ffmpeg stdexec nlohmann_json MagicEnum exiv2
+cmake 构建，通过 CPM 下载以下第三方依赖库：opencv(含contrib模块) ffmpeg stdexec nlohmann_json MagicEnum exiv2
 
 个人备注：\
 1. 手动下载rapids-cmake，解压到如下路径D:/ThirdPartyLib/rapids-cmake，解决内网CMake 在下载 rapids-cmake 时 SSL 验证失败问题：
@@ -21,12 +21,33 @@ cmake 构建，通过 CPM 下载 3 方依赖库：opencv(含contrib模块) ffmpe
 ## 构建
 
 ```powershell
+# Debug（Ninja + MSVC 18 BuildTools）
 cmake --preset x64-debug
 cmake --build --preset x64-debug
+
+# Release（Visual Studio 2022 自带工具链）
+cmake --preset x64-release
+cmake --build --preset x64-release
 ```
 
 > Ninja 与 MSVC 需在环境中可用：先执行对应的 `vcvars64.bat`，或直接从 Visual Studio 开发者命令行启动。
 > OpenCVConfig.cmake 不识别 MSVC 19.5x 时，`CMakeLists.txt` 已自动兜底设置 `OpenCV_RUNTIME=vc17`。
+
+### 构建选项
+
+| 选项 | 默认 | 说明 |
+|---|---|---|
+| `CAMERA_UTILS_ENABLE_VAS_CONCURRENCY` | `ON` | 编译依赖 stdexec 的 VAS 并发示例，并注册 `vas-concurrency` 测试用例 |
+
+开关通过 `VAS_ENABLE_STDEXEC` 宏传递给 `tests/VasConcurrencyDemo.h`。改动该选项时必须显式传入 `-D`，
+因为 CMake 的 `option()` 默认值不会覆盖已有构建目录中 `CMakeCache.txt` 的旧值：
+
+```powershell
+cmake -S . -B out/build/x64-release -DCAMERA_UTILS_ENABLE_VAS_CONCURRENCY=OFF
+```
+
+警告级别、`/permissive-`、`/utf-8` 与 Release 优化选项统一由 INTERFACE 目标 `CameraUtils::build_options`
+（根 `CMakeLists.txt`）提供，`camera_utils_core`、`CameraUtils`、`camera_utils_tests` 共用，无需各自重复声明。
 
 ## 运行
 
@@ -80,6 +101,7 @@ inc/
   OpticalFlow/*.h         光流/配准
   LivePhotoSmoothPlay/*.h LivePhoto 平滑播放
   HdrMerge/*.h            HDR 融合
+  ImageReg/*.h            图像配准辅助（Harris 角点等）
 src/
   main.cpp                CLI 入口（子命令 + 菜单）
   OpticalFlow/*.cpp       → camera_utils_core
@@ -91,4 +113,5 @@ tests/
   *.h                     各模块用例
 configs/                  运行时 JSON 配置
 data/                     媒体素材（不入库）
+references/               编码规范文档（不入库）
 ```
