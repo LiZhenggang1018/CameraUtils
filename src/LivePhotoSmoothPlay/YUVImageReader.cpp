@@ -5,17 +5,17 @@
 #include "YUVImageReader.h"
 
 YUVImageReader::YUVImageReader(int width, int height)
-    : width_(width), height_(height)
+    : width_(width),
+      height_(height)
 {
-    y_size_  = width * height;
+    y_size_ = width * height;
     uv_size_ = (width / 2) * (height / 2);
 }
 
-cv::Mat YUVImageReader::readYUV420P(const std::string &filepath)
+cv::Mat YUVImageReader::readYUV420P(const std::string& filepath)
 {
     std::ifstream file(filepath, std::ios::binary | std::ios::ate);
-    if (!file.is_open())
-    {
+    if (!file.is_open()) {
         throw std::runtime_error("无法打开文件: " + filepath);
     }
 
@@ -23,15 +23,12 @@ cv::Mat YUVImageReader::readYUV420P(const std::string &filepath)
     file.seekg(0, std::ios::beg);
 
     const size_t expected_size = static_cast<size_t>(y_size_ + 2 * uv_size_);
-    if (static_cast<size_t>(file_size) != expected_size)
-    {
+    if (static_cast<size_t>(file_size) != expected_size) {
         throw std::runtime_error("文件大小与YUV420P格式不匹配");
     }
 
     std::vector<uint8_t> yuv_data(expected_size);
-    if (!file.read(reinterpret_cast<char *>(yuv_data.data()),
-                   static_cast<std::streamsize>(expected_size)))
-    {
+    if (!file.read(reinterpret_cast<char*>(yuv_data.data()), static_cast<std::streamsize>(expected_size))) {
         throw std::runtime_error("读取文件失败");
     }
 
@@ -44,34 +41,28 @@ cv::Mat YUVImageReader::readYUV420P(const std::string &filepath)
     return bgr_image;
 }
 
-std::vector<cv::Mat> YUVImageReader::readYUV420PChannels(const std::string &filepath)
+std::vector<cv::Mat> YUVImageReader::readYUV420PChannels(const std::string& filepath)
 {
     std::ifstream file(filepath, std::ios::binary);
-    if (!file.is_open())
-    {
+    if (!file.is_open()) {
         throw std::runtime_error("无法打开文件: " + filepath);
     }
 
     const size_t total_size = static_cast<size_t>(y_size_ + 2 * uv_size_);
     std::vector<uint8_t> yuv_data(total_size);
-    if (!file.read(reinterpret_cast<char *>(yuv_data.data()),
-                   static_cast<std::streamsize>(total_size)))
-    {
+    if (!file.read(reinterpret_cast<char*>(yuv_data.data()), static_cast<std::streamsize>(total_size))) {
         throw std::runtime_error("读取文件失败");
     }
 
     // 修复 #1：用 clone() 深拷贝，避免返回的 cv::Mat 引用局部 vector
     cv::Mat y_plane = cv::Mat(height_, width_, CV_8UC1, yuv_data.data()).clone();
-    cv::Mat u_plane = cv::Mat(height_ / 2, width_ / 2, CV_8UC1,
-                              yuv_data.data() + y_size_).clone();
-    cv::Mat v_plane = cv::Mat(height_ / 2, width_ / 2, CV_8UC1,
-                              yuv_data.data() + y_size_ + uv_size_).clone();
+    cv::Mat u_plane = cv::Mat(height_ / 2, width_ / 2, CV_8UC1, yuv_data.data() + y_size_).clone();
+    cv::Mat v_plane = cv::Mat(height_ / 2, width_ / 2, CV_8UC1, yuv_data.data() + y_size_ + uv_size_).clone();
 
     return {y_plane, u_plane, v_plane};
 }
 
-void YUVImageReader::convertBGRtoYUV420P(const cv::Mat &bgr_image,
-                                          std::vector<uint8_t> &yuv_data) const
+void YUVImageReader::convertBGRtoYUV420P(const cv::Mat& bgr_image, std::vector<uint8_t>& yuv_data) const
 {
     // 修复 #7：显式检查连续性，避免 ROI 视图读错
     CV_Assert(!bgr_image.empty());
@@ -87,29 +78,21 @@ void YUVImageReader::convertBGRtoYUV420P(const cv::Mat &bgr_image,
     std::memcpy(yuv_data.data(), yuv420.data, yuv_data.size());
 }
 
-void YUVImageReader::saveAsYUV420P(const cv::Mat &image,
-                                   const std::string &filepath)
+void YUVImageReader::saveAsYUV420P(const cv::Mat& image, const std::string& filepath)
 {
-    if (image.empty())
-    {
+    if (image.empty()) {
         throw std::runtime_error("输入图像为空");
     }
-    if (image.type() != CV_8UC3)
-    {
+    if (image.type() != CV_8UC3) {
         throw std::runtime_error("输入图像必须是 CV_8UC3 (BGR)");
     }
 
     cv::Mat resized_image;
-    if (image.cols != width_ || image.rows != height_)
-    {
+    if (image.cols != width_ || image.rows != height_) {
         // 缩小时用 INTER_AREA，放大时用 INTER_CUBIC
-        const int interp = (image.cols > width_ || image.rows > height_)
-                               ? cv::INTER_AREA
-                               : cv::INTER_CUBIC;
+        const int interp = (image.cols > width_ || image.rows > height_) ? cv::INTER_AREA : cv::INTER_CUBIC;
         cv::resize(image, resized_image, cv::Size(width_, height_), 0, 0, interp);
-    }
-    else
-    {
+    } else {
         // 关键：克隆，保证传入 convertBGRtoYUV420P 的是连续内存
         resized_image = image.clone();
     }
@@ -118,10 +101,8 @@ void YUVImageReader::saveAsYUV420P(const cv::Mat &image,
     convertBGRtoYUV420P(resized_image, yuv_data);
 
     std::ofstream file(filepath, std::ios::binary);
-    if (!file.is_open())
-    {
+    if (!file.is_open()) {
         throw std::runtime_error("无法创建输出文件: " + filepath);
     }
-    file.write(reinterpret_cast<const char *>(yuv_data.data()),
-               static_cast<std::streamsize>(yuv_data.size()));
+    file.write(reinterpret_cast<const char*>(yuv_data.data()), static_cast<std::streamsize>(yuv_data.size()));
 }
