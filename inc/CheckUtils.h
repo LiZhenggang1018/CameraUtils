@@ -19,10 +19,8 @@
 
 #ifndef CHECK_AND_RETURN
 #define CHECK_AND_RETURN(cond)   \
-    do                           \
-    {                            \
-        if (cond)                \
-        {                        \
+    do {                         \
+        if (cond) {              \
             PV(#cond, "failed"); \
             return;              \
         }                        \
@@ -31,10 +29,8 @@
 
 #ifndef CHECK_AND_RETURN_RET
 #define CHECK_AND_RETURN_RET(cond, retval) \
-    do                                     \
-    {                                      \
-        if (cond)                          \
-        {                                  \
+    do {                                   \
+        if (cond) {                        \
             PV(#cond, "failed");           \
             return retval;                 \
         }                                  \
@@ -43,10 +39,8 @@
 
 #ifndef CAR
 #define CAR(cond)                \
-    do                           \
-    {                            \
-        if (cond)                \
-        {                        \
+    do {                         \
+        if (cond) {              \
             PV(#cond, "failed"); \
             return;              \
         }                        \
@@ -55,10 +49,8 @@
 
 #ifndef CARR
 #define CARR(cond, retval)       \
-    do                           \
-    {                            \
-        if (cond)                \
-        {                        \
+    do {                         \
+        if (cond) {              \
             PV(#cond, "failed"); \
             return retval;       \
         }                        \
