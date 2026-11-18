@@ -63,11 +63,11 @@ camera_utils_tests.exe magic-enum
 
 ## 编码规范（必须遵守）
 
-编写或修改 C++ 代码前必须先阅读以下规范文档：
+编写或修改 C++ 代码前必须先阅读以下规范文档（存放于本地 `references/` 目录，该目录不入库）：
 
-- `documentation/OpenHarmony-cpp-coding-style-guide.md` —— 命名、格式、注释、头文件、类、函数、C++ 特性
-- `documentation/OpenHarmony-c-cpp-secure-coding-guide.md` —— C/C++ 安全编码（内存、资源、格式化字符串、路径校验等）
-- `documentation/OpenHarmony-compile-rule.md` —— 编译选项规范
+- `references/OpenHarmony-cpp-coding-style-guide.md` —— 命名、格式、注释、头文件、类、函数、C++ 特性
+- `references/OpenHarmony-c-cpp-secure-coding-guide.md` —— C/C++ 安全编码（内存、资源、格式化字符串、路径校验等）
+- `references/OpenHarmony-compile-rule.md` —— 编译选项规范
 
 **执行要求**
 
