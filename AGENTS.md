@@ -42,6 +42,18 @@ ninja -C out\build\x64-debug
 因此：**助手编译通过不等于开发者 VS 2022 编译通过**，反之亦然。报告构建/测试结果时须说明用的是哪套配置，
 不要声称已验证开发者那侧的构建。
 
+### 排查构建参数时的坑
+
+`out/build/<preset>/build.ninja` 里所有目标共用同一套 `FLAGS` 语法，第三方依赖（`_deps/`，如 exiv2）
+的编译单元排在文件前面。用 `[regex]::Match` 或 `grep -m1` 取"第一个 FLAGS"会**误取到第三方目标**。
+
+正确做法是按目标前缀区分：本工程目标（`src/CMakeFiles/`、`tests/CMakeFiles/`）才代表项目配置。
+实测结论：本工程统一为 `-std:c++20`（来自根 `CMakeLists.txt` 的 `CMAKE_CXX_STANDARD 20`），
+第三方 `_deps` 目标为 `-std:c++17`，两者不应混淆。
+
+同理，本工程 Debug 目标为 `/Ob0 /Od /RTC1 -MDd`（标准 Debug），不存在 `/Ox` 优化；
+看到 `/Ox` 说明取到的是第三方目标。
+
 ## 测试
 
 ```bat
