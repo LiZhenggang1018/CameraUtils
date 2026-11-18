@@ -1,8 +1,8 @@
 /*
  * @Description: HDR 融合（Mertens / 物理 HDR 双管线 + 鬼影抑制）
  */
-#ifndef HDR_MERGE_H
-#define HDR_MERGE_H
+#ifndef INC_HDRMERGE_HDRMERGE_H
+#define INC_HDRMERGE_HDRMERGE_H
 
 #include "CommonEnv.h"
 #include "Exiv2Common.h"
@@ -811,4 +811,4 @@ inline int HdrMergeFromFiles(const std::string& lowPath, const std::string& norm
 
 } // namespace hdr_merge
 
-#endif // HDR_MERGE_H
+#endif // INC_HDRMERGE_HDRMERGE_H

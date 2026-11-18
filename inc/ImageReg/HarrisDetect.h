@@ -1,5 +1,5 @@
-#ifndef INC_IMAGEREG_HARRISDETECT_H_
-#define INC_IMAGEREG_HARRISDETECT_H_
+#ifndef INC_IMAGEREG_HARRISDETECT_H
+#define INC_IMAGEREG_HARRISDETECT_H
 
 #include <iostream>
 #include "CommonEnv.h"
@@ -88,4 +88,4 @@ inline void HarrisTest()
     cv::waitKey(0);
 }
 
-#endif // INC_IMAGEREG_HARRISDETECT_H_
+#endif // INC_IMAGEREG_HARRISDETECT_H

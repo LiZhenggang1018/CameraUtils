@@ -1,8 +1,8 @@
 /*
  * @Description: HDR 融合配置（Mertens / 物理 HDR 双管线 + 鬼影抑制）
  */
-#ifndef HDR_CONFIG_H
-#define HDR_CONFIG_H
+#ifndef INC_HDRMERGE_HDRCONFIG_H
+#define INC_HDRMERGE_HDRCONFIG_H
 
 #include "CommonEnv.h"
 #include "JsonUtils.h"
@@ -159,4 +159,4 @@ struct HdrConfig {
     void SaveToFile(const std::string& path) const { Srlz(*this, path); }
 };
 
-#endif // HDR_CONFIG_H
+#endif // INC_HDRMERGE_HDRCONFIG_H
