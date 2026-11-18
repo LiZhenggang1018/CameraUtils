@@ -7,10 +7,10 @@
 
 #include <filesystem>
 
-#include "FFmpegDefine.h"
-#include "YUVImageReader.h"
-#include "ImageRegistrator.h"
 #include "DecAndEnc.h"
+#include "FFmpegDefine.h"
+#include "ImageRegistrator.h"
+#include "YUVImageReader.h"
 
 namespace fs = std::filesystem;
 
@@ -19,32 +19,25 @@ inline cv::Mat g_hMatrixVidToCover;
 
 inline std::pair<double, double> DumpXYScaleFroMatrixVidToCover() // 写入txt
 {
-    if (g_hMatrixVidToCover.empty() || (g_hMatrixVidToCover.rows * g_hMatrixVidToCover.cols) < 5)
-    {
+    if (g_hMatrixVidToCover.empty() || (g_hMatrixVidToCover.rows * g_hMatrixVidToCover.cols) < 5) {
         return {};
     }
 
     // 确保以 double 读取矩阵元素（避免类型不匹配导致 at<double> 抛异常）
     cv::Mat mat64;
-    if (g_hMatrixVidToCover.type() != CV_64F)
-    {
+    if (g_hMatrixVidToCover.type() != CV_64F) {
         g_hMatrixVidToCover.convertTo(mat64, CV_64F);
-    }
-    else
-    {
+    } else {
         mat64 = g_hMatrixVidToCover;
     }
 
     // 下标 0 -> (0,0)，下标 4 -> (1,1)
     double x = 0.0;
     double y = 0.0;
-    try
-    {
+    try {
         x = mat64.at<double>(0, 0);
         y = mat64.at<double>(1, 1);
-    }
-    catch (...)
-    {
+    } catch (...) {
         // 读取失败返回默认值
         return {};
     }
@@ -53,14 +46,11 @@ inline std::pair<double, double> DumpXYScaleFroMatrixVidToCover() // 写入txt
     {
         std::filesystem::path path = std::filesystem::current_path() / vidToCoverScaleRatioFile;
         std::ofstream ofs(path, std::ofstream::trunc);
-        if (ofs)
-        {
+        if (ofs) {
             // 保存高精度以避免精度丢失
             ofs << std::setprecision(17) << x << ' ' << y << '\n';
             ofs.close();
-        }
-        else
-        {
+        } else {
             std::cerr << "Warning: cannot open file to write: " << path.string() << std::endl;
         }
     }
@@ -71,13 +61,10 @@ inline std::pair<double, double> DumpXYScaleFroMatrixVidToCover() // 写入txt
     {
         std::filesystem::path path = std::filesystem::current_path() / vidToCoverScaleRatioFile;
         std::ifstream ifs(path);
-        if (ifs)
-        {
+        if (ifs) {
             ifs >> x1 >> y1;
             ifs.close();
-        }
-        else
-        {
+        } else {
             std::cerr << "Warning: cannot open file to read: " << path.string() << std::endl;
         }
     }
@@ -96,13 +83,10 @@ inline std::pair<double, double> GetXYScaleFroMatrixVidToCover()
     {
         std::filesystem::path path = std::filesystem::current_path() / vidToCoverScaleRatioFile;
         std::ifstream ifs(path);
-        if (ifs)
-        {
+        if (ifs) {
             ifs >> x >> y;
             ifs.close();
-        }
-        else
-        {
+        } else {
             std::cerr << "Warning: cannot open file to read: " << path.string() << std::endl;
         }
     }
@@ -110,12 +94,12 @@ inline std::pair<double, double> GetXYScaleFroMatrixVidToCover()
     return {x, y};
 }
 
-inline int RegCoverFrameToLastVidFrame(int width, int height, const std::string &refYuv, const std::string &targetYuv, const std::string &outDir)
+inline int RegCoverFrameToLastVidFrame(int width, int height, const std::string& refYuv, const std::string& targetYuv,
+                                       const std::string& outDir)
 {
-    try
-    {
+    try {
         const FeatureDetectorType DETECTOR_TYPE = FeatureDetectorType::SIFT; // 特征检测器类型
-        const TransformType TRANSFORM_TYPE = TransformType::HOMOGRAPHY;     // 变换类型
+        const TransformType TRANSFORM_TYPE = TransformType::HOMOGRAPHY;      // 变换类型
 
         // ============================================
         // 程序主体（参数由函数形参提供）
@@ -133,8 +117,7 @@ inline int RegCoverFrameToLastVidFrame(int width, int height, const std::string 
         std::cout << "目标图像: " << targetYuv << std::endl;
         std::cout << "输出目录: " << outDir << std::endl;
 
-        switch (DETECTOR_TYPE)
-        {
+        switch (DETECTOR_TYPE) {
         case FeatureDetectorType::ORB:
             std::cout << "特征检测器: ORB" << std::endl;
             break;
@@ -149,8 +132,7 @@ inline int RegCoverFrameToLastVidFrame(int width, int height, const std::string 
             break;
         }
 
-        switch (TRANSFORM_TYPE)
-        {
+        switch (TRANSFORM_TYPE) {
         case TransformType::HOMOGRAPHY:
             std::cout << "变换类型: 单应性变换" << std::endl;
             break;
@@ -181,12 +163,10 @@ inline int RegCoverFrameToLastVidFrame(int width, int height, const std::string 
         std::cout << "读取目标图像: " << targetYuv << std::endl;
         cv::Mat target_img = yuv_reader.readYUV420P(targetYuv);
 
-        if (reference_img.empty())
-        {
+        if (reference_img.empty()) {
             throw std::runtime_error("参考图像读取失败或为空: " + refYuv);
         }
-        if (target_img.empty())
-        {
+        if (target_img.empty()) {
             throw std::runtime_error("目标图像读取失败或为空: " + targetYuv);
         }
 
@@ -207,29 +187,23 @@ inline int RegCoverFrameToLastVidFrame(int width, int height, const std::string 
 
         // 4. 执行配准
         std::cout << "\n步骤4: 开始图像配准..." << std::endl;
-        auto result = registrator.registerImages(
-            reference_img, target_img, DETECTOR_TYPE, TRANSFORM_TYPE);
+        auto result = registrator.registerImages(reference_img, target_img, DETECTOR_TYPE, TRANSFORM_TYPE);
 
         // 检查配准是否成功
-        if (result.registered_image.empty())
-        {
+        if (result.registered_image.empty()) {
             throw std::runtime_error("图像配准失败，配准结果为空");
         }
 
-        if (result.transform_matrix.empty())
-        {
+        if (result.transform_matrix.empty()) {
             throw std::runtime_error("图像配准失败，变换矩阵为空");
         }
 
         // 在将 H 矩阵写入 transform_matrix.txt 之前，赋值给全局变量 g_hMatrixVidToCover
-        if (!result.transform_matrix.empty())
-        {
+        if (!result.transform_matrix.empty()) {
             // 使用 clone() 确保独立拷贝
             g_hMatrixVidToCover = result.transform_matrix.clone();
             DumpXYScaleFroMatrixVidToCover();
-        }
-        else
-        {
+        } else {
             PV("clone transform_matrix fail");
             g_hMatrixVidToCover.release();
         }
@@ -240,10 +214,8 @@ inline int RegCoverFrameToLastVidFrame(int width, int height, const std::string 
 
         // 6. 绘制匹配结果
         std::cout << "\n步骤6: 绘制特征匹配结果..." << std::endl;
-        cv::Mat matches_img = registrator.drawMatches(
-            reference_img, target_img,
-            result.keypoints1, result.keypoints2,
-            result.good_matches);
+        cv::Mat matches_img = registrator.drawMatches(reference_img, target_img, result.keypoints1, result.keypoints2,
+                                                      result.good_matches);
 
         cv::imwrite(outDir + "/03_feature_matches.jpg", matches_img);
 
@@ -276,46 +248,40 @@ inline int RegCoverFrameToLastVidFrame(int width, int height, const std::string 
         cv::Mat report_img(800, 1200, CV_8UC3, cv::Scalar(240, 240, 240));
 
         // 添加标题
-        cv::putText(report_img, "YUV420P图像配准报告", cv::Point(50, 50),
-                    cv::FONT_HERSHEY_DUPLEX, 1.5, cv::Scalar(0, 0, 0), 2);
+        cv::putText(report_img, "YUV420P图像配准报告", cv::Point(50, 50), cv::FONT_HERSHEY_DUPLEX, 1.5,
+                    cv::Scalar(0, 0, 0), 2);
 
         // 添加配准统计信息
         std::string stats_text = "配准统计信息:";
-        cv::putText(report_img, stats_text, cv::Point(50, 100),
-                    cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 0, 0), 1);
+        cv::putText(report_img, stats_text, cv::Point(50, 100), cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 0, 0), 1);
 
-        std::vector<std::string> stats_lines = {
-            "图像尺寸: " + std::to_string(width) + "x" + std::to_string(height),
-            "匹配点数量: " + std::to_string(result.good_matches.size()),
-            "内点数量: " + std::to_string(result.num_inliers),
-            "RMS误差: " + std::to_string(result.rms_error) + " 像素"};
+        std::vector<std::string> stats_lines = {"图像尺寸: " + std::to_string(width) + "x" + std::to_string(height),
+                                                "匹配点数量: " + std::to_string(result.good_matches.size()),
+                                                "内点数量: " + std::to_string(result.num_inliers),
+                                                "RMS误差: " + std::to_string(result.rms_error) + " 像素"};
 
         int y_offset = 130;
-        for (const auto &line : stats_lines)
-        {
-            cv::putText(report_img, line, cv::Point(70, y_offset),
-                        cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(50, 50, 50), 1);
+        for (const auto& line : stats_lines) {
+            cv::putText(report_img, line, cv::Point(70, y_offset), cv::FONT_HERSHEY_SIMPLEX, 0.6,
+                        cv::Scalar(50, 50, 50), 1);
             y_offset += 25;
         }
 
         // 添加变换矩阵
-        cv::putText(report_img, "变换矩阵:", cv::Point(50, y_offset + 20),
-                    cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 0, 0), 1);
+        cv::putText(report_img, "变换矩阵:", cv::Point(50, y_offset + 20), cv::FONT_HERSHEY_SIMPLEX, 0.7,
+                    cv::Scalar(0, 0, 0), 1);
 
-        if (!result.transform_matrix.empty())
-        {
+        if (!result.transform_matrix.empty()) {
             y_offset += 50;
-            for (int i = 0; i < result.transform_matrix.rows; i++)
-            {
+            for (int i = 0; i < result.transform_matrix.rows; i++) {
                 std::string row_str;
-                for (int j = 0; j < result.transform_matrix.cols; j++)
-                {
+                for (int j = 0; j < result.transform_matrix.cols; j++) {
                     row_str += std::to_string(result.transform_matrix.at<double>(i, j));
                     if (j < result.transform_matrix.cols - 1)
                         row_str += ", ";
                 }
-                cv::putText(report_img, row_str, cv::Point(70, y_offset),
-                            cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(50, 50, 50), 1);
+                cv::putText(report_img, row_str, cv::Point(70, y_offset), cv::FONT_HERSHEY_SIMPLEX, 0.5,
+                            cv::Scalar(50, 50, 50), 1);
                 y_offset += 20;
             }
         }
@@ -325,8 +291,7 @@ inline int RegCoverFrameToLastVidFrame(int width, int height, const std::string 
 
         // 保存配准参数配置文件
         std::ofstream config_file(outDir + "/09_configuration.txt");
-        if (config_file.is_open())
-        {
+        if (config_file.is_open()) {
             config_file << "YUV420P图像配准配置参数" << std::endl;
             config_file << "=================================" << std::endl;
             config_file << "生成时间: " << __DATE__ << " " << __TIME__ << std::endl;
@@ -339,8 +304,7 @@ inline int RegCoverFrameToLastVidFrame(int width, int height, const std::string 
             config_file << std::endl;
             config_file << "2. 算法参数" << std::endl;
             config_file << "   特征检测器: ";
-            switch (DETECTOR_TYPE)
-            {
+            switch (DETECTOR_TYPE) {
             case FeatureDetectorType::ORB:
                 config_file << "ORB";
                 break;
@@ -356,8 +320,7 @@ inline int RegCoverFrameToLastVidFrame(int width, int height, const std::string 
             }
             config_file << std::endl;
             config_file << "   变换类型: ";
-            switch (TRANSFORM_TYPE)
-            {
+            switch (TRANSFORM_TYPE) {
             case TransformType::HOMOGRAPHY:
                 config_file << "单应性变换";
                 break;
@@ -426,9 +389,7 @@ inline int RegCoverFrameToLastVidFrame(int width, int height, const std::string 
         std::cout << "1. 确保输入YUV文件路径正确且格式为YUV420P" << std::endl;
         std::cout << "2. 图像尺寸必须与代码中指定的" << width << "x" << height << "一致" << std::endl;
         std::cout << "3. 如需修改参数，请直接编辑main.cpp中的硬编码值" << std::endl;
-    }
-    catch (const std::exception &e)
-    {
+    } catch (const std::exception& e) {
         std::cerr << "\n=================================" << std::endl;
         std::cerr << "程序执行出错!" << std::endl;
         std::cerr << "错误信息: " << e.what() << std::endl;
@@ -454,9 +415,9 @@ inline void RegCoverToVid()
 // 由于录屏文件中，LP原始图像只占据中部分区域，通过手动从图像中crop出该区域，
 inline void DecodeCropEncodeInputVid()
 {
-    constexpr double xCropRatio{ };
+    constexpr double xCropRatio{};
     constexpr double ratio = static_cast<double>(1260 - 300) / 1562;
-    constexpr double yCropRatio = 1- ratio;
+    constexpr double yCropRatio = 1 - ratio;
     DecodeCropEncode(LP_INIT_FILE.c_str(), LP_CROP_FILE.c_str(), xCropRatio, yCropRatio);
 }
 
