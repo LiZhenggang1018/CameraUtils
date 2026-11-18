@@ -12,8 +12,7 @@
 
 // 实例计数器模板类
 template <typename Derived>
-class Counter
-{
+class Counter {
 private:
     inline static std::atomic<int> cnt{};
 
@@ -58,10 +57,7 @@ public:
     }
 
     // 获取当前实例数量
-    static int GetInstanceCount()
-    {
-        return cnt.load();
-    }
+    static int GetInstanceCount() { return cnt.load(); }
 
     // 禁止赋值操作符(拷贝赋值，移动赋值)，避免计数错误
     Counter& operator=(const Counter&) = delete;
