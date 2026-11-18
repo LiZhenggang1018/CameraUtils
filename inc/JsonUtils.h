@@ -12,12 +12,12 @@
 #include <vector>
 
 #include "CheckUtils.h"
+#include "CommonEnv.h"
 #include "CustomLog.h"
 #include "EnumStrTraits.h"
 #include "NoCopyableMacro.h"
 #include "ScopedUtils.h"
 #include "Singleton.h"
-#include "CommonEnv.h"
 
 #if __has_include(<nlohmann/json.hpp>)
 #include <nlohmann/json.hpp>
@@ -30,32 +30,27 @@
 #ifdef HAS_NLOHMANN_JSON_H
 
 // using json = nlohmann::json;
-namespace
-{
+namespace {
 constexpr int DEFAULT_INDENT{4}; // json 文件缩进空格数
-inline const std::string& ConfigParamPath() {
+inline const std::string& ConfigParamPath()
+{
     static const std::string path = EnvRootPath() + "/configs/JsonConfig.json";
     return path;
-}// 用于配置 json 序列化/反序列化参数的 json 文件路径，
+} // 用于配置 json 序列化/反序列化参数的 json 文件路径，
 // enableDump默认为0，表示禁用json dump功能（在log中打印序列化的json文件的每一项），配置为1表示启用
 } // namespace
 
 // add user-defined type's to_json/from json func, and import to nlohmann namespace
-namespace nlohmann
-{
+namespace nlohmann {
 
 // add to_json from_json support for std::optional
 template <typename T>
-struct adl_serializer<std::optional<T>>
-{
+struct adl_serializer<std::optional<T>> {
     static void to_json(json& j, const std::optional<T>& opt)
     {
-        if (!opt)
-        {
+        if (!opt) {
             j = nullptr;
-        }
-        else
-        {
+        } else {
             j = *opt; // this will call adl_serializer<T>::to_json which will
             // find the free function to_json in T's namespace!
         }
@@ -63,12 +58,9 @@ struct adl_serializer<std::optional<T>>
 
     static void from_json(const json& j, std::optional<T>& opt)
     {
-        if (j.is_null())
-        {
+        if (j.is_null()) {
             opt = {};
-        }
-        else
-        {
+        } else {
             opt = j.template get<T>(); // same as above, but with
             // adl_serializer<T>::from_json
         }
@@ -81,44 +73,33 @@ struct adl_serializer<std::optional<T>>
 template <typename T, typename... Ts>
 void variant_from_json(const json& j, std::variant<Ts...>& data)
 {
-    if (j.is_null())
-    {
+    if (j.is_null()) {
         PV("josn id null");
-    }
-    else
-    {
+    } else {
         data = j.template get<T>();
     }
 }
 
 template <typename... Ts>
-struct adl_serializer<std::variant<Ts...>>
-{
+struct adl_serializer<std::variant<Ts...>> {
     static void to_json(json& j, const std::variant<Ts...>& data)
     {
         std::visit([&j](const auto& v) { j = v; }, data);
     }
 
-    static void from_json(const json& j, std::variant<Ts...>& data)
-    {
-        (variant_from_json<Ts>(j, data), ...);
-    }
+    static void from_json(const json& j, std::variant<Ts...>& data) { (variant_from_json<Ts>(j, data), ...); }
 };
 
 // Allows serializing and deserializing contents behind a std::unique_ptr.
 // unique_ptr is non_copyable, hence not recommend to use NLOHMANN_DEFINE_TYPE_INTRUSIVE in nested
 // class
 template <typename T>
-struct adl_serializer<std::unique_ptr<T>>
-{
+struct adl_serializer<std::unique_ptr<T>> {
     static void to_json(json& json_value, const std::unique_ptr<T>& ptr)
     {
-        if (ptr.get())
-        {
+        if (ptr.get()) {
             json_value = *ptr;
-        }
-        else
-        {
+        } else {
             json_value = nullptr;
         }
     }
@@ -133,16 +114,12 @@ struct adl_serializer<std::unique_ptr<T>>
 // Allows serializing and deserializing contents behind a std::shared_ptr.
 // shared_ptr is copyable, hence can be used in nested class by NLOHMANN_DEFINE_TYPE_INTRUSIVE
 template <typename T>
-struct adl_serializer<std::shared_ptr<T>>
-{
+struct adl_serializer<std::shared_ptr<T>> {
     static void to_json(json& json_value, const std::shared_ptr<T>& ptr)
     {
-        if (ptr.get())
-        {
+        if (ptr.get()) {
             json_value = *ptr;
-        }
-        else
-        {
+        } else {
             json_value = nullptr;
         }
     }
@@ -160,22 +137,19 @@ inline bool IsJsonFile(const std::string& fileName)
     return EndsWith(fileName, ".json");
 }
 
-struct JsonConfigParams
-{
+struct JsonConfigParams {
     int enableDump{}; // enableDump 配置为1表示启用json
                       // dump功能（在log中打印序列化的json文件的每一项），0表示禁用
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(JsonConfigParams, enableDump)
 };
 
 // JsonConfig: used to config json srlz/dsrlz params from json file
-class JsonConfig : public Singleton<JsonConfig>
-{
+class JsonConfig : public Singleton<JsonConfig> {
 public:
     JsonConfig()
     {
         std::ifstream ifs(ConfigParamPath());
-        if (!ifs.is_open())
-        {
+        if (!ifs.is_open()) {
             PV("open failed", ifs.fail());
             return;
         }
@@ -186,10 +160,7 @@ public:
         PV(m_enableDump.load());
     }
 
-    bool GetDumpEnable() const
-    {
-        return m_enableDump.load();
-    }
+    bool GetDumpEnable() const { return m_enableDump.load(); }
 
 private:
     std::atomic<int> m_enableDump{};
@@ -198,8 +169,7 @@ private:
 inline void Save2Json(const nlohmann::json& j, const std::string& jsonName, int i = DEFAULT_INDENT)
 {
     std::ofstream ofs(jsonName);
-    if (!ofs.is_open())
-    {
+    if (!ofs.is_open()) {
         PV("open failed", ofs.fail());
         return;
     }
@@ -226,8 +196,7 @@ template <typename T>
 std::optional<T> Dsrlz(const std::string& jsonName)
 {
     std::ifstream ifs(jsonName);
-    if (!ifs.is_open())
-    {
+    if (!ifs.is_open()) {
         PV("open failed", ifs.fail());
         return {};
     } // check file exist
