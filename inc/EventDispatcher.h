@@ -16,8 +16,7 @@
 #include "ThreadPool.h"
 
 // 事件分发器接口
-class IEventDispatcher
-{
+class IEventDispatcher {
 public:
     virtual ~IEventDispatcher() = default;
     virtual void DispatchEvent(const EventVariant& event) = 0;
@@ -26,27 +25,19 @@ public:
 };
 
 // 线程安全的事件分发器实现（单例模式）
-class EventDispatcher : public IEventDispatcher, public Singleton<EventDispatcher>
-{
+class EventDispatcher : public IEventDispatcher, public Singleton<EventDispatcher> {
 private:
     // 监听器条目
-    struct ListenerEntry
-    {
+    struct ListenerEntry {
         std::weak_ptr<IEventReceiver> listener{};
         std::string name{};
 
         explicit ListenerEntry(const std::shared_ptr<IEventReceiver>& l)
-            : listener(l), name(l->GetName())
-        {
-        }
-        bool Expired() const
-        {
-            return listener.expired();
-        }
-        std::shared_ptr<IEventReceiver> Lock() const
-        {
-            return listener.lock();
-        }
+            : listener(l),
+              name(l->GetName())
+        {}
+        bool Expired() const { return listener.expired(); }
+        std::shared_ptr<IEventReceiver> Lock() const { return listener.lock(); }
     };
 
 public:
@@ -61,10 +52,8 @@ public:
         auto& entries = listeners_[eventTypeId];
 
         // 检查是否已存在
-        for (const auto& entry : entries)
-        {
-            if (auto e = entry.Lock())
-            {
+        for (const auto& entry : entries) {
+            if (auto e = entry.Lock()) {
                 CARR(e == listener, false);
             }
         }
@@ -86,20 +75,16 @@ public:
         CARR(it == listeners_.end(), false);
 
         auto& entries = it->second;
-        entries.erase(std::remove_if(entries.begin(),
-                                     entries.end(),
-                                     [&](const ListenerEntry& entry)
-                                     {
-                                         if (auto l = entry.Lock())
-                                         {
+        entries.erase(std::remove_if(entries.begin(), entries.end(),
+                                     [&](const ListenerEntry& entry) {
+                                         if (auto l = entry.Lock()) {
                                              return l == listener;
                                          }
                                          return false;
                                      }),
                       entries.end());
 
-        if (entries.empty())
-        {
+        if (entries.empty()) {
             PV("entries empty, remove all");
             listeners_.erase(it);
         }
@@ -110,12 +95,10 @@ public:
     {
         // 使用visit来分发事件
         std::visit(
-            [this](auto&& arg)
-            {
+            [this](auto&& arg) {
                 using T = std::decay_t<decltype(arg)>;
 
-                if constexpr (!std::is_same_v<T, std::monostate>)
-                {
+                if constexpr (!std::is_same_v<T, std::monostate>) {
                     this->DispatchToListeners<T>(arg);
                 }
             },
@@ -127,8 +110,7 @@ public:
     {
         std::shared_lock lock(listenersMtx_);
         PV("Total event types : ", listeners_.size(), "Total listeners: ", GetTotalListenerCount());
-        for (const auto& [typeId, entries] : listeners_)
-        {
+        for (const auto& [typeId, entries] : listeners_) {
             PV("Event type ID: ", typeId, " - ", entries.size(), " listeners");
         }
     }
@@ -144,8 +126,7 @@ public:
     {
         std::shared_lock lock(listenersMtx_);
         size_t count = 0;
-        for (const auto& [typeId, entries] : listeners_)
-        {
+        for (const auto& [typeId, entries] : listeners_) {
             count += entries.size();
         }
         return count;
@@ -168,30 +149,23 @@ private:
         isDispatching_ = true;
 
         auto it = listeners_.find(eventTypeId);
-        if (it != listeners_.end())
-        {
+        if (it != listeners_.end()) {
             // 复制监听器列表以避免在回调中修改导致的迭代器失效
             auto entries = it->second;
             lock.unlock(); // 释放锁，允许其他线程注册/移除监听器
 
-            for (const auto& entry : entries)
-            {
-                if (auto listener = entry.Lock())
-                {
+            for (const auto& entry : entries) {
+                if (auto listener = entry.Lock()) {
                     // 同步调用Cb
                     // listener->OnEvent(EventVariant{ event });
 
                     // 异步调用Cb，改成在线程池中执行回调,以防止某个监听器阻塞整个分发过程
                     // 异步会拷贝EventType，要求可拷贝
-                    static_assert(std::is_copy_constructible_v<EventType>,
-                                  "EventType must be copy constructible");
+                    static_assert(std::is_copy_constructible_v<EventType>, "EventType must be copy constructible");
 
-                    pool_.EnqueMsg(
-                        [listener, event]()
-                        {
-                            listener->OnEvent(
-                                EventVariant{event}); // 将具体事件包装成variant传递给监听器
-                        });
+                    pool_.EnqueMsg([listener, event]() {
+                        listener->OnEvent(EventVariant{event}); // 将具体事件包装成variant传递给监听器
+                    });
                 }
             }
         }
@@ -201,10 +175,9 @@ private:
 
     void CleanupExpiredListeners(std::vector<ListenerEntry>& entries)
     {
-        entries.erase(std::remove_if(entries.begin(),
-                                     entries.end(),
-                                     [](const ListenerEntry& entry) { return entry.Expired(); }),
-                      entries.end());
+        entries.erase(
+            std::remove_if(entries.begin(), entries.end(), [](const ListenerEntry& entry) { return entry.Expired(); }),
+            entries.end());
     }
 };
 
