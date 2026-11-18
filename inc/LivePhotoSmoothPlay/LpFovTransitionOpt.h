@@ -5,14 +5,14 @@
 #ifndef LPFOVTRANSITIONOPT_H_
 #define LPFOVTRANSITIONOPT_H_
 
-//#include <windows.h> // 用于SetConsoleOutputCP
+// #include <windows.h> // 用于SetConsoleOutputCP
 
+#include "AlphaMergeYuvs.h"
+#include "CenterCropGenYuvs.h"
 #include "DecDemo.h"
+#include "LpReg.h"
 #include "OpenCVCommon.h"
 #include "YUVProcessor.h"
-#include "AlphaMergeYuvs.h"
-#include "LpReg.h"
-#include "CenterCropGenYuvs.h"
 
 inline void AuxTestDumpUtils()
 {
