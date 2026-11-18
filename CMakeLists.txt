@@ -45,6 +45,39 @@ function(camera_utils_copy_dlls TARGET_NAME SRC_DIR)
     endif()
 endfunction()
 
+# 为可执行目标复制 FFmpeg + 当前构建类型对应的 OpenCV 运行库
+function(camera_utils_copy_runtime_dlls TARGET_NAME)
+    camera_utils_copy_dlls(${TARGET_NAME} "${FFMPEG_ROOT}/bin")
+
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        # Debug：只要以 d.dll 结尾的（opencv_world4100d.dll ...）
+        file(GLOB_RECURSE _opencv_dlls CONFIGURE_DEPENDS
+            "${opencv_prebuilt_SOURCE_DIR}/opencv_world*d.dll"
+            "${opencv_prebuilt_SOURCE_DIR}/opencv_core*d.dll"
+        )
+    else()
+        # Release：glob 全部后排除以 d.dll 结尾的 Debug 版
+        file(GLOB_RECURSE _opencv_dlls CONFIGURE_DEPENDS
+            "${opencv_prebuilt_SOURCE_DIR}/opencv_world*.dll"
+            "${opencv_prebuilt_SOURCE_DIR}/opencv_core*.dll"
+        )
+        list(FILTER _opencv_dlls EXCLUDE REGEX "d\\.dll$")
+    endif()
+
+    if(_opencv_dlls)
+        foreach(_dll IN LISTS _opencv_dlls)
+            message(STATUS "Will copy OpenCV DLL: ${_dll}")
+            add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${_dll}"
+                    "$<TARGET_FILE_DIR:${TARGET_NAME}>"
+                COMMENT "Copying OpenCV DLL: ${_dll}")
+        endforeach()
+    else()
+        message(WARNING "No OpenCV DLL found to copy under ${opencv_prebuilt_SOURCE_DIR}")
+    endif()
+endfunction()
+
 # ============================================================
 # CPM
 # ============================================================
@@ -145,6 +178,17 @@ if(_opencv_local_has_contrib)
         message(FATAL_ERROR "OpenCVConfig.cmake not found under ${_opencv_candidate}")
     endif()
     message(STATUS "OpenCV_DIR = ${OpenCV_DIR}")
+    # OpenCVConfig.cmake 仅在 MSVC_VERSION 匹配 ^19[34][0-9]$ 时才推断 vc17；
+    # VS2026(MSVC 19.5x) 会推断失败并置 OpenCV_FOUND=FALSE，这里显式兜底。
+    if(MSVC AND MSVC_VERSION GREATER_EQUAL 1950 AND NOT OpenCV_RUNTIME)
+        set(OpenCV_RUNTIME vc17)
+        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+            set(OpenCV_ARCH x64)
+        else()
+            set(OpenCV_ARCH x86)
+        endif()
+        message(STATUS "OpenCV: 显式指定 runtime=${OpenCV_RUNTIME} arch=${OpenCV_ARCH} (MSVC ${MSVC_VERSION})")
+    endif()
 find_package(OpenCV REQUIRED COMPONENTS
     core imgproc highgui features2d calib3d flann video videoio imgcodecs objdetect optflow photo stitching xphoto ximgproc stereo)
     # ${OpenCV_LIBS} 和 ${OpenCV_INCLUDE_DIRS} 由 find_package 提供
