@@ -31,7 +31,7 @@ public:
 
     FrameInterpolator() = default;
     explicit FrameInterpolator(const Params& params)
-        : m_params(params)
+        : params_(params)
     {}
 
     [[nodiscard]] cv::Mat Interpolate(const cv::Mat& prev, const cv::Mat& curr, double t = 0.5) const;
@@ -39,7 +39,7 @@ public:
     [[nodiscard]] cv::Mat BlendFromFlows(const cv::Mat& prev, const cv::Mat& curr, const cv::Mat& flowFwd,
                                          const cv::Mat& flowBwd, double t) const;
 
-    [[nodiscard]] const Params& GetParams() const { return m_params; }
+    [[nodiscard]] const Params& GetParams() const { return params_; }
 
 private:
     // 内部：全分辨率光流计算（不含降分辨率包装）
@@ -48,8 +48,8 @@ private:
     // 对外：带 flowDownscale 包装
     void ComputeFlow(const cv::Mat& from, const cv::Mat& to, cv::Mat& flow) const;
 
-    Params m_params;
-    mutable cv::Mat m_prevFlowFwd;
+    Params params_;
+    mutable cv::Mat prevFlowFwd_;
 };
 
 #endif // INC_OPTICALFLOW_FRAMEINTERPOLATOR_H
