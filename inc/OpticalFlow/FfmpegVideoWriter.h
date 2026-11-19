@@ -35,20 +35,20 @@ public:
 
     void Close();
 
-    [[nodiscard]] bool IsOpened() const { return m_opened; }
-    [[nodiscard]] const char* EncoderName() const { return m_encoderName; }
+    [[nodiscard]] bool IsOpened() const { return opened_; }
+    [[nodiscard]] const char* EncoderName() const { return encoderName_; }
 
 private:
-    AVFormatContext* m_fmtCtx = nullptr;
-    AVCodecContext* m_codecCtx = nullptr;
-    AVStream* m_stream = nullptr;
-    SwsContext* m_swsCtx = nullptr;
-    AVFrame* m_frame = nullptr;
-    AVPacket* m_packet = nullptr;
+    AVFormatContext* fmtCtx_ = nullptr;
+    AVCodecContext* codecCtx_ = nullptr;
+    AVStream* stream_ = nullptr;
+    SwsContext* swsCtx_ = nullptr;
+    AVFrame* frame_ = nullptr;
+    AVPacket* packet_ = nullptr;
 
-    int64_t m_pts = 0;
-    bool m_opened = false;
-    const char* m_encoderName = "";
+    int64_t pts_ = 0;
+    bool opened_ = false;
+    const char* encoderName_ = "";
 };
 
 #endif // INC_OPTICALFLOW_FFMPEGVIDEOWRITER_H
