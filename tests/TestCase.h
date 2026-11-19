@@ -53,7 +53,6 @@ inline void TestInBlockingMode()
 
     blockingDeque.Stop();
     std::cout << "       Stop." << std::endl;
-    return;
 }
 
 // 测试BlockingDeque非阻塞模式
@@ -93,8 +92,6 @@ inline void TestInNonBlockingMode()
 
     nonBlockingDeque.Stop();
     std::cout << "              Stop" << std::endl;
-
-    return;
 }
 
 inline void TestFindAndThenOrElse()
@@ -190,7 +187,6 @@ inline void MiscTest()
     };
 
     InstanceCounterTest();
-    return;
 }
 
 inline void TestCircularQueue()
@@ -470,7 +466,7 @@ private:
 inline void MsgQueueTest()
 {
     MsgQueueTest::RunAllTests();
-    return;
+
 }
 
 #endif // !TESTS_TESTCASE_H

@@ -299,8 +299,8 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                             continue;
                         }
                         repFrame->format = AV_PIX_FMT_YUV420P;
-                        repFrame->width = static_cast<int>(encCtx->width);
-                        repFrame->height = static_cast<int>(encCtx->height);
+                        repFrame->width = encCtx->width;
+                        repFrame->height = encCtx->height;
                         if (av_frame_get_buffer(repFrame, 32) < 0) {
                             std::cout << "Warning: av_frame_get_buffer failed for: " << replacePath << std::endl;
                             continue;
@@ -443,8 +443,8 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                     continue;
                 }
                 repFrame->format = AV_PIX_FMT_YUV420P;
-                repFrame->width = static_cast<int>(encCtx->width);
-                repFrame->height = static_cast<int>(encCtx->height);
+                repFrame->width = encCtx->width;
+                repFrame->height = encCtx->height;
                 if (av_frame_get_buffer(repFrame, 32) < 0) {
                     std::cout << "Warning: av_frame_get_buffer failed for: " << replacePath << std::endl;
                     continue;
@@ -579,8 +579,8 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                 continue;
             }
             repFrame->format = AV_PIX_FMT_YUV420P;
-            repFrame->width = static_cast<int>(encCtx->width);
-            repFrame->height = static_cast<int>(encCtx->height);
+            repFrame->width = encCtx->width;
+            repFrame->height = encCtx->height;
             if (av_frame_get_buffer(repFrame, 32) < 0) {
                 std::cout << "Warning: av_frame_get_buffer failed for: " << replacePath << std::endl;
                 continue;

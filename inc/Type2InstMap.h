@@ -71,7 +71,6 @@ public:
         for (auto&& [type, inst] : Type2InstMap::GetInstance().mgrMap_) {
             cb(inst);
         }
-        return;
     }
 
 private:

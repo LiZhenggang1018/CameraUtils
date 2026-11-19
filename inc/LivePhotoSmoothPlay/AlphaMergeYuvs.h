@@ -533,8 +533,6 @@ inline void TestAlphaMergeYuvs()
         std::cerr << "Error: " << e.what() << std::endl;
         return;
     }
-
-    return;
 }
 
 #endif // !INC_LIVEPHOTOSMOOTHPLAY_ALPHAMERGEYUVS_H

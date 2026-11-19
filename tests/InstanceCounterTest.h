@@ -82,7 +82,6 @@ inline void InstanceCounterTest()
               << ", B实例数: " << CounterB::GetInstanceCount() << std::endl;
 
     std::cout << "\n=== 程序结束 ===" << std::endl;
-    return;
 }
 
 #endif // TESTS_INSTANCECOUNTERTEST_H

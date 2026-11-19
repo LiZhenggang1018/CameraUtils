@@ -34,8 +34,6 @@ inline void FactoryJsonTest()
             inst->Draw();
         }
     }
-
-    return;
 }
 
 #endif // !TESTS_FACTORYANDJSON_H

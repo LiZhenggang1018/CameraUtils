@@ -87,8 +87,6 @@ inline void FactoryTest()
     for (auto&& s : allShapes) {
         s->Draw();
     }
-
-    return;
 }
 
 #endif // TEST_FACTORY_DEMO

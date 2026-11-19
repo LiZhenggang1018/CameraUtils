@@ -167,8 +167,6 @@ inline void VasConcurrencyTest()
     auto mainEnd = std::chrono::steady_clock::now();
     auto mainDuration = std::chrono::duration_cast<std::chrono::milliseconds>(mainEnd - mainStart).count();
     std::cout << "main() execution time: " << mainDuration << " ms" << std::endl;
-
-    return;
 }
 #endif // VAS_HAS_STDEXEC
 #endif // TESTS_VASCONCURRENCYDEMO_H

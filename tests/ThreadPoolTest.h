@@ -226,7 +226,6 @@ private:
 inline void ThreadPoolTest()
 {
     ThreadPoolTest::RunAllTests();
-    return;
 }
 
 #endif // !TESTS_THREADPOOLTEST_H
