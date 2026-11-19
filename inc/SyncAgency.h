@@ -1,4 +1,4 @@
-﻿/*
+/*
  * @Description: SyncAgency mechanism allows independent C++ module to have happens-before/busy wait
  * time dependence
  */
@@ -52,56 +52,56 @@ static const char* ToString(SyncId id)
 class SyncNotifier final {
 public:
     explicit SyncNotifier(SyncId syncId)
-        : m_syncId(syncId) {};
+        : syncId_(syncId) {};
     ~SyncNotifier() = default;
     DISALLOW_COPY_AND_MOVE(SyncNotifier);
 
     void SetState(SyncState state)
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(mutex_);
         if (state == SyncState::DONE) {
-            PV(SyncUtils::ToString(m_syncId), "Done");
-            m_isReady = true;
-            m_cv.notify_all();
+            PV(SyncUtils::ToString(syncId_), "Done");
+            isReady_ = true;
+            cv_.notify_all();
         } else {
-            m_isReady = false;
+            isReady_ = false;
         }
     }
 
     void Wait(int64_t timeout)
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        PV(SyncUtils::ToString(m_syncId), "m_isReady", m_isReady);
-        m_cv.wait_for(lock, std::chrono::milliseconds(timeout), [this]() { return m_isReady; });
+        std::unique_lock<std::mutex> lock(mutex_);
+        PV(SyncUtils::ToString(syncId_), "isReady_", isReady_);
+        cv_.wait_for(lock, std::chrono::milliseconds(timeout), [this]() { return isReady_; });
     }
 
 private:
-    SyncId m_syncId{};
-    mutable std::mutex m_mutex{};
-    bool m_isReady{true};
-    std::condition_variable m_cv{};
+    SyncId syncId_{};
+    mutable std::mutex mutex_{};
+    bool isReady_{true};
+    std::condition_variable cv_{};
 };
 
 class SyncAgency final : public Singleton<SyncAgency> {
 public:
     std::shared_ptr<SyncNotifier> Register(SyncId syncId)
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(mutex_);
         auto notifier = std::make_shared<SyncNotifier>(syncId);
-        m_notifiers.insert({syncId, notifier});
+        notifiers_.insert({syncId, notifier});
         PrintNotifiers();
         return notifier;
     }
 
     void UnRegister(SyncId syncId, std::shared_ptr<SyncNotifier> notifier)
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(mutex_);
         CAR(!notifier);
         // UnRegister中会 先强制设置SyncState::DONE
         notifier->SetState(SyncState::DONE); // unexpected stop, we should notify done
-        for (auto iter = m_notifiers.begin(); iter != m_notifiers.end(); ++iter) {
+        for (auto iter = notifiers_.begin(); iter != notifiers_.end(); ++iter) {
             if (iter->first == syncId && iter->second == notifier) {
-                m_notifiers.erase(iter);
+                notifiers_.erase(iter);
                 break;
             }
         }
@@ -110,10 +110,10 @@ public:
 
     void WaitSync(SyncId syncId, int64_t timeout = 0)
     {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        CAR(m_notifiers.count(syncId) == 0);
+        std::unique_lock<std::mutex> lock(mutex_);
+        CAR(notifiers_.count(syncId) == 0);
         auto timeLeft = timeout;
-        auto range = m_notifiers.equal_range(syncId);
+        auto range = notifiers_.equal_range(syncId);
         lock.unlock();
 
         // 遍历multimap中所有key为syncId的value/syncNotifier项,依次调用每个syncNotifier的Wait()接口
@@ -138,18 +138,18 @@ public:
 
     void PrintNotifiers() const
     {
-        if (m_notifiers.empty()) {
+        if (notifiers_.empty()) {
             PV("notifiers.empty()");
         }
-        for (auto&& [id, sp] : m_notifiers) {
+        for (auto&& [id, sp] : notifiers_) {
             PV("syncId:", static_cast<int>(id), "sync Notifier addr:", sp.get());
         }
     }
 
 private:
     // 同一个SyncId可以对应多个SyncNotifier实例，即有多个Receiver在等待同一个SyncId
-    std::multimap<SyncId, std::shared_ptr<SyncNotifier>> m_notifiers{};
-    mutable std::mutex m_mutex{};
+    std::multimap<SyncId, std::shared_ptr<SyncNotifier>> notifiers_{};
+    mutable std::mutex mutex_{};
 };
 
 #endif
