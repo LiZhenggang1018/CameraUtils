@@ -1,4 +1,4 @@
-﻿/*
+/*
  * @Description: BlockingDeque and NonBlockingDeque
  */
 
@@ -19,8 +19,8 @@ template <typename T, bool IS_BLOCKING>
 class OptionalBlockingDeque {
 public:
     explicit OptionalBlockingDeque(int maxSize, int timeoutMs = DEFAULT_TIMEOUT_MS)
-        : m_size{maxSize},
-          m_timeoutMs{std::chrono::milliseconds{timeoutMs}}
+        : maxSize_{maxSize},
+          timeoutMs_{std::chrono::milliseconds{timeoutMs}}
     {}
 
     DISALLOW_COPY_AND_MOVE(OptionalBlockingDeque);
@@ -32,38 +32,38 @@ public:
     // 开始队列操作
     void Start()
     {
-        std::lock_guard lock(m_mtx);
-        m_isRunning = true;
-        m_cond.notify_all(); // 通知所有等待的线程
+        std::lock_guard lock(mutex_);
+        isRunning_ = true;
+        cond_.notify_all(); // 通知所有等待的线程
     }
 
     // 停止队列操作
     void Stop()
     {
-        std::lock_guard lock(m_mtx);
-        m_isRunning = false;
-        m_cond.notify_all(); // 通知所有等待的线程
+        std::lock_guard lock(mutex_);
+        isRunning_ = false;
+        cond_.notify_all(); // 通知所有等待的线程
     }
 
     // 清空队列
     void Clear()
     {
-        std::lock_guard lock(m_mtx);
-        m_deque.clear();
+        std::lock_guard lock(mutex_);
+        deque_.clear();
     }
 
     // 检查队列是否为空
     bool IsEmpty() const
     {
-        std::lock_guard lock(m_mtx);
-        return m_deque.empty();
+        std::lock_guard lock(mutex_);
+        return deque_.empty();
     }
 
     // 获取队列的大小
     size_t Size() const
     {
-        std::lock_guard lock(m_mtx);
-        return m_deque.size();
+        std::lock_guard lock(mutex_);
+        return deque_.size();
     }
 
     // 入队操作（从队尾入队）
@@ -79,40 +79,40 @@ public:
     bool PopFront(T& t) { return Dequeue(t, false); }
 
 private:
-    std::deque<T> m_deque{};
-    mutable std::mutex m_mtx{};
-    std::condition_variable m_cond{};
-    int m_size{}; // deque最大size
-    bool m_isRunning{};
-    std::chrono::milliseconds m_timeoutMs{}; // 阻塞调用时最大超时时间 timeoutMs
+    std::deque<T> deque_{};
+    mutable std::mutex mutex_{};
+    std::condition_variable cond_{};
+    int maxSize_{}; // deque最大size
+    bool isRunning_{};
+    std::chrono::milliseconds timeoutMs_{}; // 阻塞调用时最大超时时间 timeoutMs
     static constexpr int DEFAULT_TIMEOUT_MS{1000};
 
     // 通用入队操作
     bool Enqueue(const T& value, bool back)
     {
         if constexpr (IS_BLOCKING) {
-            std::unique_lock lock(m_mtx);
-            if (!m_cond.wait_for(lock, m_timeoutMs, [this] { return m_isRunning && m_deque.size() < m_size; })) {
+            std::unique_lock lock(mutex_);
+            if (!cond_.wait_for(lock, timeoutMs_, [this] { return isRunning_ && deque_.size() < maxSize_; })) {
                 return false; // 超时，返回false
             }
             if (back) {
-                m_deque.push_back(value);
+                deque_.push_back(value);
             } else {
-                m_deque.push_front(value);
+                deque_.push_front(value);
             }
-            m_cond.notify_all();
+            cond_.notify_all();
             return true;
         } else {
-            std::lock_guard lock(m_mtx);
-            if (m_deque.size() >= m_size) {
+            std::lock_guard lock(mutex_);
+            if (deque_.size() >= maxSize_) {
                 return false; // 队列已满，返回false
             }
             if (back) {
-                m_deque.push_back(value);
+                deque_.push_back(value);
             } else {
-                m_deque.push_front(value);
+                deque_.push_front(value);
             }
-            m_cond.notify_all();
+            cond_.notify_all();
             return true;
         }
     }
@@ -121,33 +121,33 @@ private:
     bool Dequeue(T& value, bool back)
     {
         if constexpr (IS_BLOCKING) {
-            std::unique_lock lock(m_mtx);
-            if (!m_cond.wait_for(lock, m_timeoutMs, [this] { return !m_deque.empty() || !m_isRunning; })) {
+            std::unique_lock lock(mutex_);
+            if (!cond_.wait_for(lock, timeoutMs_, [this] { return !deque_.empty() || !isRunning_; })) {
                 return false; // 超时，返回false
             }
-            if (!m_deque.empty()) {
-                value = back ? std::move(m_deque.back()) : std::move(m_deque.front());
+            if (!deque_.empty()) {
+                value = back ? std::move(deque_.back()) : std::move(deque_.front());
                 if (back) {
-                    m_deque.pop_back();
+                    deque_.pop_back();
                 } else {
-                    m_deque.pop_front();
+                    deque_.pop_front();
                 }
-                m_cond.notify_all();
+                cond_.notify_all();
                 return true;
             }
             return false;
         } else {
-            std::lock_guard lock(m_mtx);
-            if (m_deque.empty()) {
+            std::lock_guard lock(mutex_);
+            if (deque_.empty()) {
                 return false; // 队列为空，返回false
             }
-            value = back ? std::move(m_deque.back()) : std::move(m_deque.front());
+            value = back ? std::move(deque_.back()) : std::move(deque_.front());
             if (back) {
-                m_deque.pop_back();
+                deque_.pop_back();
             } else {
-                m_deque.pop_front();
+                deque_.pop_front();
             }
-            m_cond.notify_all();
+            cond_.notify_all();
             return true;
         }
     }
