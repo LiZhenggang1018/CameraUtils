@@ -72,7 +72,7 @@ inline void OnMouse(int event, int x, int y, int /*flags*/, void* userdata)
 
 inline int OpticalFlowTest()
 {
-    std::string videoPath = OpticalFlowDataPathImpl();
+    const std::string& videoPath = OpticalFlowDataPathImpl();
 
     cv::VideoCapture capture(videoPath);
     if (!capture.isOpened()) {
@@ -436,7 +436,7 @@ inline int Upsample30To60()
     const std::string configPath = InterpolationConfig::DefaultPath();
     const InterpolationConfig cfg = InterpolationConfig::LoadFromFile(configPath);
 
-    const std::string inputPath = OpticalFlowDataPathImpl();
+    const std::string& inputPath = OpticalFlowDataPathImpl();
 
     // 根据 factor 自动推断输出帧率，命名输出文件
     const int outFps = 30 * cfg.factor;

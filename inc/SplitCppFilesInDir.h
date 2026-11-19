@@ -67,7 +67,7 @@ inline void SplitCppFilesInDir(std::string_view inDir, std::string_view outDir)
             pos = nl + 1;
         }
 
-        const fs::path originalPath = entry.path();
+        const fs::path& originalPath = entry.path();
         const std::string stem = originalPath.stem().string();
         const std::string extStr = originalPath.extension().string();
 

@@ -16,8 +16,8 @@ inline void RegTest()
     //    直接复用 FFmpegDefine.h 里已有的绝对路径宏，
     //    避免手写相对路径依赖 CWD。
     // ------------------------------------------------------------
-    const std::string refYuvPath = LAST_VID_FRAME_YUV; // = .../LpJpg/275.yuv
-    const std::string curYuvPath = COVER_FRAME_YUV;    // = .../LpJpg/296.yuv
+    const std::string& refYuvPath = LAST_VID_FRAME_YUV; // = .../LpJpg/275.yuv
+    const std::string& curYuvPath = COVER_FRAME_YUV;    // = .../LpJpg/296.yuv
     const std::string yuvOutDir = LP_SMOOTH_PLAY_DATA_PATH + "reg_yuv_demo";
 
     std::cout << "[RegTest] refYuv = " << refYuvPath << std::endl;
@@ -31,8 +31,8 @@ inline void RegTest()
     // 2. 图像配准：cover.jpg 配准到 last_frame.jpg
     //    图片文件也同样放在 LP_SMOOTH_PLAY_DATA_PATH 下，用绝对路径。
     // ------------------------------------------------------------
-    const std::string refImgPath = RegImgRefFile();
-    const std::string curImgPath = RegImgCurFile();
+    const std::string& refImgPath = RegImgRefFile();
+    const std::string& curImgPath = RegImgCurFile();
     const std::string imgOutDir = LP_SMOOTH_PLAY_DATA_PATH + "reg_img_demo";
 
     std::cout << "[RegTest] refImg = " << refImgPath << std::endl;
