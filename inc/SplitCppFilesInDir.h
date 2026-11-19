@@ -13,7 +13,7 @@
 
 namespace fs = std::filesystem;
 
-void SplitCppFilesInDir(std::string_view inDir, std::string_view outDir)
+inline void SplitCppFilesInDir(std::string_view inDir, std::string_view outDir)
 {
     constexpr std::size_t kMaxLines = 150;
 
