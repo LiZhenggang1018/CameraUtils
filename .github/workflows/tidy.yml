@@ -59,7 +59,22 @@ jobs:
         run: |
           # Headers must report no analyzer findings; bugprone and style checks are still
           # triaged as warnings until the existing backlog is cleared.
-          $files = Get-ChildItem -Path src -Recurse -Include *.cpp
+          #
+          # Every translation unit in compile_commands.json is checked, not just src/*.cpp:
+          # header findings only surface in a TU that includes them, so skipping TUs leaves
+          # the headers they include entirely unchecked. tests/HeaderCoverage.cpp exists
+          # precisely to pull in headers that no production TU includes.
+          #
+          # Only project TUs are selected; dependencies (_deps/, .cpm-cache/) must be ignored.
+          # Paths in compile_commands.json use forward slashes even on Windows.
+          $root = (Resolve-Path $PWD).Path -replace '\\', '/'
+          $db = Get-Content out/build/x64-release/compile_commands.json -Raw | ConvertFrom-Json
+          $files = $db |
+            Where-Object { $_.file -like "$root/src/*" -or $_.file -like "$root/tests/*" } |
+            ForEach-Object { $_.file } |
+            Sort-Object -Unique
+          Write-Host "Checking $($files.Count) translation units"
+
           $failed = @()
           foreach ($f in $files) {
             # magic_enum v0.9.8 picks its enum-name branch with `#elif defined(__clang__)`,
@@ -67,15 +82,12 @@ jobs:
             # __FUNCSIG__, so the clang offsets yield a zero reflected range. The guard only
             # relaxes that static_assert; clang-cl cannot reflect enums correctly here, so
             # this flag must never be used for a real build.
-            $extra = @()
-            if ($f.Name -eq 'main.cpp') {
-              $extra = @('--extra-arg=-DMAGIC_ENUM_NO_CHECK_REFLECTED_ENUM')
-            }
-            $output = & $env:CLANG_TIDY -p out/build/x64-release $f.FullName --quiet `
+            $extra = @('--extra-arg=-DMAGIC_ENUM_NO_CHECK_REFLECTED_ENUM')
+            $output = & $env:CLANG_TIDY -p out/build/x64-release $f --quiet `
               --warnings-as-errors='clang-analyzer-*' @extra 2>&1
             $output | ForEach-Object { Write-Host $_ }
             if ($LASTEXITCODE -ne 0) {
-              $failed += $f.Name
+              $failed += ($f.Replace($root + '\', ''))
             }
           }
           if ($failed.Count -gt 0) {
