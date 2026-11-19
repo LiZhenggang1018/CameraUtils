@@ -124,14 +124,12 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
         // 计算起始位置
         int startX = (w - cropW) / 2;
         int startY = (h - cropH) / 2;
-        int startX_UV = startX / 2;
-        int startY_UV = startY / 2;
 
         // 确保起始位置是偶数
         startX = (startX / 2) * 2;
         startY = (startY / 2) * 2;
-        startX_UV = startX / 2;
-        startY_UV = startY / 2;
+        int startX_UV = startX / 2;
+        int startY_UV = startY / 2;
 
         // 创建裁剪后的YUV数据缓冲区
         int cropYSize = cropW * cropH;
