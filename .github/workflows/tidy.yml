@@ -18,6 +18,13 @@ jobs:
         with:
           arch: x64
 
+      - name: Set up OpenCV with contrib
+        id: opencv
+        uses: ./.github/actions/setup-opencv
+        with:
+          version: "4.10.0"
+          config: "Release"
+
       - name: Configure with compile commands
         run: cmake --preset x64-release
 
