@@ -77,9 +77,9 @@ public:
     template <typename... TArgs>
     ProductPtr Create(const KType& name, TArgs&&... args)
     {
-        std::lock_guard<std::mutex> lk(m_creatorTblMutex);
-        auto creatorIter = m_creatorTbl.find(name);
-        if (creatorIter == m_creatorTbl.end()) {
+        std::lock_guard<std::mutex> lk(creatorTblMutex_);
+        auto creatorIter = creatorTbl_.find(name);
+        if (creatorIter == creatorTbl_.end()) {
             std::stringstream kname;
             kname << name;
             // LOGE("create %s not found!", kname.str().c_str());
@@ -92,9 +92,9 @@ public:
     template <typename... TArgs>
     std::vector<ProductPtr> CreateAll(TArgs&&... args)
     {
-        std::lock_guard<std::mutex> lk(m_creatorTblMutex);
+        std::lock_guard<std::mutex> lk(creatorTblMutex_);
         std::vector<ProductPtr> typeVec{};
-        for (const auto& pair : m_creatorTbl) {
+        for (const auto& pair : creatorTbl_) {
             auto obj = pair.second(std::forward<TArgs>(args)...);
             if (obj != nullptr) {
                 std::stringstream kname;
@@ -109,27 +109,27 @@ public:
     template <typename U>
     int RegisterCreator(const KType& name)
     {
-        std::lock_guard<std::mutex> lk(m_creatorTblMutex);
+        std::lock_guard<std::mutex> lk(creatorTblMutex_);
         CheckNameExists(name);
-        m_creatorTbl.emplace(name, CreatorGenerator{}.template GetCreator<U>(name));
+        creatorTbl_.emplace(name, CreatorGenerator{}.template GetCreator<U>(name));
         return 0;
     }
 
-    bool CheckNameExists(const KType& name) const { return m_creatorTbl.count(name) != 0; }
+    bool CheckNameExists(const KType& name) const { return creatorTbl_.count(name) != 0; }
 
 private:
     void CheckNameExists(const KType& name)
     {
         std::stringstream kname;
         kname << name;
-        if (m_creatorTbl.count(name) != 0) {
+        if (creatorTbl_.count(name) != 0) {
             // LOGE("found same type! type=%s", kname.str().c_str());
         }
     }
 
 private:
-    mutable std::mutex m_creatorTblMutex;
-    std::unordered_map<KType, CreatorType> m_creatorTbl;
+    mutable std::mutex creatorTblMutex_;
+    std::unordered_map<KType, CreatorType> creatorTbl_;
 };
 
 } // namespace detail
