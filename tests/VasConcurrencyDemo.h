@@ -127,9 +127,9 @@ inline void VasConcurrencyTest()
     // ===== 并发启动三个帧处理 =====
     // 用 split 得到可共享结果的 sender，
     // split 将一次性异步操作转换为可共享的、可被多次等待的异步句柄，常见于“先启动后等待”或“多消费者等待同一结果”场景。
-    auto split1 = exec::split(std::move(processFrame1));
-    auto split2 = exec::split(std::move(processFrame2));
-    auto split3 = exec::split(std::move(processFrame3));
+    auto split1 = exec::split(processFrame1);
+    auto split2 = exec::split(processFrame2);
+    auto split3 = exec::split(processFrame3);
 
     // 拷贝一份用于启动，原始对象保留给回调链
     std::cout << "Starting frame processing tasks...\n";

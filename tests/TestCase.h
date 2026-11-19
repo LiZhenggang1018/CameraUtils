@@ -42,7 +42,7 @@ inline void TestInBlockingMode()
 
     // 消费者线程（阻塞队列）
     std::thread consumerBlocking([&blockingDeque]() {
-        int value;
+        int value{};
         while (blockingDeque.PopFront(value)) {
             std::cout << "  Popped: " << value << std::endl;
             std::this_thread::sleep_for(std::chrono::milliseconds(300));
@@ -81,7 +81,7 @@ inline void TestInNonBlockingMode()
 
     // 消费者线程（非阻塞队列）
     std::thread consumerNonBlocking([&nonBlockingDeque]() {
-        int value;
+        int value{};
         while (nonBlockingDeque.PopFront(value)) {
             std::cout << "  Popped: " << value << std::endl;
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -206,7 +206,7 @@ inline void TestCircularQueue()
 
     std::thread consumer([&queue]() {
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        int value;
+        int value{};
         for (int i = 0; i < 5; ++i) {
             // 对于非阻塞式的队列为空时的Pop()，这里会返回失败，可以考虑添加返回值判断
             // 对于阻塞式的队列为空时的Pop()，这里会一直等待直到有数据
@@ -237,7 +237,7 @@ inline void TestOverwriteFunction()
     queue.Push(5); // 应该覆盖2
     PV("After pushing 4,5 - Size:", queue.Size());
 
-    int value;
+    int value{};
     while (!queue.Empty() && queue.Pop(value)) {
         PV("Popped:", value);
     }
