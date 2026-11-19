@@ -1,6 +1,8 @@
 #ifndef TESTS_THREADPOOLTEST_H
 #define TESTS_THREADPOOLTEST_H
 
+#include <numbers>
+
 #include "CustomLog.h"
 #include "ThreadPool.h"
 
@@ -198,7 +200,7 @@ private:
 
         auto future2 = pool.EnqueMsg([]() {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            return 3.14159;
+            return std::numbers::pi;
         });
 
         auto future3 = pool.EnqueMsg([]() {

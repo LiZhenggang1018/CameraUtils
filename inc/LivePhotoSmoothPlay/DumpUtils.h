@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <numbers>
 #include <sstream>
 #include <string>
 #include <type_traits>
@@ -162,14 +163,14 @@ inline void TestDumpFunctions()
         std::cout << "=== Test Dump Function ===\n";
 
         // 测试基本类型
-        Dump("test_basic.txt", 42, 3.14159, "Hello", 'A');
+        Dump("test_basic.txt", 42, std::numbers::pi, "Hello", 'A');
 
         std::cout << "\n=== Test DumpDetailed Function ===\n";
 
         // 测试详细版本
         DumpDetailed("test_detailed.txt",
                      100,                     // int
-                     3.14159265359,           // double
+                     std::numbers::pi,        // double
                      "World",                 // const char*
                      std::string("C++17"),    // std::string
                      true,                    // bool

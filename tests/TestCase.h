@@ -1,6 +1,8 @@
 #ifndef TESTS_TESTCASE_H
 #define TESTS_TESTCASE_H
 
+#include <numbers>
+
 #include "CoreUtils.h"
 
 #include "EventTest.h"
@@ -438,7 +440,7 @@ private:
 
         auto future2 = msgQueue.EnqueMsg([]() {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            return 3.14159;
+            return std::numbers::pi;
         });
 
         auto future3 = msgQueue.EnqueMsg([]() {
