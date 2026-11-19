@@ -1,0 +1,99 @@
+name: Setup OpenCV with contrib
+description: >-
+  Build an OpenCV install tree that includes the contrib modules this project needs
+  (optflow, ximgproc), then cache it. The first run compiles OpenCV and takes a while;
+  later runs restore the cached install tree in seconds.
+
+inputs:
+  version:
+    description: OpenCV / opencv_contrib git tag to build
+    required: false
+    default: "4.10.0"
+  modules:
+    description: >-
+      Comma separated BUILD_LIST. Must match CAMERA_UTILS_OPENCV_COMPONENTS in CMakeLists.txt,
+      otherwise the cached tree will not satisfy the build.
+    required: false
+    default: "core,imgproc,highgui,imgcodecs,video,videoio,features2d,calib3d,flann,optflow,ximgproc"
+  config:
+    description: >-
+      CMake configuration to build and cache (Debug or Release). Each configuration gets its
+      own cache entry so a Debug job never reuses a Release-only tree.
+    required: false
+    default: "Debug"
+  install-dir:
+    description: Install prefix for the OpenCV tree
+    required: false
+    default: "C:/opencv-contrib"
+
+outputs:
+  opencv-root:
+    description: Forward-slash install prefix, suitable for OPENCV_ROOT
+    value: ${{ steps.emit.outputs.root }}
+
+runs:
+  using: composite
+  steps:
+    - name: Restore cached OpenCV tree
+      id: cache
+      uses: actions/cache@v5
+      with:
+        path: ${{ inputs.install-dir }}
+        key: opencv-contrib-${{ inputs.version }}-${{ inputs.config }}-${{ inputs.modules }}-${{ runner.os }}
+
+    - name: Build OpenCV with contrib
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: pwsh
+      env:
+        OPENCV_VERSION: ${{ inputs.version }}
+        OPENCV_MODULES: ${{ inputs.modules }}
+        OPENCV_CONFIG: ${{ inputs.config }}
+        OPENCV_INSTALL_DIR: ${{ inputs.install-dir }}
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $src = Join-Path $env:RUNNER_TEMP 'opencv-src'
+        New-Item -ItemType Directory -Force -Path $src | Out-Null
+
+        # 只取需要的模块，避免编译整个 OpenCV
+        git clone --depth 1 --branch $env:OPENCV_VERSION https://github.com/opencv/opencv.git (Join-Path $src 'opencv')
+        if ($LASTEXITCODE -ne 0) { throw 'opencv clone failed' }
+        git clone --depth 1 --branch $env:OPENCV_VERSION https://github.com/opencv/opencv_contrib.git (Join-Path $src 'opencv_contrib')
+        if ($LASTEXITCODE -ne 0) { throw 'opencv_contrib clone failed' }
+
+        $build = Join-Path $src 'build'
+        cmake -S (Join-Path $src 'opencv') -B $build -G Ninja `
+          "-DCMAKE_BUILD_TYPE=$($env:OPENCV_CONFIG)" `
+          "-DCMAKE_INSTALL_PREFIX=$($env:OPENCV_INSTALL_DIR)" `
+          "-DOPENCV_EXTRA_MODULES_PATH=$(Join-Path $src 'opencv_contrib\modules')" `
+          "-DBUILD_LIST=$($env:OPENCV_MODULES)" `
+          -DBUILD_TESTS=OFF -DBUILD_PERF_TESTS=OFF -DBUILD_EXAMPLES=OFF `
+          -DBUILD_opencv_apps=OFF -DBUILD_opencv_python2=OFF -DBUILD_opencv_python3=OFF `
+          -DBUILD_opencv_js=OFF -DBUILD_JAVA=OFF -DWITH_CUDA=OFF -DWITH_IPP=OFF `
+          -DBUILD_SHARED_LIBS=ON
+        if ($LASTEXITCODE -ne 0) { throw 'opencv configure failed' }
+
+        cmake --build $build --target install
+        if ($LASTEXITCODE -ne 0) { throw "opencv $($env:OPENCV_CONFIG) build failed" }
+
+    - name: Export OPENCV_ROOT
+      id: emit
+      shell: pwsh
+      env:
+        OPENCV_CONFIG: ${{ inputs.config }}
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $installDir = "${{ inputs.install-dir }}"
+        if (-not (Test-Path $installDir)) { throw "OpenCV install dir missing: $installDir" }
+        $root = (Resolve-Path $installDir).Path -replace '\\', '/'
+
+        # CMakeLists.txt 用 optflow.hpp 是否存在来判断“含 contrib”，这里保持一致
+        if (-not (Test-Path (Join-Path $root 'include/opencv2/optflow.hpp'))) {
+          throw "optflow.hpp not found under $root - the cached tree lacks contrib"
+        }
+        $config = Get-ChildItem -Path $root -Recurse -Filter 'OpenCVConfig.cmake' -ErrorAction SilentlyContinue |
+          Select-Object -First 1
+        if (-not $config) { throw "OpenCVConfig.cmake not found under $root" }
+
+        Write-Host "OPENCV_ROOT=$root (config: $($config.FullName))"
+        "OPENCV_ROOT=$root" >> $env:GITHUB_ENV
+        "root=$root" >> $env:GITHUB_OUTPUT
