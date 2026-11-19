@@ -30,8 +30,8 @@ bool FfmpegVideoWriter::Open(const std::string& path, int width, int height, int
     }
 
     // 1. 输出上下文（根据扩展名自动选 mp4 封装）
-    int ret = avformat_alloc_output_context2(&m_fmtCtx, nullptr, nullptr, path.c_str());
-    if (ret < 0 || m_fmtCtx == nullptr) {
+    int ret = avformat_alloc_output_context2(&fmtCtx_, nullptr, nullptr, path.c_str());
+    if (ret < 0 || fmtCtx_ == nullptr) {
         std::fprintf(stderr, "[FfmpegVideoWriter] alloc_output_context2: %s\n", AvErr(ret).c_str());
         return false;
     }
@@ -46,35 +46,35 @@ bool FfmpegVideoWriter::Open(const std::string& path, int width, int height, int
         Close();
         return false;
     }
-    m_encoderName = codec->name;
+    encoderName_ = codec->name;
 
     // 3. 编码器上下文
-    m_codecCtx = avcodec_alloc_context3(codec);
-    if (m_codecCtx == nullptr) {
+    codecCtx_ = avcodec_alloc_context3(codec);
+    if (codecCtx_ == nullptr) {
         std::fprintf(stderr, "[FfmpegVideoWriter] alloc_codec_context3 failed\n");
         Close();
         return false;
     }
 
-    m_codecCtx->width = width;
-    m_codecCtx->height = height;
-    m_codecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
-    m_codecCtx->time_base = AVRational{1, fps};
-    m_codecCtx->framerate = AVRational{fps, 1};
-    m_codecCtx->gop_size = 10;
-    m_codecCtx->max_b_frames = 1;
+    codecCtx_->width = width;
+    codecCtx_->height = height;
+    codecCtx_->pix_fmt = AV_PIX_FMT_YUV420P;
+    codecCtx_->time_base = AVRational{1, fps};
+    codecCtx_->framerate = AVRational{fps, 1};
+    codecCtx_->gop_size = 10;
+    codecCtx_->max_b_frames = 1;
     // CRF 模式下 bit_rate 置 0，避免和 crf 冲突
-    m_codecCtx->bit_rate = (enc.crf >= 0) ? 0 : bitrate;
+    codecCtx_->bit_rate = (enc.crf >= 0) ? 0 : bitrate;
 
     // 显式指定色彩空间，让 mp4 metadata 标记为 BT.709
-    m_codecCtx->color_primaries = AVCOL_PRI_BT709;
-    m_codecCtx->color_trc = AVCOL_TRC_BT709;
-    m_codecCtx->colorspace = AVCOL_SPC_BT709;
-    m_codecCtx->color_range = AVCOL_RANGE_MPEG;
+    codecCtx_->color_primaries = AVCOL_PRI_BT709;
+    codecCtx_->color_trc = AVCOL_TRC_BT709;
+    codecCtx_->colorspace = AVCOL_SPC_BT709;
+    codecCtx_->color_range = AVCOL_RANGE_MPEG;
 
     // MP4 需要全局头
-    if (m_fmtCtx->oformat->flags & AVFMT_GLOBALHEADER) {
-        m_codecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+    if (fmtCtx_->oformat->flags & AVFMT_GLOBALHEADER) {
+        codecCtx_->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
 
     // 4. 编码器 opts：preset + 可选 crf（从 EncoderParams 读取）
@@ -86,7 +86,7 @@ bool FfmpegVideoWriter::Open(const std::string& path, int width, int height, int
         av_dict_set(&opts, "crf", crf_buf, 0);
     }
 
-    ret = avcodec_open2(m_codecCtx, codec, &opts);
+    ret = avcodec_open2(codecCtx_, codec, &opts);
     av_dict_free(&opts); // 必须释放
     if (ret < 0) {
         std::fprintf(stderr, "[FfmpegVideoWriter] avcodec_open2: %s\n", AvErr(ret).c_str());
@@ -95,22 +95,22 @@ bool FfmpegVideoWriter::Open(const std::string& path, int width, int height, int
     }
 
     // 5. 流
-    m_stream = avformat_new_stream(m_fmtCtx, nullptr);
-    if (m_stream == nullptr) {
+    stream_ = avformat_new_stream(fmtCtx_, nullptr);
+    if (stream_ == nullptr) {
         std::fprintf(stderr, "[FfmpegVideoWriter] avformat_new_stream failed\n");
         Close();
         return false;
     }
-    ret = avcodec_parameters_from_context(m_stream->codecpar, m_codecCtx);
+    ret = avcodec_parameters_from_context(stream_->codecpar, codecCtx_);
     if (ret < 0) {
         std::fprintf(stderr, "[FfmpegVideoWriter] parameters_from_context: %s\n", AvErr(ret).c_str());
         Close();
         return false;
     }
-    m_stream->time_base = m_codecCtx->time_base;
+    stream_->time_base = codecCtx_->time_base;
 
     // 6. 打开输出文件
-    ret = avio_open(&m_fmtCtx->pb, path.c_str(), AVIO_FLAG_WRITE);
+    ret = avio_open(&fmtCtx_->pb, path.c_str(), AVIO_FLAG_WRITE);
     if (ret < 0) {
         std::fprintf(stderr, "[FfmpegVideoWriter] avio_open: %s\n", AvErr(ret).c_str());
         Close();
@@ -118,7 +118,7 @@ bool FfmpegVideoWriter::Open(const std::string& path, int width, int height, int
     }
 
     // 7. 写文件头（moov 在 trailer 写）
-    ret = avformat_write_header(m_fmtCtx, nullptr);
+    ret = avformat_write_header(fmtCtx_, nullptr);
     if (ret < 0) {
         std::fprintf(stderr, "[FfmpegVideoWriter] write_header: %s\n", AvErr(ret).c_str());
         Close();
@@ -126,9 +126,9 @@ bool FfmpegVideoWriter::Open(const std::string& path, int width, int height, int
     }
 
     // 8. 像素格式转换（BGR24 → YUV420P，BT.709 + limited range）
-    m_swsCtx = sws_getContext(width, height, AV_PIX_FMT_BGR24, width, height, AV_PIX_FMT_YUV420P, SWS_FAST_BILINEAR,
-                              nullptr, nullptr, nullptr);
-    if (m_swsCtx == nullptr) {
+    swsCtx_ = sws_getContext(width, height, AV_PIX_FMT_BGR24, width, height, AV_PIX_FMT_YUV420P, SWS_FAST_BILINEAR,
+                             nullptr, nullptr, nullptr);
+    if (swsCtx_ == nullptr) {
         std::fprintf(stderr, "[FfmpegVideoWriter] sws_getContext failed\n");
         Close();
         return false;
@@ -144,38 +144,38 @@ bool FfmpegVideoWriter::Open(const std::string& path, int width, int height, int
         int brightness = 0;
         int contrast = 1 << 16;
         int saturation = 1 << 16;
-        sws_setColorspaceDetails(m_swsCtx, srcCoeff, srcRange, dstCoeff, dstRange, brightness, contrast, saturation);
+        sws_setColorspaceDetails(swsCtx_, srcCoeff, srcRange, dstCoeff, dstRange, brightness, contrast, saturation);
     }
 
     // 9. 帧与包
-    m_frame = av_frame_alloc();
-    m_packet = av_packet_alloc();
-    if (m_frame == nullptr || m_packet == nullptr) {
+    frame_ = av_frame_alloc();
+    packet_ = av_packet_alloc();
+    if (frame_ == nullptr || packet_ == nullptr) {
         std::fprintf(stderr, "[FfmpegVideoWriter] alloc frame/packet failed\n");
         Close();
         return false;
     }
-    m_frame->format = m_codecCtx->pix_fmt;
-    m_frame->width = width;
-    m_frame->height = height;
-    ret = av_frame_get_buffer(m_frame, 0);
+    frame_->format = codecCtx_->pix_fmt;
+    frame_->width = width;
+    frame_->height = height;
+    ret = av_frame_get_buffer(frame_, 0);
     if (ret < 0) {
         std::fprintf(stderr, "[FfmpegVideoWriter] av_frame_get_buffer: %s\n", AvErr(ret).c_str());
         Close();
         return false;
     }
 
-    m_pts = 0;
-    m_opened = true;
+    pts_ = 0;
+    opened_ = true;
     std::printf("[FfmpegVideoWriter] opened: %s, encoder=%s, %dx%d @ %dfps, "
                 "preset=%s, crf=%d, bitrate=%d\n",
-                path.c_str(), m_encoderName, width, height, fps, enc.preset.c_str(), enc.crf, bitrate);
+                path.c_str(), encoderName_, width, height, fps, enc.preset.c_str(), enc.crf, bitrate);
     return true;
 }
 
 bool FfmpegVideoWriter::WriteFrame(const cv::Mat& bgr)
 {
-    if (!m_opened) {
+    if (!opened_) {
         std::fprintf(stderr, "[FfmpegVideoWriter] not opened\n");
         return false;
     }
@@ -188,16 +188,16 @@ bool FfmpegVideoWriter::WriteFrame(const cv::Mat& bgr)
     // ---- BGR -> YUV420P ----
     const uint8_t* srcData[1] = {bgr.data};
     const int srcLine[1] = {static_cast<int>(bgr.step)};
-    sws_scale(m_swsCtx, srcData, srcLine, 0, bgr.rows, m_frame->data, m_frame->linesize);
+    sws_scale(swsCtx_, srcData, srcLine, 0, bgr.rows, frame_->data, frame_->linesize);
 
-    m_frame->pts = m_pts++;
+    frame_->pts = pts_++;
 
     // ---- send frame ----
-    int ret = avcodec_send_frame(m_codecCtx, m_frame);
+    int ret = avcodec_send_frame(codecCtx_, frame_);
     if (ret == AVERROR(EAGAIN)) {
         // 编码器缓冲区满，先取完再重试
         while (true) {
-            int rr = avcodec_receive_packet(m_codecCtx, m_packet);
+            int rr = avcodec_receive_packet(codecCtx_, packet_);
             if (rr == AVERROR(EAGAIN) || rr == AVERROR_EOF) {
                 break;
             }
@@ -205,12 +205,12 @@ bool FfmpegVideoWriter::WriteFrame(const cv::Mat& bgr)
                 std::fprintf(stderr, "[FfmpegVideoWriter] drain recv: %s\n", AvErr(rr).c_str());
                 return false;
             }
-            av_packet_rescale_ts(m_packet, m_codecCtx->time_base, m_stream->time_base);
-            m_packet->stream_index = m_stream->index;
-            av_interleaved_write_frame(m_fmtCtx, m_packet);
-            av_packet_unref(m_packet);
+            av_packet_rescale_ts(packet_, codecCtx_->time_base, stream_->time_base);
+            packet_->stream_index = stream_->index;
+            av_interleaved_write_frame(fmtCtx_, packet_);
+            av_packet_unref(packet_);
         }
-        ret = avcodec_send_frame(m_codecCtx, m_frame);
+        ret = avcodec_send_frame(codecCtx_, frame_);
     }
 
     if (ret < 0) {
@@ -220,7 +220,7 @@ bool FfmpegVideoWriter::WriteFrame(const cv::Mat& bgr)
 
     // ---- receive packets ----
     while (true) {
-        ret = avcodec_receive_packet(m_codecCtx, m_packet);
+        ret = avcodec_receive_packet(codecCtx_, packet_);
         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
             break;
         }
@@ -228,29 +228,29 @@ bool FfmpegVideoWriter::WriteFrame(const cv::Mat& bgr)
             std::fprintf(stderr, "[FfmpegVideoWriter] recv_packet: %s\n", AvErr(ret).c_str());
             return false;
         }
-        av_packet_rescale_ts(m_packet, m_codecCtx->time_base, m_stream->time_base);
-        m_packet->stream_index = m_stream->index;
+        av_packet_rescale_ts(packet_, codecCtx_->time_base, stream_->time_base);
+        packet_->stream_index = stream_->index;
 
-        int wret = av_interleaved_write_frame(m_fmtCtx, m_packet);
+        int wret = av_interleaved_write_frame(fmtCtx_, packet_);
         if (wret < 0) {
             std::fprintf(stderr, "[FfmpegVideoWriter] write_frame: %s\n", AvErr(wret).c_str());
             return false;
         }
-        av_packet_unref(m_packet);
+        av_packet_unref(packet_);
     }
     return true;
 }
 
 void FfmpegVideoWriter::Close()
 {
-    if (m_codecCtx != nullptr && m_packet != nullptr && m_stream != nullptr && m_opened) {
+    if (codecCtx_ != nullptr && packet_ != nullptr && stream_ != nullptr && opened_) {
         // flush 编码器
-        int ret = avcodec_send_frame(m_codecCtx, nullptr);
+        int ret = avcodec_send_frame(codecCtx_, nullptr);
         if (ret < 0 && ret != AVERROR_EOF) {
             std::fprintf(stderr, "[FfmpegVideoWriter] flush send: %s\n", AvErr(ret).c_str());
         }
         while (true) {
-            ret = avcodec_receive_packet(m_codecCtx, m_packet);
+            ret = avcodec_receive_packet(codecCtx_, packet_);
             if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
                 break;
             }
@@ -258,43 +258,43 @@ void FfmpegVideoWriter::Close()
                 std::fprintf(stderr, "[FfmpegVideoWriter] flush recv: %s\n", AvErr(ret).c_str());
                 break;
             }
-            av_packet_rescale_ts(m_packet, m_codecCtx->time_base, m_stream->time_base);
-            m_packet->stream_index = m_stream->index;
-            int wret = av_interleaved_write_frame(m_fmtCtx, m_packet);
+            av_packet_rescale_ts(packet_, codecCtx_->time_base, stream_->time_base);
+            packet_->stream_index = stream_->index;
+            int wret = av_interleaved_write_frame(fmtCtx_, packet_);
             if (wret < 0) {
                 std::fprintf(stderr, "[FfmpegVideoWriter] flush write: %s\n", AvErr(wret).c_str());
             }
-            av_packet_unref(m_packet); // ← 关键：补上漏掉的 unref
+            av_packet_unref(packet_); // ← 关键：补上漏掉的 unref
         }
     }
 
-    if (m_fmtCtx != nullptr && (m_fmtCtx->pb != nullptr)) {
+    if (fmtCtx_ != nullptr && (fmtCtx_->pb != nullptr)) {
         // 关键：写 trailer（moov atom 在这里）
-        const int ret = av_write_trailer(m_fmtCtx);
+        const int ret = av_write_trailer(fmtCtx_);
         if (ret < 0) {
             std::fprintf(stderr, "[FfmpegVideoWriter] write_trailer: %s\n", AvErr(ret).c_str());
         }
-        avio_closep(&m_fmtCtx->pb);
+        avio_closep(&fmtCtx_->pb);
     }
 
-    if (m_swsCtx) {
-        sws_freeContext(m_swsCtx);
-        m_swsCtx = nullptr;
+    if (swsCtx_) {
+        sws_freeContext(swsCtx_);
+        swsCtx_ = nullptr;
     }
-    if (m_frame) {
-        av_frame_free(&m_frame);
+    if (frame_) {
+        av_frame_free(&frame_);
     }
-    if (m_packet) {
-        av_packet_free(&m_packet);
+    if (packet_) {
+        av_packet_free(&packet_);
     }
-    if (m_codecCtx) {
-        avcodec_free_context(&m_codecCtx);
+    if (codecCtx_) {
+        avcodec_free_context(&codecCtx_);
     }
-    if (m_fmtCtx) {
-        avformat_free_context(m_fmtCtx);
-        m_fmtCtx = nullptr;
+    if (fmtCtx_) {
+        avformat_free_context(fmtCtx_);
+        fmtCtx_ = nullptr;
     }
 
-    m_stream = nullptr;
-    m_opened = false;
+    stream_ = nullptr;
+    opened_ = false;
 }
