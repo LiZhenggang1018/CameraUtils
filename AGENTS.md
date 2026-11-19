@@ -94,6 +94,20 @@ camera_utils_tests.exe --list
 camera_utils_tests.exe magic-enum
 ```
 
+## CI 约定
+
+- 工作流只有 `ci-windows.yml`（构建 + 单测）、`style.yml`（clang-format）、`tidy.yml`（clang-tidy）。
+  曾有一个 `ci.yml`，用 `cmake -S . -B build` 且未准备 MSVC 环境与 OpenCV，已删除，勿再引入。
+- **OpenCV 必须含 contrib**：`inc/OpenCVCommon.h` 依赖 `optflow.hpp` 与 `ximgproc.hpp`，而
+  `CMakeLists.txt` 用 `optflow.hpp` 是否存在来决定走预编译还是源码构建。官方
+  `opencv-<ver>-windows.exe` 不含 contrib，用它会被判定拒绝并退化为源码构建（等于白下载）。
+  两个 workflow 统一通过 `.github/actions/setup-opencv` 获取，该 action 构建并缓存
+  `C:/opencv-contrib`，`config` 输入区分 Debug/Release，缓存 key 含 config。
+- `setup-opencv` 的 `modules` 默认值必须与 `CMakeLists.txt` 的
+  `CAMERA_UTILS_OPENCV_MODULES` + `CAMERA_UTILS_OPENCV_CONTRIB_MODULES` 保持一致，
+  否则缓存命中的树无法满足链接。
+- `.github/` 下的文件统一使用 **CRLF** 行尾。
+
 ## Git 提交与推送策略
 
 ### 提交
