@@ -11,7 +11,7 @@
 template <typename... Args>
 void PV(Args&&... args)
 {
-    ((std::cout << args << ' '), ...);
+    ((std::cout << std::forward<Args>(args) << ' '), ...);
     std::cout << std::endl;
 }
 

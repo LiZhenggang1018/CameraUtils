@@ -27,7 +27,7 @@ template <typename T>
 void WriteValue(std::ostream& os, T&& value)
 {
     static_assert(IS_PRINTABLE_V<std::remove_reference_t<T>>, "Type must support << operator");
-    os << value;
+    os << std::forward<T>(value);
 }
 
 // 主模板函数
@@ -220,7 +220,7 @@ void DumpWithVector(const std::string& fileName, Args&&... args)
 
     // 写入文件
     std::ofstream outFile(fileName, std::ios::trunc);
-    ((outFile << args << ' '), ...);
+    ((outFile << std::forward<Args>(args) << ' '), ...);
     outFile << std::endl;
 
     // 读取并显示
