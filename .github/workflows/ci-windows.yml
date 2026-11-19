@@ -38,56 +38,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cpm-
 
-      # 👇 OpenCV 三步：缓存 + 首次下载解压 + 设置 OPENCV_ROOT
-      - name: Cache OpenCV
-        id: opencv-cache
-        uses: actions/cache@v5
+      # OpenCV 必须含 contrib（optflow / ximgproc），官方 windows 安装包不含 contrib，
+      # 用它会被 CMakeLists.txt 的 optflow.hpp 判定拒掉并退化为源码构建。
+      - name: Set up OpenCV with contrib
+        id: opencv
+        uses: ./.github/actions/setup-opencv
         with:
-          path: C:\opencv
-          key: opencv-4.10.0-windows-x64
-
-      - name: Download and extract OpenCV
-        if: steps.opencv-cache.outputs.cache-hit != 'true'
-        shell: pwsh
-        run: |
-          $url = "https://github.com/opencv/opencv/releases/download/4.10.0/opencv-4.10.0-windows.exe"
-          $installer = "$env:RUNNER_TEMP\opencv-installer.exe"
-          Write-Host "Downloading $url ..."
-          Invoke-WebRequest -Uri $url -OutFile $installer
-          Write-Host "Extracting to C:\opencv ..."
-          New-Item -ItemType Directory -Force -Path "C:\opencv" | Out-Null
-          Start-Process -FilePath $installer -ArgumentList "-o`"C:\opencv`" -y" -Wait -NoNewWindow
-          Write-Host "Extracted directory tree:"
-          Get-ChildItem "C:\opencv" -Depth 2 | Select-Object FullName
-
-      - name: Set OPENCV_ROOT
-        shell: pwsh
-        run: |
-          $candidates = @(
-            "C:\opencv\opencv\build",
-            "C:\opencv\build",
-            "C:\opencv\opencv"
-          )
-          $found = $null
-          foreach ($c in $candidates) {
-            if (Test-Path (Join-Path $c "OpenCVConfig.cmake")) {
-              $found = $c
-              break
-            }
-          }
-          if (-not $found) {
-            $cfg = Get-ChildItem -Path "C:\opencv" -Recurse -Filter "OpenCVConfig.cmake" |
-                   Select-Object -First 1
-            if ($cfg) { $found = $cfg.DirectoryName }
-          }
-          if (-not $found) {
-            Write-Error "OpenCVConfig.cmake not found under C:\opencv"
-            exit 1
-          }
-          # 关键修复：把反斜杠转成正斜杠再写入环境变量
-          $found = $found -replace '\\', '/'
-          Write-Host "OPENCV_ROOT=$found"
-          echo "OPENCV_ROOT=$found" >> $env:GITHUB_ENV
+          version: "4.10.0"
+          config: "Debug"
 
       - name: Configure CMake (x64-debug)
         run: cmake --preset x64-debug
