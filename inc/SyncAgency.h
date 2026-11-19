@@ -111,7 +111,7 @@ public:
     void WaitSync(SyncId syncId, int64_t timeout = 0)
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        CAR(notifiers_.count(syncId) == 0);
+        CAR(!notifiers_.contains(syncId));
         auto timeLeft = timeout;
         auto range = notifiers_.equal_range(syncId);
         lock.unlock();

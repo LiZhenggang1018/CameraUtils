@@ -92,7 +92,7 @@ constexpr bool IsValidEnumValue()
     constexpr auto name = ExtractEnumName<Ev>();
     constexpr auto integerName = ExtractEnumName<std::underlying_type_t<decltype(Ev)>(Ev)>();
     static_assert(!name.empty(), "failed to extract enum value name");
-    return RemovePossibleParenthesis(name).compare(integerName) != 0;
+    return RemovePossibleParenthesis(name) != integerName;
 }
 
 template <auto Ev>
@@ -147,7 +147,7 @@ struct EnumStrInfo<Enum, Ev, false, true> {
 
     static constexpr std::optional<Enum> Str2Enum(std::string_view str, size_t hash)
     {
-        if (hash == SVHASH && SVSTR.compare(str) == 0) {
+        if (hash == SVHASH && SVSTR == str) {
             return Enum(Ev);
         }
         return EnumStrInfo<Enum, Ev + 1>::Str2Enum(str, hash);

@@ -108,7 +108,7 @@ inline void ConcatCppFilesInDir(std::string_view inDir, std::string_view outDir)
     for (auto& e : entries) {
         std::string base;
         int part = 0;
-        if (ParsePartSuffix(e.stem, base, part) && stemSet.count(e.extLower + "\x01" + base)) {
+        if (ParsePartSuffix(e.stem, base, part) && stemSet.contains(e.extLower + "\x01" + base)) {
             e.baseStem = base;
             e.part = part;
         } else {
