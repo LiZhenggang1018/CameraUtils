@@ -70,7 +70,7 @@ bool FEqual(T x, T y, T tolerance = std::numeric_limits<T>::epsilon())
 template <typename T>
 T SwapEndian(T value)
 {
-    static_assert(std::is_arithmetic<T>::value, "Template param must be an arithmetic type");
+    static_assert(std::is_arithmetic_v<T>, "Template param must be an arithmetic type");
     T result{};
     auto* src = reinterpret_cast<uint8_t*>(&value);
     auto* dst = reinterpret_cast<uint8_t*>(&result);
@@ -97,7 +97,7 @@ inline bool EndsWith(const std::string& str, const std::string& suffix)
 inline bool StartsWith(const std::string& str, const std::string& prefix)
 {
     CHECK_AND_RETURN_RET(prefix.size() > str.size(), false);
-    return str.compare(0, prefix.size(), prefix) == 0;
+    return str.starts_with(prefix);
 }
 
 // 辅助函数，用于递归展开元组并调用函数
