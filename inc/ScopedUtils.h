@@ -134,7 +134,7 @@ public:
         }
     }
 
-    void dismiss() { active_ = false; }
+    void Dismiss() { active_ = false; }
 
 private:
     Func fn_;
@@ -185,6 +185,6 @@ static inline ScopeGuard<Func> operator+(ScopeGuardOnExit, Func&& fn)
 
 #define ON_SCOPE_EXIT auto __onGuardExit__ = ScopeGuardOnExit{} + [&]
 
-#define CANCEL_SCOPE_EXIT __onGuardExit__.dismiss()
+#define CANCEL_SCOPE_EXIT __onGuardExit__.Dismiss()
 
 #endif

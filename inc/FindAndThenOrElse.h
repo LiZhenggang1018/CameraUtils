@@ -13,7 +13,7 @@
 
 // 判断一个类型是否是序列容器的布尔型模板变量
 template <typename T>
-constexpr bool is_sequence_container_v =
+constexpr bool IS_SEQUENCE_CONTAINER_V =
     // 检查类型 T 是否定义了 iterator 和 const_iterator 类型。序列容器（如
     // std::vector、std::list、std::deque）通常都定义了这两个类型。
     std::is_same_v<typename T::iterator, typename T::iterator> &&
@@ -59,7 +59,7 @@ private:
 template <typename Container, typename T>
 auto Find(const Container& c, const T& value)
 {
-    static_assert(is_sequence_container_v<Container>, "Container must be a sequence container");
+    static_assert(IS_SEQUENCE_CONTAINER_V<Container>, "Container must be a sequence container");
     auto it = std::find(std::begin(c), std::end(c), value);
     // 如果没有找到值，返回默认构造的 find_result
     if (it == std::end(c)) {

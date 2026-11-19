@@ -20,7 +20,7 @@
 enum ProbeEnum { PROBE_ENUM }; // for probe usage
 namespace EnumTraits {
 
-inline constexpr size_t maxValidEnums = 128;
+inline constexpr size_t MAX_VALID_ENUMS = 128;
 
 template <typename T>
 constexpr const char* PrettyTypeName()
@@ -114,11 +114,11 @@ struct EnumRange {
 };
 
 template <typename Enum>
-constexpr auto ERBegin = EnumRange<Enum>::begin;
+constexpr auto ER_BEGIN = EnumRange<Enum>::begin;
 template <typename Enum>
-constexpr auto EREnd = EnumRange<Enum>::end;
+constexpr auto ER_END = EnumRange<Enum>::end;
 template <typename Enum>
-constexpr size_t ERSize = EREnd<Enum> - ERBegin<Enum>;
+constexpr size_t ER_SIZE = ER_END<Enum> - ER_BEGIN<Enum>;
 
 constexpr size_t SVHash(std::string_view str)
 {
@@ -130,23 +130,24 @@ constexpr size_t SVHash(std::string_view str)
     return hash;
 }
 
-template <typename Enum, ULT<Enum> Ev = ERBegin<Enum>, bool = (Ev == EREnd<Enum>), bool = IsValidEnumValue<Enum(Ev)>()>
+template <typename Enum, ULT<Enum> Ev = ER_BEGIN<Enum>, bool = (Ev == ER_END<Enum>),
+          bool = IsValidEnumValue<Enum(Ev)>()>
 struct EnumStrInfo;
 
 template <typename Enum, ULT<Enum> Ev>
 struct EnumStrInfo<Enum, Ev, false, true> {
-    static constexpr size_t validEnums = EnumStrInfo<Enum, Ev + 1>::validEnums;
-    static constexpr std::string_view svstr = ExtractUnScopedEnumName<Enum(Ev)>();
-    static constexpr size_t svhash = SVHash(svstr);
+    static constexpr size_t VALID_ENUMS = EnumStrInfo<Enum, Ev + 1>::VALID_ENUMS;
+    static constexpr std::string_view SVSTR = ExtractUnScopedEnumName<Enum(Ev)>();
+    static constexpr size_t SVHASH = SVHash(SVSTR);
 
     static constexpr std::string_view Value2Str(ULT<Enum> val)
     {
-        return val == Ev ? svstr : EnumStrInfo<Enum, Ev + 1>::Value2Str(val);
+        return val == Ev ? SVSTR : EnumStrInfo<Enum, Ev + 1>::Value2Str(val);
     }
 
     static constexpr std::optional<Enum> Str2Enum(std::string_view str, size_t hash)
     {
-        if (hash == svhash && svstr.compare(str) == 0) {
+        if (hash == SVHASH && SVSTR.compare(str) == 0) {
             return Enum(Ev);
         }
         return EnumStrInfo<Enum, Ev + 1>::Str2Enum(str, hash);
@@ -158,15 +159,15 @@ struct EnumStrInfo<Enum, Ev, false, false> : EnumStrInfo<Enum, Ev + 1> {};
 
 template <typename Enum, ULT<Enum> Ev, bool valid>
 struct EnumStrInfo<Enum, Ev, true, valid> {
-    static constexpr size_t validEnums = 0;
+    static constexpr size_t VALID_ENUMS = 0;
     static constexpr std::string_view Value2Str(ULT<Enum>) { return "InvalidEnumValue"; }
     static constexpr std::optional<Enum> Str2Enum(std::string_view, size_t) { return std::nullopt; }
 };
 
 template <typename Enum, typename = std::enable_if_t<std::is_enum_v<Enum>>>
 struct EnumCast {
-    static constexpr size_t validEnums = EnumStrInfo<Enum>::validEnums;
-    static_assert(validEnums <= maxValidEnums, "support at max 128 enum values");
+    static constexpr size_t VALID_ENUMS = EnumStrInfo<Enum>::VALID_ENUMS;
+    static_assert(VALID_ENUMS <= MAX_VALID_ENUMS, "support at max 128 enum values");
 
     static std::string ToStr(ULT<Enum> val) { return std::string(EnumStrInfo<Enum>::Value2Str(val)); }
     static std::string ToStr(Enum enumVal) { return ToStr(static_cast<ULT<Enum>>(enumVal)); }

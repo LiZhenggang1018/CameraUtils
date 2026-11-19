@@ -39,8 +39,8 @@ public:
         if constexpr (std::is_constructible_v<Inst, Type>) {
             for (auto&& type : types) {
                 Dump("Register", type);
-                if (auto&& [pos, ret] = m_mgrMap.emplace(std::piecewise_construct, std::forward_as_tuple(type),
-                                                         std::forward_as_tuple(type));
+                if (auto&& [pos, ret] = mgrMap_.emplace(std::piecewise_construct, std::forward_as_tuple(type),
+                                                        std::forward_as_tuple(type));
                     !ret) {
                     Dump("map insert error", type);
                 }
@@ -48,8 +48,8 @@ public:
         } else if constexpr (!std::is_constructible_v<Inst, Type> && std::is_constructible_v<Inst>) {
             for (auto&& type : types) {
                 Dump("Register", type);
-                if (auto&& [pos, ret] = m_mgrMap.emplace(std::piecewise_construct, std::forward_as_tuple(type),
-                                                         std::forward_as_tuple());
+                if (auto&& [pos, ret] =
+                        mgrMap_.emplace(std::piecewise_construct, std::forward_as_tuple(type), std::forward_as_tuple());
                     !ret) {
                     Dump("map insert error", type);
                 }
@@ -59,16 +59,16 @@ public:
 
     static decltype(auto) GetMgr(Type type)
     {
-        if (Type2InstMap::GetInstance().m_mgrMap.find(type) == Type2InstMap::GetInstance().m_mgrMap.end()) {
+        if (Type2InstMap::GetInstance().mgrMap_.find(type) == Type2InstMap::GetInstance().mgrMap_.end()) {
             Dump("GetMgr error", type);
         }
-        return Type2InstMap::GetInstance().m_mgrMap.at(type);
+        return Type2InstMap::GetInstance().mgrMap_.at(type);
     }
 
     // AMgrMap::ForEachMgr([&](auto& a) {a.MethodInA();});
     static void ForEachMgr(std::function<void(Inst&)> cb)
     {
-        for (auto&& [type, inst] : Type2InstMap::GetInstance().m_mgrMap) {
+        for (auto&& [type, inst] : Type2InstMap::GetInstance().mgrMap_) {
             cb(inst);
         }
         return;
@@ -97,7 +97,7 @@ private:
             PV(str);
         }
     }
-    inline static std::unordered_map<Type, Inst> m_mgrMap{};
+    inline static std::unordered_map<Type, Inst> mgrMap_{};
 };
 
 #endif // INC_TYPE2INSTMAP_H

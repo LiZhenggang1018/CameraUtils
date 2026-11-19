@@ -50,7 +50,7 @@ using ReceiverCb = std::function<void(const EventVariant& event)>;
 
 // 自定义事件类型定义
 struct MessageEvent {
-    std::string s_{};
+    std::string value{};
 };
 
 // 辅助函数来检查事件类型
@@ -85,8 +85,8 @@ size_t GetEventTypeId()
     static_assert(!std::is_same_v<T, std::monostate>, "Cannot use monostate as event type");
 
     // 每个函数模板实例都有唯一的地址
-    static const auto tag_ptr = &EventTypeTag<T>;
-    return reinterpret_cast<size_t>(tag_ptr);
+    static const auto tagPtr = &EventTypeTag<T>;
+    return reinterpret_cast<size_t>(tagPtr);
 }
 
 //// C++17环境编译不过，C++20编译OK

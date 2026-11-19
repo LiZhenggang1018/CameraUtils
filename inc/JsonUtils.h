@@ -71,7 +71,7 @@ struct adl_serializer<std::optional<T>> {
 // [deprecated] involved with exception used by 3rd party lib
 // add to_json from_json support for std::variant
 template <typename T, typename... Ts>
-void variant_from_json(const json& j, std::variant<Ts...>& data)
+void VariantFromJson(const json& j, std::variant<Ts...>& data)
 {
     if (j.is_null()) {
         PV("josn id null");
@@ -87,7 +87,7 @@ struct adl_serializer<std::variant<Ts...>> {
         std::visit([&j](const auto& v) { j = v; }, data);
     }
 
-    static void from_json(const json& j, std::variant<Ts...>& data) { (variant_from_json<Ts>(j, data), ...); }
+    static void from_json(const json& j, std::variant<Ts...>& data) { (VariantFromJson<Ts>(j, data), ...); }
 };
 
 // Allows serializing and deserializing contents behind a std::unique_ptr.
@@ -95,19 +95,19 @@ struct adl_serializer<std::variant<Ts...>> {
 // class
 template <typename T>
 struct adl_serializer<std::unique_ptr<T>> {
-    static void to_json(json& json_value, const std::unique_ptr<T>& ptr)
+    static void to_json(json& jsonValue, const std::unique_ptr<T>& ptr)
     {
         if (ptr.get()) {
-            json_value = *ptr;
+            jsonValue = *ptr;
         } else {
-            json_value = nullptr;
+            jsonValue = nullptr;
         }
     }
 
-    static void from_json(const json& json_value, std::unique_ptr<T>& ptr)
+    static void from_json(const json& jsonValue, std::unique_ptr<T>& ptr)
     {
-        T inner_val = json_value.template get<T>();
-        ptr = std::make_unique<T>(std::move(inner_val));
+        T innerVal = jsonValue.template get<T>();
+        ptr = std::make_unique<T>(std::move(innerVal));
     }
 };
 
@@ -115,19 +115,19 @@ struct adl_serializer<std::unique_ptr<T>> {
 // shared_ptr is copyable, hence can be used in nested class by NLOHMANN_DEFINE_TYPE_INTRUSIVE
 template <typename T>
 struct adl_serializer<std::shared_ptr<T>> {
-    static void to_json(json& json_value, const std::shared_ptr<T>& ptr)
+    static void to_json(json& jsonValue, const std::shared_ptr<T>& ptr)
     {
         if (ptr.get()) {
-            json_value = *ptr;
+            jsonValue = *ptr;
         } else {
-            json_value = nullptr;
+            jsonValue = nullptr;
         }
     }
 
-    static void from_json(const json& json_value, std::shared_ptr<T>& ptr)
+    static void from_json(const json& jsonValue, std::shared_ptr<T>& ptr)
     {
-        T inner_val = json_value.template get<T>();
-        ptr = std::make_shared<T>(std::move(inner_val));
+        T innerVal = jsonValue.template get<T>();
+        ptr = std::make_shared<T>(std::move(innerVal));
     }
 };
 } // namespace nlohmann

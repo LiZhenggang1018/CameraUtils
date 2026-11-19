@@ -13,7 +13,7 @@
 // 通用工厂模式（General
 // Factory），允许根据一个键（通常是字符串）动态创建实现了某个接口（Intf）的派生类对象。
 
-namespace detail {
+namespace Detail {
 
 // CreatorTraits: 根据 Intf（接口类型）、KType（键类型）、PassName（是否传递名称）以及实际构造参数
 // Args...，生成一个创建器（Creator）。 创建器是一个可调用对象，接受 Args... 参数，返回
@@ -132,7 +132,7 @@ private:
     std::unordered_map<KType, CreatorType> creatorTbl_;
 };
 
-} // namespace detail
+} // namespace Detail
 
 // 控制运行 FactoryDemo.h 还是 FactoryDemo_1.h
 // #define TEST_FACTORY_DEMO 1 // 定义宏以启用 FactoryDemo.h
