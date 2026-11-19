@@ -53,14 +53,14 @@ public:
             tail_ = (tail_ + 1) % capacity_;
             head_ = (head_ + 1) % capacity_; // 头部也前进，保持队列满状态
             // size_ 保持不变，因为覆盖了一个元素
-            not_empty_.notify_one();
+            notEmpty_.notify_one();
             return true;
         }
 
         // 非覆盖模式下的正常阻塞队列Push逻辑
         // if constexpr (Block) {
         //    while (size_ == capacity_) {
-        //        not_full_.wait(lock);
+        //        notFull_.wait(lock);
         //    }
         //}
         // else {
@@ -73,7 +73,7 @@ public:
         buffer_[tail_] = value;
         tail_ = (tail_ + 1) % capacity_;
         ++size_;
-        not_empty_.notify_one();
+        notEmpty_.notify_one();
         return true;
     }
 
@@ -85,13 +85,13 @@ public:
             buffer_[tail_] = std::move(value);
             tail_ = (tail_ + 1) % capacity_;
             head_ = (head_ + 1) % capacity_;
-            not_empty_.notify_one();
+            notEmpty_.notify_one();
             return true;
         }
 
         // if constexpr (Block) {
         //     while (size_ == capacity_) {
-        //         not_full_.wait(lock);
+        //         notFull_.wait(lock);
         //     }
         // }
         // else {
@@ -103,7 +103,7 @@ public:
         buffer_[tail_] = std::move(value);
         tail_ = (tail_ + 1) % capacity_;
         ++size_;
-        not_empty_.notify_one();
+        notEmpty_.notify_one();
         return true;
     }
 
@@ -112,7 +112,7 @@ public:
         std::unique_lock lock(mutex_);
         if constexpr (Block) {
             while (size_ == 0) {
-                not_empty_.wait(lock);
+                notEmpty_.wait(lock);
             }
         } else {
             if (size_ == 0) {
@@ -122,7 +122,7 @@ public:
         value = std::move(buffer_[head_]);
         head_ = (head_ + 1) % capacity_;
         --size_;
-        not_full_.notify_one();
+        notFull_.notify_one();
         return true;
     }
 
@@ -155,7 +155,7 @@ public:
         head_ = 0;
         tail_ = 0;
         size_ = 0;
-        not_full_.notify_all();
+        notFull_.notify_all();
     }
 
 private:
@@ -165,8 +165,8 @@ private:
     size_t tail_{};
     T* buffer_{};
     std::mutex mutex_{};
-    std::condition_variable not_full_{};
-    std::condition_variable not_empty_{};
+    std::condition_variable notFull_{};
+    std::condition_variable notEmpty_{};
 };
 
 // 阻塞式，队列空时Pop()会阻塞等待
