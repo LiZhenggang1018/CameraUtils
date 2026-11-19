@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-namespace hdr_merge {
+namespace HdrMerge {
 
 // ============================================================
 // 配准（新增可选 outResult 输出配准质量指标）
@@ -30,7 +30,7 @@ inline cv::Mat AlignToReference(const cv::Mat& reference, const cv::Mat& target,
                                 RegistrationResult* outResult = nullptr)
 {
     try {
-        auto result = registrator.registerImages(reference, target, detector, transform);
+        auto result = registrator.RegisterImages(reference, target, detector, transform);
 
         if (outResult) {
             *outResult = result;
@@ -75,46 +75,46 @@ inline cv::Rect DetectContentRoi(const cv::Mat& img, int blackThreshold = 5, dou
     cv::Mat gray;
     cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
 
-    const int H = gray.rows;
-    const int W = gray.cols;
+    const int h = gray.rows;
+    const int w = gray.cols;
 
     auto isBlackRow = [&](int y) -> bool {
         int blackCount = 0;
         const uint8_t* row = gray.ptr<uint8_t>(y);
-        for (int x = 0; x < W; ++x) {
+        for (int x = 0; x < w; ++x) {
             if (row[x] < blackThreshold)
                 ++blackCount;
         }
-        return static_cast<double>(blackCount) / W >= blackRatio;
+        return static_cast<double>(blackCount) / w >= blackRatio;
     };
 
     auto isBlackCol = [&](int x) -> bool {
         int blackCount = 0;
-        for (int y = 0; y < H; ++y) {
+        for (int y = 0; y < h; ++y) {
             if (gray.at<uint8_t>(y, x) < blackThreshold)
                 ++blackCount;
         }
-        return static_cast<double>(blackCount) / H >= blackRatio;
+        return static_cast<double>(blackCount) / h >= blackRatio;
     };
 
     int top = 0;
-    while (top < H && isBlackRow(top))
+    while (top < h && isBlackRow(top))
         ++top;
 
-    int bottom = H - 1;
+    int bottom = h - 1;
     while (bottom >= top && isBlackRow(bottom))
         --bottom;
 
     int left = 0;
-    while (left < W && isBlackCol(left))
+    while (left < w && isBlackCol(left))
         ++left;
 
-    int right = W - 1;
+    int right = w - 1;
     while (right >= left && isBlackCol(right))
         --right;
 
     if (top >= bottom || left >= right) {
-        return cv::Rect(0, 0, W, H);
+        return cv::Rect(0, 0, w, h);
     }
 
     return cv::Rect(left, top, right - left + 1, bottom - top + 1);
@@ -127,11 +127,11 @@ inline cv::Rect ComputeCommonRoi(const cv::Mat& alignedLow, const cv::Mat& align
                                  const HdrConfig& cfg)
 {
     if (!cfg.autoDetectBorder) {
-        const int W = reference.cols;
-        const int H = reference.rows;
-        const int bx = static_cast<int>(W * cfg.cropRatio);
-        const int by = static_cast<int>(H * cfg.cropRatio);
-        return cv::Rect(bx, by, W - 2 * bx, H - 2 * by);
+        const int w = reference.cols;
+        const int h = reference.rows;
+        const int bx = static_cast<int>(w * cfg.cropRatio);
+        const int by = static_cast<int>(h * cfg.cropRatio);
+        return cv::Rect(bx, by, w - 2 * bx, h - 2 * by);
     }
 
     cv::Rect roiLow = DetectContentRoi(alignedLow, cfg.blackThreshold, cfg.blackRatio);
@@ -148,11 +148,11 @@ inline cv::Rect ComputeCommonRoi(const cv::Mat& alignedLow, const cv::Mat& align
         std::cerr << "[HdrMerge] Content ROI too small (" << (areaRatio * 100) << "%), "
                   << "fallback to fixed crop " << (cfg.cropRatio * 100) << "%" << std::endl;
 
-        const int W = reference.cols;
-        const int H = reference.rows;
-        const int bx = static_cast<int>(W * cfg.cropRatio);
-        const int by = static_cast<int>(H * cfg.cropRatio);
-        return cv::Rect(bx, by, W - 2 * bx, H - 2 * by);
+        const int w = reference.cols;
+        const int h = reference.rows;
+        const int bx = static_cast<int>(w * cfg.cropRatio);
+        const int by = static_cast<int>(h * cfg.cropRatio);
+        return cv::Rect(bx, by, w - 2 * bx, h - 2 * by);
     }
 
     std::cout << "[HdrMerge] Content ROI: " << common << " (" << (areaRatio * 100) << "% of frame)" << std::endl;
@@ -260,7 +260,7 @@ inline std::vector<float> ResolveEffectiveExposures(const std::string& lowPath, 
         auto iNormal = CameraUtils::ReadExposureInfo(normalPath);
         auto iHigh = CameraUtils::ReadExposureInfo(highPath);
 
-        if (iLow.valid() && iNormal.valid() && iHigh.valid()) {
+        if (iLow.Valid() && iNormal.Valid() && iHigh.Valid()) {
             times = {iLow.timeSeconds, iNormal.timeSeconds, iHigh.timeSeconds};
             isos = {iLow.iso, iNormal.iso, iHigh.iso};
             std::cout << "[HdrMerge] EXIF exposure: "
@@ -268,9 +268,9 @@ inline std::vector<float> ResolveEffectiveExposures(const std::string& lowPath, 
                       << "normal=" << iNormal.timeSeconds << "s/" << iNormal.iso << "ISO, "
                       << "high=" << iHigh.timeSeconds << "s/" << iHigh.iso << "ISO" << std::endl;
         } else {
-            std::cout << "[HdrMerge] EXIF exposure incomplete (low=" << (iLow.valid() ? "ok" : "missing")
-                      << ", normal=" << (iNormal.valid() ? "ok" : "missing")
-                      << ", high=" << (iHigh.valid() ? "ok" : "missing") << ")" << std::endl;
+            std::cout << "[HdrMerge] EXIF exposure incomplete (low=" << (iLow.Valid() ? "ok" : "missing")
+                      << ", normal=" << (iNormal.Valid() ? "ok" : "missing")
+                      << ", high=" << (iHigh.Valid() ? "ok" : "missing") << ")" << std::endl;
         }
     }
 
@@ -761,8 +761,8 @@ inline int HdrMergeFromFiles(const std::string& lowPath, const std::string& norm
         detailEnhanced = merged;
         if (cfg.enableDetailEnhance) {
             std::cout << "[HdrMerge] detailEnhance..." << std::endl;
-            cv::detailEnhance(merged, detailEnhanced, static_cast<float>(cfg.detailSigma_s),
-                              static_cast<float>(cfg.detailSigma_r));
+            cv::detailEnhance(merged, detailEnhanced, static_cast<float>(cfg.detailSigmaS),
+                              static_cast<float>(cfg.detailSigmaR));
         }
 
         finalResult = detailEnhanced;
@@ -808,6 +808,6 @@ inline int HdrMergeFromFiles(const std::string& lowPath, const std::string& norm
     return HdrMergeFromFiles(lowPath, normalPath, highPath, outDir, cfg);
 }
 
-} // namespace hdr_merge
+} // namespace HdrMerge
 
 #endif // INC_HDRMERGE_HDRMERGE_H

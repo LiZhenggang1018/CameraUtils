@@ -62,8 +62,8 @@ struct HdrConfig {
     double unsharpThreshold = 0.0;
 
     bool enableDetailEnhance = false;
-    double detailSigma_s = 10.0;
-    double detailSigma_r = 0.15;
+    double detailSigmaS = 10.0;
+    double detailSigmaR = 0.15;
 
     // ---- 物理 HDR ----
     bool readExposureFromExif = true;
@@ -98,7 +98,7 @@ struct HdrConfig {
     NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
         HdrConfig, pipelineMode, qualityLevel, qualityPresets, contrastWeight, saturationWeight, exposureWeight,
         autoDetectBorder, cropRatio, blackThreshold, blackRatio, enableUnsharpMask, unsharpAmount, unsharpRadius,
-        unsharpThreshold, enableDetailEnhance, detailSigma_s, detailSigma_r, readExposureFromExif, manualExposureTimes,
+        unsharpThreshold, enableDetailEnhance, detailSigmaS, detailSigmaR, readExposureFromExif, manualExposureTimes,
         manualIsos, baseIso, calibrateResponse, tonemapType, dragoGamma, dragoSaturation, reinhardGamma,
         reinhardIntensity, reinhardLightAdapt, enableGhostSuppression, ghostDetectionMode, motionThreshold,
         lkFbThreshold, motionDilateRadius, ghostSuppressStrength, saveMotionMask, saveIntermediate)
