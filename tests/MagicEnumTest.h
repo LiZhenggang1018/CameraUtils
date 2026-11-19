@@ -21,10 +21,10 @@ inline void TestMagicEnum()
     CU_CHECK(name == "RED");
 
     // 2. string -> enum
-    std::string color_name = "GREEN";
-    auto color_opt = magic_enum::enum_cast<Color>(color_name);
-    CU_CHECK(color_opt.has_value());
-    CU_CHECK(color_opt.value() == Color::GREEN);
+    std::string colorName = "GREEN";
+    auto colorOpt = magic_enum::enum_cast<Color>(colorName);
+    CU_CHECK(colorOpt.has_value());
+    CU_CHECK(colorOpt.value() == Color::GREEN);
     std::cout << "enum_cast(\"GREEN\") -> Color::GREEN OK" << std::endl;
 
     // 3. 遍历枚举所有值

@@ -92,7 +92,7 @@ auto CbFrameToVcf(int value)
 
 inline void VasConcurrencyTest()
 {
-    auto main_start = std::chrono::steady_clock::now();
+    auto mainStart = std::chrono::steady_clock::now();
     // 1. 创建对象并存入 nodes 。对应VAS创建特定Pipeline，挂载各个对应Node（Node1->Node2->Node3）
     std::vector<std::shared_ptr<NodeBase>> nodes;
     nodes.push_back(std::make_shared<Node1>());
@@ -120,16 +120,16 @@ inline void VasConcurrencyTest()
 
     // 3. 生成三个独立的 processFrame sender，对应处理3帧，每帧的初始值分别为
     // 1、2、3。对应VAS中同时有多帧在不同Node上处理（ Node1→Node2→Node3 ）的情况。
-    auto processFrame_1 = processOneFrameTask(1);
-    auto processFrame_2 = processOneFrameTask(2);
-    auto processFrame_3 = processOneFrameTask(3);
+    auto processFrame1 = processOneFrameTask(1);
+    auto processFrame2 = processOneFrameTask(2);
+    auto processFrame3 = processOneFrameTask(3);
 
     // ===== 并发启动三个帧处理 =====
     // 用 split 得到可共享结果的 sender，
     // split 将一次性异步操作转换为可共享的、可被多次等待的异步句柄，常见于“先启动后等待”或“多消费者等待同一结果”场景。
-    auto split1 = exec::split(std::move(processFrame_1));
-    auto split2 = exec::split(std::move(processFrame_2));
-    auto split3 = exec::split(std::move(processFrame_3));
+    auto split1 = exec::split(std::move(processFrame1));
+    auto split2 = exec::split(std::move(processFrame2));
+    auto split3 = exec::split(std::move(processFrame3));
 
     // 拷贝一份用于启动，原始对象保留给回调链
     std::cout << "Starting frame processing tasks...\n";
@@ -164,9 +164,9 @@ inline void VasConcurrencyTest()
         std::cout << "Final result after sync_wait: " << std::get<0>(*result) << std::endl;
     }
 
-    auto main_end = std::chrono::steady_clock::now();
-    auto main_duration = std::chrono::duration_cast<std::chrono::milliseconds>(main_end - main_start).count();
-    std::cout << "main() execution time: " << main_duration << " ms" << std::endl;
+    auto mainEnd = std::chrono::steady_clock::now();
+    auto mainDuration = std::chrono::duration_cast<std::chrono::milliseconds>(mainEnd - mainStart).count();
+    std::cout << "main() execution time: " << mainDuration << " ms" << std::endl;
 
     return;
 }

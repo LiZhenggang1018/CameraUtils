@@ -29,44 +29,44 @@ inline const std::string& OpticalFlowDataPathImpl()
     return s;
 }
 
-enum class Mode { Lk, Dense, Dis, DeepFlow, Overlay };
+enum class Mode { LK, DENSE, DIS, DEEP_FLOW, OVERLAY };
 
 inline const char* ModeName(Mode mode)
 {
     switch (mode) {
-    case Mode::Lk:
+    case Mode::LK:
         return "LK";
-    case Mode::Dense:
+    case Mode::DENSE:
         return "Dense";
-    case Mode::Dis:
+    case Mode::DIS:
         return "Dis";
-    case Mode::DeepFlow:
+    case Mode::DEEP_FLOW:
         return "DeepFlow";
-    case Mode::Overlay:
+    case Mode::OVERLAY:
         return "Overlay";
     }
     return "Unknown";
 }
 
 struct AppState {
-    LkTracker* tracker_ = nullptr;
-    bool paused_ = false;
-    Mode mode_ = Mode::Lk;
-    cv::Mat currentFrame_;
-    bool deepFlowDirty_ = true;
+    LkTracker* tracker = nullptr;
+    bool paused = false;
+    Mode mode = Mode::LK;
+    cv::Mat currentFrame;
+    bool deepFlowDirty = true;
 };
 
 inline void OnMouse(int event, int x, int y, int /*flags*/, void* userdata)
 {
     auto* state = static_cast<AppState*>(userdata);
-    if (state == nullptr || state->tracker_ == nullptr) {
+    if (state == nullptr || state->tracker == nullptr) {
         return;
     }
 
     if (event == cv::EVENT_LBUTTONDOWN) {
-        state->tracker_->AddPoint(cv::Point2f(static_cast<float>(x), static_cast<float>(y)));
+        state->tracker->AddPoint(cv::Point2f(static_cast<float>(x), static_cast<float>(y)));
     } else if (event == cv::EVENT_RBUTTONDOWN) {
-        state->tracker_->RemovePoint(cv::Point2f(static_cast<float>(x), static_cast<float>(y)), 8.0);
+        state->tracker->RemovePoint(cv::Point2f(static_cast<float>(x), static_cast<float>(y)), 8.0);
     }
 }
 
@@ -86,7 +86,7 @@ inline int OpticalFlowTest()
     DenseFlowDeepFlow denseFlowDeepFlow;
 
     AppState state;
-    state.tracker_ = &tracker;
+    state.tracker = &tracker;
 
     const std::string windowName = "Optical Flow Demo";
     cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
@@ -106,7 +106,7 @@ inline int OpticalFlowTest()
     using Clock = std::chrono::steady_clock;
 
     while (true) {
-        if (!state.paused_) {
+        if (!state.paused) {
             if (!capture.read(frame)) {
                 break;
             }
@@ -119,11 +119,11 @@ inline int OpticalFlowTest()
             } else {
                 tracker.Track(prevGray, gray);
 
-                if (state.mode_ == Mode::Dense || state.mode_ == Mode::Dis || state.mode_ == Mode::Overlay) {
+                if (state.mode == Mode::DENSE || state.mode == Mode::DIS || state.mode == Mode::OVERLAY) {
 
                     const auto t0 = Clock::now();
 
-                    if (state.mode_ == Mode::Dis) {
+                    if (state.mode == Mode::DIS) {
                         flow = denseFlowDis.Compute(prevGray, gray);
                     } else {
                         flow = denseFlowFarneback.Compute(prevGray, gray);
@@ -136,15 +136,15 @@ inline int OpticalFlowTest()
             }
 
             prevGray = gray.clone();
-            state.currentFrame_ = frame.clone();
-            state.deepFlowDirty_ = true;
+            state.currentFrame = frame.clone();
+            state.deepFlowDirty = true;
         }
 
-        if (state.currentFrame_.empty()) {
+        if (state.currentFrame.empty()) {
             continue;
         }
 
-        if (state.mode_ == Mode::DeepFlow && state.paused_ && state.deepFlowDirty_ && !prevGray.empty() &&
+        if (state.mode == Mode::DEEP_FLOW && state.paused && state.deepFlowDirty && !prevGray.empty() &&
             !gray.empty()) {
 
             const auto t0 = Clock::now();
@@ -152,28 +152,28 @@ inline int OpticalFlowTest()
             const auto t1 = Clock::now();
             lastDeepFlowMs = std::chrono::duration<double, std::milli>(t1 - t0).count();
             denseColor = FlowToColor(flow);
-            state.deepFlowDirty_ = false;
+            state.deepFlowDirty = false;
         }
 
         cv::Mat display;
 
-        switch (state.mode_) {
-        case Mode::Lk: {
-            display = state.currentFrame_.clone();
+        switch (state.mode) {
+        case Mode::LK: {
+            display = state.currentFrame.clone();
             DrawLkTrails(display, tracker.PrevPoints(), tracker.Points());
             break;
         }
-        case Mode::Dense:
-        case Mode::Dis: {
-            display = denseColor.empty() ? state.currentFrame_.clone() : denseColor.clone();
+        case Mode::DENSE:
+        case Mode::DIS: {
+            display = denseColor.empty() ? state.currentFrame.clone() : denseColor.clone();
             break;
         }
-        case Mode::DeepFlow: {
-            display = denseColor.empty() ? state.currentFrame_.clone() : denseColor.clone();
+        case Mode::DEEP_FLOW: {
+            display = denseColor.empty() ? state.currentFrame.clone() : denseColor.clone();
             break;
         }
-        case Mode::Overlay: {
-            display = denseColor.empty() ? state.currentFrame_.clone() : denseColor.clone();
+        case Mode::OVERLAY: {
+            display = denseColor.empty() ? state.currentFrame.clone() : denseColor.clone();
             DrawLkTrails(display, tracker.PrevPoints(), tracker.Points());
             break;
         }
@@ -181,7 +181,7 @@ inline int OpticalFlowTest()
 
         char statusBuffer[256];
 
-        if (state.mode_ == Mode::Lk || state.mode_ == Mode::Overlay) {
+        if (state.mode == Mode::LK || state.mode == Mode::OVERLAY) {
             char fbInfo[64];
             if (tracker.IsFbFilterEnabled()) {
                 std::snprintf(fbInfo, sizeof(fbInfo), "FB=%.2f/%.2f", tracker.FbThreshold(), tracker.AverageFbError());
@@ -189,24 +189,24 @@ inline int OpticalFlowTest()
                 std::snprintf(fbInfo, sizeof(fbInfo), "FB=OFF");
             }
 
-            if (state.mode_ == Mode::Lk) {
+            if (state.mode == Mode::LK) {
                 std::snprintf(statusBuffer, sizeof(statusBuffer), "Mode=LK maxLv=%d trk=%d %s %.1fms %s",
                               tracker.MaxLevel(), tracker.TrackedCount(), fbInfo, lastDenseMs,
-                              state.paused_ ? "PAUSED" : "PLAYING");
+                              state.paused ? "PAUSED" : "PLAYING");
             } else {
                 std::snprintf(statusBuffer, sizeof(statusBuffer), "Mode=Overlay win=%d trk=%d %s %.1fms %s",
                               denseFlowFarneback.Winsize(), tracker.TrackedCount(), fbInfo, lastDenseMs,
-                              state.paused_ ? "PAUSED" : "PLAYING");
+                              state.paused ? "PAUSED" : "PLAYING");
             }
-        } else if (state.mode_ == Mode::Dense) {
+        } else if (state.mode == Mode::DENSE) {
             std::snprintf(statusBuffer, sizeof(statusBuffer), "Mode=Dense win=%d trk=%d %.1fms %s",
                           denseFlowFarneback.Winsize(), tracker.TrackedCount(), lastDenseMs,
-                          state.paused_ ? "PAUSED" : "PLAYING");
-        } else if (state.mode_ == Mode::Dis) {
+                          state.paused ? "PAUSED" : "PLAYING");
+        } else if (state.mode == Mode::DIS) {
             std::snprintf(statusBuffer, sizeof(statusBuffer), "Mode=Dis preset=%s %.1fms %s", denseFlowDis.PresetName(),
-                          lastDenseMs, state.paused_ ? "PAUSED" : "PLAYING");
+                          lastDenseMs, state.paused ? "PAUSED" : "PLAYING");
         } else {
-            if (state.paused_) {
+            if (state.paused) {
                 std::snprintf(statusBuffer, sizeof(statusBuffer), "Mode=DeepFlow %.1fms PAUSED", lastDeepFlowMs);
             } else {
                 std::snprintf(statusBuffer, sizeof(statusBuffer), "Mode=DeepFlow -- pause to compute -- PLAYING");
@@ -222,19 +222,19 @@ inline int OpticalFlowTest()
 
         cv::imshow(windowName, display);
 
-        const int key = cv::waitKey(state.paused_ ? 30 : 1);
+        const int key = cv::waitKey(state.paused ? 30 : 1);
 
         if (key == 27 || key == 'q') {
             break;
         }
 
         if (key == ' ') {
-            state.paused_ = !state.paused_;
+            state.paused = !state.paused;
         } else if (key == 'm') {
-            const int nextMode = (static_cast<int>(state.mode_) + 1) % 5;
-            state.mode_ = static_cast<Mode>(nextMode);
-            if (state.mode_ == Mode::DeepFlow) {
-                state.deepFlowDirty_ = true;
+            const int nextMode = (static_cast<int>(state.mode) + 1) % 5;
+            state.mode = static_cast<Mode>(nextMode);
+            if (state.mode == Mode::DEEP_FLOW) {
+                state.deepFlowDirty = true;
             }
         } else if (key == '+' || key == '=') {
             tracker.SetMaxLevel(std::min(tracker.MaxLevel() + 1, 6));
@@ -257,7 +257,7 @@ inline int OpticalFlowTest()
             firstFrame = true;
             flow.release();
             denseColor.release();
-            state.deepFlowDirty_ = true;
+            state.deepFlowDirty = true;
             lastDenseMs = 0.0;
             lastDeepFlowMs = 0.0;
             capture.set(cv::CAP_PROP_POS_FRAMES, 0);
@@ -292,13 +292,13 @@ inline int UpsampleVideo(const std::string& inputPath, const std::string& output
         return -1;
     }
 
-    const int W = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
-    const int H = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
+    const int w = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_WIDTH));
+    const int h = static_cast<int>(cap.get(cv::CAP_PROP_FRAME_HEIGHT));
     const double srcFps = cap.get(cv::CAP_PROP_FPS);
     const long totalFrames = static_cast<long>(cap.get(cv::CAP_PROP_FRAME_COUNT));
-    std::printf("[Meta ] W=%d H=%d srcFps=%.3f totalFrames=%ld\n", W, H, srcFps, totalFrames);
+    std::printf("[Meta ] W=%d H=%d srcFps=%.3f totalFrames=%ld\n", w, h, srcFps, totalFrames);
 
-    if (W <= 0 || H <= 0 || srcFps <= 0) {
+    if (w <= 0 || h <= 0 || srcFps <= 0) {
         std::cerr << "[ERROR] Invalid input metadata" << std::endl;
         return -1;
     }
@@ -329,11 +329,11 @@ inline int UpsampleVideo(const std::string& inputPath, const std::string& output
     enc.crf = cfg.crf;
 
     const int outFps = static_cast<int>(srcFps * cfg.factor);
-    if (!writer.Open(outputPath, W, H, outFps, cfg.bitrate, enc)) {
+    if (!writer.Open(outputPath, w, h, outFps, cfg.bitrate, enc)) {
         std::cerr << "[ERROR] FfmpegVideoWriter Open failed" << std::endl;
         return -1;
     }
-    std::printf("[Writer] opened, encoder=%s, %dx%d @ %dfps\n", writer.EncoderName(), W, H, outFps);
+    std::printf("[Writer] opened, encoder=%s, %dx%d @ %dfps\n", writer.EncoderName(), w, h, outFps);
 
     // -------- 读第一帧 --------
     cv::Mat prev;
@@ -348,8 +348,8 @@ inline int UpsampleVideo(const std::string& inputPath, const std::string& output
         return -1;
     }
 
-    if (prev.cols != W || prev.rows != H) {
-        std::printf("[WARN ] frame size %dx%d != meta %dx%d\n", prev.cols, prev.rows, W, H);
+    if (prev.cols != w || prev.rows != h) {
+        std::printf("[WARN ] frame size %dx%d != meta %dx%d\n", prev.cols, prev.rows, w, h);
     }
 
     // -------- 写第一帧 --------

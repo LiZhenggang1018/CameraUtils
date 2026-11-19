@@ -10,7 +10,7 @@ public:
     CounterA(const CounterA&) = default;
     CounterA(CounterA&&) = default;
 
-    void print() const { std::cout << "A对象地址: " << this << std::endl; }
+    void Print() const { std::cout << "A对象地址: " << this << std::endl; }
 };
 
 // 示例类B
@@ -20,11 +20,11 @@ public:
     CounterB(const CounterB&) = default;
     CounterB(CounterB&&) = default;
 
-    void show() const { std::cout << "B对象地址: " << this << std::endl; }
+    void Show() const { std::cout << "B对象地址: " << this << std::endl; }
 };
 
 // 测试函数
-inline void testFunction()
+inline void TestFunction()
 {
     std::cout << "\n=== 进入testFunction ===" << std::endl;
 
@@ -55,17 +55,17 @@ inline void InstanceCounterTest()
 
     // 测试拷贝构造
     std::cout << "\n--- 测试拷贝构造 ---" << std::endl;
-    CounterA a_copy = a1;
+    CounterA aCopy = a1;
 
     // 测试移动构造
     std::cout << "\n--- 测试移动构造 ---" << std::endl;
-    CounterA a_move = std::move(a2);
+    CounterA aMove = std::move(a2);
 
     std::cout << "\n拷贝/移动后 - A实例数: " << CounterA::GetInstanceCount()
               << ", B实例数: " << CounterB::GetInstanceCount() << std::endl;
 
     // 测试函数作用域
-    testFunction();
+    TestFunction();
 
     // 动态创建对象
     std::cout << "\n--- 测试动态创建 ---" << std::endl;

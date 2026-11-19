@@ -31,7 +31,7 @@ inline void FactoryJsonTest()
     for (const auto& name : names) {
         auto inst = ShapeFactory::Instance().Create(name, 5.0); // 根据子类名 依次创建各子类
         if (inst) {
-            inst->draw();
+            inst->Draw();
         }
     }
 

@@ -46,7 +46,7 @@ public:
 };
 
 // 定义工厂类型（接口 Shape，键类型 string，传递名称，额外参数 double）
-using ShapeFactory = detail::GeneralFactory<Shape, std::string, true, double>;
+using ShapeFactory = Detail::GeneralFactory<Shape, std::string, true, double>;
 
 // 定义自动注册宏
 #define REGISTER_SHAPE_BY_NAME(_clsName, _cls) \

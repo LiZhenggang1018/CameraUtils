@@ -110,11 +110,11 @@ inline void TestFindAndThenOrElse()
 
 // test code for OverloadNoCvt
 struct B1 {
-    int i_{1};
+    int i{1};
 };
 
 struct B2 {
-    float f_{};
+    float f{};
 };
 
 using C1 = std::variant<B1, B2>;
@@ -166,14 +166,14 @@ inline void TimeoutMonitorTest()
     testCase.Foo(3.14f);
 }
 
-enum Color { Red = 1, Green = 2, Blue = 3 };
+enum Color { RED = 1, GREEN = 2, BLUE = 3 };
 
 inline void MiscTest()
 {
     PV(1, "a");
     CAR(1 == 1);
 
-    PV(Enum2Str<Color>(Red)); // 打印Red
+    PV(Enum2Str<Color>(RED)); // 打印Red
     PV(Enum2Str<Color>(1));   // 同样打印Red
     std::string s("Red");
     if (auto e = Str2Enum<Color>(s)) // e是 optional<EN>类型,当一个 optional<T> 对象被按语境转换成 bool

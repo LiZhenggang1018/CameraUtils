@@ -20,7 +20,7 @@
 // 接口 Shape
 class Shape {
 public:
-    virtual void draw() const = 0;
+    virtual void Draw() const = 0;
     virtual ~Shape() = default;
 };
 
@@ -34,7 +34,7 @@ public:
         : name_("Circle"),
           radius_(radius)
     {} // 构造函数不接受名称参数
-    void draw() const override { std::cout << "Circle[" << name_ << "] with radius " << radius_ << std::endl; }
+    void Draw() const override { std::cout << "Circle[" << name_ << "] with radius " << radius_ << std::endl; }
 };
 
 // 具体类：Square（构造函数只接受 side）
@@ -47,12 +47,12 @@ public:
         : name_("Square"),
           side_(side)
     {}
-    void draw() const override { std::cout << "Square[" << name_ << "] with side " << side_ << std::endl; }
+    void Draw() const override { std::cout << "Square[" << name_ << "] with side " << side_ << std::endl; }
 };
 
 // 需要额外增加的宏定义：
 //  1、定义工厂类型：不将注册键传递给构造函数（PassName = false），额外参数 double
-using ShapeFactory = detail::GeneralFactory<Shape, std::string, false, double>;
+using ShapeFactory = Detail::GeneralFactory<Shape, std::string, false, double>;
 
 // 2、定义自动注册宏（保留以字符串键注册映射）
 #define REGISTER_SHAPE_BY_NAME(_clsName, _cls) \
@@ -73,10 +73,10 @@ inline void FactoryTest()
     auto shape3 = factory.Create("Triangle", 2.0); // 未注册
 
     if (shape1) {
-        shape1->draw();
+        shape1->Draw();
     }
     if (shape2) {
-        shape2->draw();
+        shape2->Draw();
     }
     if (!shape3) {
         std::cout << "Triangle not registered\n";
@@ -85,7 +85,7 @@ inline void FactoryTest()
     // 批量创建所有已注册的类型（参数 4.0 传递给构造函数）
     auto allShapes = factory.CreateAll(4.0);
     for (auto&& s : allShapes) {
-        s->draw();
+        s->Draw();
     }
 
     return;

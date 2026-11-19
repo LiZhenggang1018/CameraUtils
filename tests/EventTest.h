@@ -19,7 +19,7 @@ inline void TestBasicEventDelivery()
     // 使用variant后，回调中可通过std::visit或std::get<>来处理具体事件，此处示例使用std::get<>
     auto cb = [](const EventVariant& event) {
         if (auto messageEvent = GetEvent<MessageEvent>(event)) {
-            PV("Rcv:", messageEvent->s_);
+            PV("Rcv:", messageEvent->value);
         }
     };
 
@@ -67,7 +67,7 @@ public:
     void Cb(const EventVariant& event)
     {
         if (auto messageEvent = GetEvent<MessageEvent>(event)) {
-            PV("Rcv:", messageEvent->s_);
+            PV("Rcv:", messageEvent->value);
         }
     }
 
