@@ -1,6 +1,9 @@
 # .clang-tidy
 # 命名规则依据 references/OpenHarmony-cpp-coding-style-guide.md 第 2 章
 ---
+# opt-in 的字节填充优化检查在此排除：HdrConfig 等配置结构按功能分组排列字段以便阅读，
+# 只在启动时构造一次、不在热点路径上。NOLINTNEXTLINE 对 clang-analyzer 检查无效，
+# 只能整体排除，否则 CI 的 clang-analyzer 硬门禁会失败。
 Checks: >
   -*,
   bugprone-*,
@@ -14,10 +17,15 @@ Checks: >
   -cppcoreguidelines-pro-type-reinterpret-cast,
   -modernize-use-trailing-return-type,
   -readability-magic-numbers,
-  -readability-identifier-length
+  -readability-identifier-length,
+  -clang-analyzer-optin.performance.Padding
 
 WarningsAsErrors: ''
-HeaderFilterRegex: '^(?!.*(third_party|\.cpm-cache)).*$'
+# 只检查本工程目录下的头文件；_deps/ 与 third_party/ 不在这些前缀下，自然被排除。
+# 注意：LLVM 的 llvm::Regex 不支持负向先行断言 (?!...)，原先的
+# '^(?!.*(third_party|\.cpm-cache)).*$' 永远匹配失败，导致头文件从未被检查。
+# 另外该正则是对绝对路径做部分匹配，不能用 ^ 锚定工程根。
+HeaderFilterRegex: '(src|inc|tests)[\\/]'
 FormatStyle: file
 
 CheckOptions:
@@ -65,12 +73,20 @@ CheckOptions:
   - key: readability-identifier-naming.GlobalVariablePrefix
     value: 'g_'
 
-  # 常量、枚举值、宏：全大写 + 下划线（规则 2.6）
+  # 常量（规则 2.6）：
+  #   全局作用域 / 类的静态成员常量 -> 全大写 + 下划线
+  #   函数局部 const 常量、类的普通 const 成员变量 -> 小驼峰
+  # ConstantCase 是兜底项，按规范取小驼峰，不要设成 UPPER_CASE，
+  # 否则会把函数局部常量与普通 const 成员误判为违规。
   - key: readability-identifier-naming.ConstantCase
+    value: camelBack
+  - key: readability-identifier-naming.LocalConstantCase
+    value: camelBack
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.ClassConstantCase
     value: UPPER_CASE
   - key: readability-identifier-naming.EnumConstantCase
-    value: UPPER_CASE
-  - key: readability-identifier-naming.GlobalConstantCase
     value: UPPER_CASE
   - key: readability-identifier-naming.MacroDefinitionCase
     value: UPPER_CASE
