@@ -67,7 +67,7 @@ auto Find(const Container& c, const T& value)
     } else {
         // 否则返回找到的值
         return FindResult<T>(*it);
-   ;;;;;;; }
+    }
 }
 
 #endif // INC_FINDANDTHENORELSE_H
