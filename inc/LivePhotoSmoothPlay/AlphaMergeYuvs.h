@@ -395,13 +395,8 @@ inline void AlphaMergeYuvsOpenCV(const YuvInfo& yuv1, const YuvInfo& yuv2, doubl
     }
 
     // 计算YUV420文件大小
-    int w = yuv1.width;
     int h = yuv1.height;
     int stride = yuv1.stride;
-
-    size_t ySize = static_cast<size_t>(stride) * h;
-    size_t uvSize = static_cast<size_t>(stride / 2) * (h / 2);
-    size_t totalSize = ySize + uvSize * 2;
 
     // 使用OpenCV处理YUV数据
     // 创建OpenCV矩阵表示YUV数据（I420格式），注意步长参数
