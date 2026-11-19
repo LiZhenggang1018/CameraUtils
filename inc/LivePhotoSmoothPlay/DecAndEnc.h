@@ -54,7 +54,7 @@ inline AVStreamTempInfo GetAVStreamTempInfo(const std::string& filename)
             int width = videoStream->codecpar->width;
             AVRational sampleAspectRatio = videoStream->sample_aspect_ratio;
             int64_t bitRate = videoStream->codecpar->bit_rate;
-            enum AVPixelFormat pixFmt = static_cast<AVPixelFormat>(videoStream->codecpar->format);
+            auto pixFmt = static_cast<AVPixelFormat>(videoStream->codecpar->format);
             AVRational framerate = videoStream->r_frame_rate;
 
             PV("time_base.num", timeBase.num, "time_base.den", timeBase.den, "height", height, "width", width,
@@ -308,7 +308,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
 
                         bool readOk = true;
                         for (int y = 0; y < repFrame->height && readOk; ++y) {
-                            size_t want = static_cast<size_t>(repFrame->width);
+                            auto want = static_cast<size_t>(repFrame->width);
                             size_t got = fread(repFrame->data[0] + (static_cast<size_t>(y) * repFrame->linesize[0]), 1,
                                                want, repFp.get());
                             if (got != want) {
@@ -316,7 +316,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                             }
                         }
                         for (int y = 0; y < repFrame->height / 2 && readOk; ++y) {
-                            size_t want = static_cast<size_t>(repFrame->width / 2);
+                            auto want = static_cast<size_t>(repFrame->width / 2);
                             size_t got = fread(repFrame->data[1] + (static_cast<size_t>(y) * repFrame->linesize[1]), 1,
                                                want, repFp.get());
                             if (got != want) {
@@ -324,7 +324,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                             }
                         }
                         for (int y = 0; y < repFrame->height / 2 && readOk; ++y) {
-                            size_t want = static_cast<size_t>(repFrame->width / 2);
+                            auto want = static_cast<size_t>(repFrame->width / 2);
                             size_t got = fread(repFrame->data[2] + (static_cast<size_t>(y) * repFrame->linesize[2]), 1,
                                                want, repFp.get());
                             if (got != want) {
@@ -452,7 +452,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
 
                 bool readOk = true;
                 for (int y = 0; y < repFrame->height && readOk; ++y) {
-                    size_t want = static_cast<size_t>(repFrame->width);
+                    auto want = static_cast<size_t>(repFrame->width);
                     size_t got =
                         fread(repFrame->data[0] + (static_cast<size_t>(y) * repFrame->linesize[0]), 1, want, repFp.get());
                     if (got != want) {
@@ -460,7 +460,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                     }
                 }
                 for (int y = 0; y < repFrame->height / 2 && readOk; ++y) {
-                    size_t want = static_cast<size_t>(repFrame->width / 2);
+                    auto want = static_cast<size_t>(repFrame->width / 2);
                     size_t got =
                         fread(repFrame->data[1] + (static_cast<size_t>(y) * repFrame->linesize[1]), 1, want, repFp.get());
                     if (got != want) {
@@ -468,7 +468,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                     }
                 }
                 for (int y = 0; y < repFrame->height / 2 && readOk; ++y) {
-                    size_t want = static_cast<size_t>(repFrame->width / 2);
+                    auto want = static_cast<size_t>(repFrame->width / 2);
                     size_t got =
                         fread(repFrame->data[2] + (static_cast<size_t>(y) * repFrame->linesize[2]), 1, want, repFp.get());
                     if (got != want) {
@@ -588,7 +588,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
 
             bool readOk = true;
             for (int y = 0; y < repFrame->height && readOk; ++y) {
-                size_t want = static_cast<size_t>(repFrame->width);
+                auto want = static_cast<size_t>(repFrame->width);
                 size_t got =
                     fread(repFrame->data[0] + (static_cast<size_t>(y) * repFrame->linesize[0]), 1, want, repFp.get());
                 if (got != want) {
@@ -596,7 +596,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                 }
             }
             for (int y = 0; y < repFrame->height / 2 && readOk; ++y) {
-                size_t want = static_cast<size_t>(repFrame->width / 2);
+                auto want = static_cast<size_t>(repFrame->width / 2);
                 size_t got =
                     fread(repFrame->data[1] + (static_cast<size_t>(y) * repFrame->linesize[1]), 1, want, repFp.get());
                 if (got != want) {
@@ -604,7 +604,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                 }
             }
             for (int y = 0; y < repFrame->height / 2 && readOk; ++y) {
-                size_t want = static_cast<size_t>(repFrame->width / 2);
+                auto want = static_cast<size_t>(repFrame->width / 2);
                 size_t got =
                     fread(repFrame->data[2] + (static_cast<size_t>(y) * repFrame->linesize[2]), 1, want, repFp.get());
                 if (got != want) {

@@ -475,7 +475,7 @@ inline YuvInfo LoadYuvFromFile(const std::string& filename, int width, int heigh
     }
 
     // 分配内存
-    unsigned char* data = new unsigned char[totalSize];
+    auto* data = new unsigned char[totalSize];
 
     // 读取数据
     file.read(reinterpret_cast<char*>(data), totalSize);

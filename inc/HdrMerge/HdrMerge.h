@@ -537,10 +537,10 @@ inline void ApplyGhostSuppressionMertens(cv::Mat& lowCropped, cv::Mat& normalCro
     const float strength = static_cast<float>(std::clamp(cfg.ghostSuppressStrength, 0.0, 1.0));
 
     for (int y = 0; y < motionMask.rows; ++y) {
-        const uint8_t* m = motionMask.ptr<uint8_t>(y);
-        cv::Vec3b* l = lowCropped.ptr<cv::Vec3b>(y);
-        cv::Vec3b* h = highCropped.ptr<cv::Vec3b>(y);
-        const cv::Vec3b* n = normalCropped.ptr<cv::Vec3b>(y);
+        const auto* m = motionMask.ptr<uint8_t>(y);
+        auto* l = lowCropped.ptr<cv::Vec3b>(y);
+        auto* h = highCropped.ptr<cv::Vec3b>(y);
+        const auto* n = normalCropped.ptr<cv::Vec3b>(y);
 
         for (int x = 0; x < motionMask.cols; ++x) {
             if (m[x] == 0) {
@@ -579,10 +579,10 @@ inline void ApplyGhostSuppressionPhysicalLinear(std::vector<cv::Mat>& linearImag
     cv::Mat& linHigh = linearImages[2];
 
     for (int y = 0; y < motionMask.rows; ++y) {
-        const uint8_t* m = motionMask.ptr<uint8_t>(y);
-        cv::Vec3f* l = linLow.ptr<cv::Vec3f>(y);
-        cv::Vec3f* h = linHigh.ptr<cv::Vec3f>(y);
-        const cv::Vec3f* n = linNormal.ptr<cv::Vec3f>(y);
+        const auto* m = motionMask.ptr<uint8_t>(y);
+        auto* l = linLow.ptr<cv::Vec3f>(y);
+        auto* h = linHigh.ptr<cv::Vec3f>(y);
+        const auto* n = linNormal.ptr<cv::Vec3f>(y);
 
         for (int x = 0; x < motionMask.cols; ++x) {
             if (m[x] == 0) {

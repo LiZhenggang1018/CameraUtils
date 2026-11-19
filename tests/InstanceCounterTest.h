@@ -69,8 +69,8 @@ inline void InstanceCounterTest()
 
     // 动态创建对象
     std::cout << "\n--- 测试动态创建 ---" << std::endl;
-    CounterA* dynamicA = new CounterA();
-    CounterB* dynamicB = new CounterB();
+    auto* dynamicA = new CounterA();
+    auto* dynamicB = new CounterB();
 
     std::cout << "动态创建后 - A实例数: " << CounterA::GetInstanceCount()
               << ", B实例数: " << CounterB::GetInstanceCount() << std::endl;

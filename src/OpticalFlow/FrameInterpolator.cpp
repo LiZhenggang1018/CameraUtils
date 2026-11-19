@@ -13,9 +13,9 @@ void BuildGrid(int h, int w, cv::Mat& gridX, cv::Mat& gridY)
     gridX.create(h, w, CV_32F);
     gridY.create(h, w, CV_32F);
     for (int y = 0; y < h; ++y) {
-        float* px = gridX.ptr<float>(y);
-        float* py = gridY.ptr<float>(y);
-        const float fy = static_cast<float>(y);
+        auto* px = gridX.ptr<float>(y);
+        auto* py = gridY.ptr<float>(y);
+        const auto fy = static_cast<float>(y);
         for (int x = 0; x < w; ++x) {
             px[x] = static_cast<float>(x);
             py[x] = fy;

@@ -72,8 +72,8 @@ T SwapEndian(T value)
 {
     static_assert(std::is_arithmetic<T>::value, "Template param must be an arithmetic type");
     T result{};
-    uint8_t* src = reinterpret_cast<uint8_t*>(&value);
-    uint8_t* dst = reinterpret_cast<uint8_t*>(&result);
+    auto* src = reinterpret_cast<uint8_t*>(&value);
+    auto* dst = reinterpret_cast<uint8_t*>(&result);
     std::reverse_copy(src, src + sizeof(T), dst);
     return result;
 }
