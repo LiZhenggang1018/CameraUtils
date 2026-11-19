@@ -20,7 +20,8 @@ inline const std::string& ImageRegInFileImpl()
 // 辅助函数：如果图像尺寸超过 maxSize，则等比例缩放并返回，否则返回原图
 inline cv::Mat FitToScreen(const cv::Mat& img, int maxSize = 800)
 {
-    int h = img.rows, w = img.cols;
+    int h = img.rows;
+    int w = img.cols;
     if (h <= maxSize && w <= maxSize) {
         return img;
     }
@@ -80,7 +81,8 @@ inline void HarrisTest()
     for (int y = 0; y < eigen.rows; y += 10) {
         for (int x = 0; x < eigen.cols; x += 10) {
             const float* p = eigen.ptr<float>(y, x);
-            float v2x = p[4], v2y = p[5];
+            float v2x = p[4];
+            float v2y = p[5];
             cv::Point pt(x, y);
             cv::line(rgb, pt, pt + cv::Point(v2x * 5, v2y * 5), cv::Scalar(0, 255, 0), 1);
         }

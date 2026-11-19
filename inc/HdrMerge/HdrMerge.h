@@ -367,7 +367,8 @@ inline double ComputeGrayMedian(const cv::Mat& gray)
 // 亮度归一化后的灰度差分
 inline cv::Mat NormalizedAbsDiff(const cv::Mat& refBgr, const cv::Mat& otherBgr)
 {
-    cv::Mat gRef, gOther;
+    cv::Mat gRef;
+    cv::Mat gOther;
     cv::cvtColor(refBgr, gRef, cv::COLOR_BGR2GRAY);
     cv::cvtColor(otherBgr, gOther, cv::COLOR_BGR2GRAY);
 
@@ -405,7 +406,9 @@ inline cv::Mat DetectMotionDiff(const cv::Mat& lowCropped, const cv::Mat& normal
 inline cv::Mat DetectMotionLk(const cv::Mat& lowCropped, const cv::Mat& normalCropped, const cv::Mat& highCropped,
                               const HdrConfig& cfg)
 {
-    cv::Mat gL, gN, gH;
+    cv::Mat gL;
+    cv::Mat gN;
+    cv::Mat gH;
     cv::cvtColor(lowCropped, gL, cv::COLOR_BGR2GRAY);
     cv::cvtColor(normalCropped, gN, cv::COLOR_BGR2GRAY);
     cv::cvtColor(highCropped, gH, cv::COLOR_BGR2GRAY);
@@ -423,11 +426,13 @@ inline cv::Mat DetectMotionLk(const cv::Mat& lowCropped, const cv::Mat& normalCr
     BiDirectionalLkFilter filter;
     filter.SetFbThreshold(cfg.lkFbThreshold);
 
-    std::vector<cv::Point2f> stablePrevL, stableCurrL;
+    std::vector<cv::Point2f> stablePrevL;
+    std::vector<cv::Point2f> stableCurrL;
     std::vector<float> errL;
     filter.Filter(gN, gL, pts, stablePrevL, stableCurrL, errL);
 
-    std::vector<cv::Point2f> stablePrevH, stableCurrH;
+    std::vector<cv::Point2f> stablePrevH;
+    std::vector<cv::Point2f> stableCurrH;
     std::vector<float> errH;
     filter.Filter(gN, gH, pts, stablePrevH, stableCurrH, errH);
 
@@ -525,7 +530,9 @@ inline void ApplyGhostSuppressionMertens(cv::Mat& lowCropped, cv::Mat& normalCro
         return;
     }
 
-    cv::Mat gLow, gNormal, gHigh;
+    cv::Mat gLow;
+    cv::Mat gNormal;
+    cv::Mat gHigh;
     cv::cvtColor(lowCropped, gLow, cv::COLOR_BGR2GRAY);
     cv::cvtColor(normalCropped, gNormal, cv::COLOR_BGR2GRAY);
     cv::cvtColor(highCropped, gHigh, cv::COLOR_BGR2GRAY);

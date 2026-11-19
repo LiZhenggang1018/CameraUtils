@@ -141,7 +141,8 @@ cv::Mat ImageRegistrator::EstimateTransform(const std::vector<cv::KeyPoint>& key
     }
 
     // 提取匹配点坐标（Point2f，720×1584 下足够精度）
-    std::vector<cv::Point2f> points1, points2;
+    std::vector<cv::Point2f> points1;
+    std::vector<cv::Point2f> points2;
     points1.reserve(matches.size());
     points2.reserve(matches.size());
     for (const auto& match : matches) {
@@ -181,7 +182,8 @@ cv::Mat ImageRegistrator::EstimateTransform(const std::vector<cv::KeyPoint>& key
 
         case TransformType::TRANSLATION: {
             // 中位数平移，不做 RANSAC，所有匹配都算内点
-            std::vector<float> dx, dy;
+            std::vector<float> dx;
+            std::vector<float> dy;
             dx.reserve(points1.size());
             dy.reserve(points1.size());
             for (size_t i = 0; i < points1.size(); ++i) {
@@ -474,7 +476,8 @@ cv::Mat LoadImageWithWIC(const std::string& path)
             break;
         }
 
-        UINT w = 0, h = 0;
+        UINT w = 0;
+        UINT h = 0;
         hr = converter->GetSize(&w, &h);
         if (FAILED(hr) || w == 0 || h == 0) {
             break;

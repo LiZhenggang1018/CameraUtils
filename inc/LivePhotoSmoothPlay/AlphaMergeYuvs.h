@@ -410,7 +410,8 @@ inline void AlphaMergeYuvsOpenCV(const YuvInfo& yuv1, const YuvInfo& yuv2, doubl
     cv::Mat uvPlane2 = yuvMat2.rowRange(h, h + (h / 2));
 
     // 分离UV平面为U和V
-    cv::Mat uvChannels1[2], uvChannels2[2];
+    cv::Mat uvChannels1[2];
+    cv::Mat uvChannels2[2];
 
     // 重新排列UV交织的数据
     cv::Mat uvInterleaved1 = uvPlane1.reshape(2, h / 2);
@@ -425,7 +426,9 @@ inline void AlphaMergeYuvsOpenCV(const YuvInfo& yuv1, const YuvInfo& yuv2, doubl
     cv::Mat vPlane2 = uvChannels2[1];
 
     // 进行alpha混合
-    cv::Mat yMixed, uMixed, vMixed;
+    cv::Mat yMixed;
+    cv::Mat uMixed;
+    cv::Mat vMixed;
 
     cv::addWeighted(yPlane1, yuv1AlphaRatio, yPlane2, 1.0 - yuv1AlphaRatio, 0.0, yMixed);
     cv::addWeighted(uPlane1, yuv1AlphaRatio, uPlane2, 1.0 - yuv1AlphaRatio, 0.0, uMixed);

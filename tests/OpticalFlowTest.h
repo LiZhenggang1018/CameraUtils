@@ -382,7 +382,8 @@ inline int UpsampleVideo(const std::string& inputPath, const std::string& output
         }
 
         // ★ 关键优化：每对帧只算一次双向光流，所有中间帧复用
-        cv::Mat flowFwd, flowBwd;
+        cv::Mat flowFwd;
+        cv::Mat flowBwd;
         interp.ComputeFlows(prev, curr, flowFwd, flowBwd);
 
         // 生成 factor-1 个中间帧：t = 1/factor, 2/factor, ..., (factor-1)/factor

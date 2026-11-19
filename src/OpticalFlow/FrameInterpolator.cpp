@@ -34,13 +34,17 @@ cv::Mat ExpandWeightTo3Ch(const cv::Mat& weight)
 cv::Mat LaplacianBlend(const cv::Mat& prev8u, const cv::Mat& curr8u, const cv::Mat& wpF, const cv::Mat& wcF,
                        const cv::Mat& confidence, double t, int levels = 4)
 {
-    cv::Mat prevF, currF;
+    cv::Mat prevF;
+    cv::Mat currF;
     prev8u.convertTo(prevF, CV_32FC3);
     curr8u.convertTo(currF, CV_32FC3);
 
     // ★ 修复：buildPyramid 的 maxlevel = levels - 1，
     //   这样金字塔正好 levels 层（0..levels-1），和后面循环逻辑一致
-    std::vector<cv::Mat> gp, gc, gwp, gwc;
+    std::vector<cv::Mat> gp;
+    std::vector<cv::Mat> gc;
+    std::vector<cv::Mat> gwp;
+    std::vector<cv::Mat> gwc;
     cv::buildPyramid(prevF, gp, levels - 1);
     cv::buildPyramid(currF, gc, levels - 1);
     cv::buildPyramid(wpF, gwp, levels - 1);
@@ -54,14 +58,23 @@ cv::Mat LaplacianBlend(const cv::Mat& prev8u, const cv::Mat& curr8u, const cv::M
     }
 
     // 拉普拉斯金字塔
-    std::vector<cv::Mat> lp, lc, lwp, lwc;
+    std::vector<cv::Mat> lp;
+    std::vector<cv::Mat> lc;
+    std::vector<cv::Mat> lwp;
+    std::vector<cv::Mat> lwc;
     for (int i = 0; i < levels - 1; ++i) {
-        cv::Mat upP, upC, upWP, upWC;
+        cv::Mat upP;
+        cv::Mat upC;
+        cv::Mat upWP;
+        cv::Mat upWC;
         cv::pyrUp(gp[i + 1], upP, gp[i].size());
         cv::pyrUp(gc[i + 1], upC, gc[i].size());
         cv::pyrUp(gwp[i + 1], upWP, gwp[i].size());
         cv::pyrUp(gwc[i + 1], upWC, gwc[i].size());
-        cv::Mat lapP, lapC, lapWP, lapWC;
+        cv::Mat lapP;
+        cv::Mat lapC;
+        cv::Mat lapWP;
+        cv::Mat lapWC;
         cv::subtract(gp[i], upP, lapP);
         cv::subtract(gc[i], upC, lapC);
         cv::subtract(gwp[i], upWP, lapWP);
@@ -79,7 +92,8 @@ cv::Mat LaplacianBlend(const cv::Mat& prev8u, const cv::Mat& curr8u, const cv::M
     // 逐层融合
     std::vector<cv::Mat> lout;
     for (int i = 0; i < levels; ++i) {
-        cv::Mat warpBlend, linearBlend;
+        cv::Mat warpBlend;
+        cv::Mat linearBlend;
         cv::addWeighted(lwp[i], 1.0 - t, lwc[i], t, 0.0, warpBlend);
         cv::addWeighted(lp[i], 1.0 - t, lc[i], t, 0.0, linearBlend);
 
@@ -162,10 +176,12 @@ cv::Mat ComputeConfidence(const cv::Mat& flowFwd, const cv::Mat& flowBwd, const 
     cv::Mat thr2Small(err2.size(), CV_32F, cv::Scalar(thrSmall * thrSmall));
     cv::Mat thr2Large(err2.size(), CV_32F, cv::Scalar(threshold * threshold));
 
-    cv::Mat maskSmall8, maskLarge8;
+    cv::Mat maskSmall8;
+    cv::Mat maskLarge8;
     cv::compare(err2Local, thr2Small, maskSmall8, cv::CMP_LT);
     cv::compare(err2Local, thr2Large, maskLarge8, cv::CMP_LT);
-    cv::Mat maskSmall, maskLarge;
+    cv::Mat maskSmall;
+    cv::Mat maskLarge;
     maskSmall8.convertTo(maskSmall, CV_32F, 1.0 / 255.0);
     maskLarge8.convertTo(maskLarge, CV_32F, 1.0 / 255.0);
 
@@ -203,7 +219,8 @@ void PostProcessFlow(const cv::Mat& flowIn, const cv::Mat& guideGray, cv::Mat& f
     std::vector<cv::Mat> ch2(2);
     cv::split(medianFlow, ch2);
 
-    cv::Mat gf0, gf1;
+    cv::Mat gf0;
+    cv::Mat gf1;
     cv::ximgproc::guidedFilter(guideGray, ch2[0], gf0, 8, 100.0);
     cv::ximgproc::guidedFilter(guideGray, ch2[1], gf1, 8, 100.0);
 
@@ -248,7 +265,8 @@ void FrameInterpolator::ComputeFlow(const cv::Mat& from, const cv::Mat& to, cv::
 
     // 降分辨率：resize → 算光流 → upsample → 缩放位移
     const double s = params_.flowDownscale;
-    cv::Mat fromSmall, toSmall;
+    cv::Mat fromSmall;
+    cv::Mat toSmall;
     cv::resize(from, fromSmall, cv::Size(), s, s, cv::INTER_AREA);
     cv::resize(to, toSmall, cv::Size(), s, s, cv::INTER_AREA);
 
@@ -281,7 +299,8 @@ void FrameInterpolator::ComputeFlowInternal(const cv::Mat& from, const cv::Mat& 
     if (params_.maxCoarseLevels > 0 && params_.flowBackend == 1 &&
         params_.flowDownscale >= 1.0) { // ← 关键：降分辨率时跳过，避免重复
         const double coarseScale = std::pow(0.5, params_.maxCoarseLevels);
-        cv::Mat fromCoarse, toCoarse;
+        cv::Mat fromCoarse;
+        cv::Mat toCoarse;
         cv::resize(from, fromCoarse, cv::Size(), coarseScale, coarseScale, cv::INTER_AREA);
         cv::resize(to, toCoarse, cv::Size(), coarseScale, coarseScale, cv::INTER_AREA);
 
@@ -345,7 +364,8 @@ void FrameInterpolator::ComputeFlowInternal(const cv::Mat& from, const cv::Mat& 
 // ============================================================
 void FrameInterpolator::ComputeFlows(const cv::Mat& prev, const cv::Mat& curr, cv::Mat& flowFwd, cv::Mat& flowBwd) const
 {
-    cv::Mat prevGray, currGray;
+    cv::Mat prevGray;
+    cv::Mat currGray;
     if (prev.channels() == 3) {
         cv::cvtColor(prev, prevGray, cv::COLOR_BGR2GRAY);
         cv::cvtColor(curr, currGray, cv::COLOR_BGR2GRAY);
@@ -368,7 +388,8 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev, const cv::Mat& curr, c
         currForFlow = currGray;
     }
 
-    cv::Mat flowFwdRaw, flowBwdRaw;
+    cv::Mat flowFwdRaw;
+    cv::Mat flowBwdRaw;
     ComputeFlow(prevForFlow, currForFlow, flowFwdRaw);
     ComputeFlow(currForFlow, prevForFlow, flowBwdRaw);
 
@@ -424,7 +445,8 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev, const cv::Mat& cu
     const int h = prev.rows;
     const int w = prev.cols;
 
-    cv::Mat gridX, gridY;
+    cv::Mat gridX;
+    cv::Mat gridY;
     BuildGrid(h, w, gridX, gridY);
 
     cv::Mat warpedPrev = WarpToMid(prev, flowFwd, gridX, gridY, t);
@@ -443,7 +465,10 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev, const cv::Mat& cu
         staticMask = cv::Mat::zeros(h, w, CV_32F);
     }
 
-    cv::Mat wpF, wcF, prevF, currF;
+    cv::Mat wpF;
+    cv::Mat wcF;
+    cv::Mat prevF;
+    cv::Mat currF;
     warpedPrev.convertTo(wpF, CV_32FC3);
     warpedCurr.convertTo(wcF, CV_32FC3);
     prev.convertTo(prevF, CV_32FC3);
@@ -520,7 +545,8 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev, const cv::Mat& cu
 
 cv::Mat FrameInterpolator::Interpolate(const cv::Mat& prev, const cv::Mat& curr, double t) const
 {
-    cv::Mat fF, fB;
+    cv::Mat fF;
+    cv::Mat fB;
     ComputeFlows(prev, curr, fF, fB);
     return BlendFromFlows(prev, curr, fF, fB, t);
 }
