@@ -163,7 +163,7 @@ public:
 inline void TimeoutMonitorTest()
 {
     TimeoutTestCase testCase{};
-    testCase.Foo(3.14f);
+    testCase.Foo(3.14F);
 }
 
 enum Color { RED = 1, GREEN = 2, BLUE = 3 };

@@ -229,11 +229,11 @@ inline cv::Mat BuildSrgbDegammaLUT()
 {
     cv::Mat lut(1, 256, CV_32FC1);
     for (int i = 0; i < 256; ++i) {
-        float v = static_cast<float>(i) / 255.0f;
-        if (v <= 0.04045f) {
-            lut.at<float>(0, i) = v / 12.92f;
+        float v = static_cast<float>(i) / 255.0F;
+        if (v <= 0.04045F) {
+            lut.at<float>(0, i) = v / 12.92F;
         } else {
-            lut.at<float>(0, i) = std::pow((v + 0.055f) / 1.055f, 2.4f);
+            lut.at<float>(0, i) = std::pow((v + 0.055F) / 1.055F, 2.4F);
         }
     }
     return lut;
@@ -308,7 +308,7 @@ inline cv::Mat TonemapHdr(const cv::Mat& hdr32f, const HdrConfig& cfg)
         if (cfg.tonemapType == "reinhard") {
             auto t = cv::createTonemapReinhard(static_cast<float>(cfg.reinhardGamma),
                                                static_cast<float>(cfg.reinhardIntensity),
-                                               static_cast<float>(cfg.reinhardLightAdapt), 0.0f);
+                                               static_cast<float>(cfg.reinhardLightAdapt), 0.0F);
             t->process(hdr32f, ldr32f);
         } else {
             if (cfg.tonemapType != "drago") {
@@ -425,7 +425,7 @@ inline cv::Mat DetectMotionLk(const cv::Mat& lowCropped, const cv::Mat& normalCr
 
     auto isStable = [](const cv::Point2f& p, const std::vector<cv::Point2f>& stable) -> bool {
         for (const auto& s : stable) {
-            if (std::abs(p.x - s.x) < 1.0f && std::abs(p.y - s.y) < 1.0f) {
+            if (std::abs(p.x - s.x) < 1.0F && std::abs(p.y - s.y) < 1.0F) {
                 return true;
             }
         }
@@ -537,13 +537,13 @@ inline void ApplyGhostSuppressionMertens(cv::Mat& lowCropped, cv::Mat& normalCro
             if (m[x] == 0)
                 continue;
 
-            const float alpha = (m[x] / 255.0f) * strength;
+            const float alpha = (m[x] / 255.0F) * strength;
 
             for (int c = 0; c < 3; ++c) {
                 const uint8_t fillL = cv::saturate_cast<uint8_t>(n[x][c] * sLow);
                 const uint8_t fillH = cv::saturate_cast<uint8_t>(n[x][c] * sHigh);
-                l[x][c] = cv::saturate_cast<uint8_t>((l[x][c] * (1.0f - alpha)) + (fillL * alpha));
-                h[x][c] = cv::saturate_cast<uint8_t>((h[x][c] * (1.0f - alpha)) + (fillH * alpha));
+                l[x][c] = cv::saturate_cast<uint8_t>((l[x][c] * (1.0F - alpha)) + (fillL * alpha));
+                h[x][c] = cv::saturate_cast<uint8_t>((h[x][c] * (1.0F - alpha)) + (fillH * alpha));
             }
         }
     }
@@ -577,10 +577,10 @@ inline void ApplyGhostSuppressionPhysicalLinear(std::vector<cv::Mat>& linearImag
             if (m[x] == 0)
                 continue;
 
-            const float alpha = (m[x] / 255.0f) * strength;
+            const float alpha = (m[x] / 255.0F) * strength;
             for (int c = 0; c < 3; ++c) {
-                l[x][c] = l[x][c] * (1.0f - alpha) + n[x][c] * alpha;
-                h[x][c] = h[x][c] * (1.0f - alpha) + n[x][c] * alpha;
+                l[x][c] = l[x][c] * (1.0F - alpha) + n[x][c] * alpha;
+                h[x][c] = h[x][c] * (1.0F - alpha) + n[x][c] * alpha;
             }
         }
     }

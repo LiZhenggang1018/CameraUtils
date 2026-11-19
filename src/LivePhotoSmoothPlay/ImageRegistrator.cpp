@@ -119,7 +119,7 @@ std::vector<cv::DMatch> ImageRegistrator::MatchFeatures(const cv::Mat& descripto
     std::vector<cv::DMatch> goodMatches;
     goodMatches.reserve(knnMatches.size());
 
-    const float ratioThresh = 0.75f;
+    const float ratioThresh = 0.75F;
     for (const auto& knnMatchItem : knnMatches) {
         if (knnMatchItem.size() == 2) {
             if (knnMatchItem[0].distance < ratioThresh * knnMatchItem[1].distance) {

@@ -60,8 +60,8 @@ public:
         }
 
         // 计算裁剪像素数（每边）
-        int cropX = static_cast<int>(width_ * cropPercent / 100.0f);
-        int cropY = static_cast<int>(height_ * cropPercent / 100.0f);
+        int cropX = static_cast<int>(width_ * cropPercent / 100.0F);
+        int cropY = static_cast<int>(height_ * cropPercent / 100.0F);
 
         // 确保裁剪后尺寸是偶数（YUV420要求）
         cropX = (cropX / 2) * 2;
@@ -135,7 +135,7 @@ private:
                     (v11 * (1 - fx) * (1 - fy)) + (v12 * fx * (1 - fy)) + (v21 * (1 - fx) * fy) + (v22 * fx * fy);
 
                 // 写入输出
-                output[(y * planeWidth) + x] = static_cast<uint8_t>(std::clamp(interpolated, 0.0f, 255.0f));
+                output[(y * planeWidth) + x] = static_cast<uint8_t>(std::clamp(interpolated, 0.0F, 255.0F));
             }
         }
     }
