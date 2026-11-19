@@ -19,8 +19,8 @@
 cv::Ptr<cv::Feature2D> ImageRegistrator::createDetector(FeatureDetectorType type) const
 {
     const int key = static_cast<int>(type);
-    auto it = m_detectorCache.find(key);
-    if (it != m_detectorCache.end()) {
+    auto it = detectorCache_.find(key);
+    if (it != detectorCache_.end()) {
         return it->second;
     }
 
@@ -46,7 +46,7 @@ cv::Ptr<cv::Feature2D> ImageRegistrator::createDetector(FeatureDetectorType type
         break;
     }
 
-    m_detectorCache[key] = detector;
+    detectorCache_[key] = detector;
     return detector;
 }
 
