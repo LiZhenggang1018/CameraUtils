@@ -66,7 +66,7 @@ public:
     }
 
     // AMgrMap::ForEachMgr([&](auto& a) {a.MethodInA();});
-    static void ForEachMgr(std::function<void(Inst&)> cb)
+    static void ForEachMgr(const std::function<void(Inst&)>& cb)
     {
         for (auto&& [type, inst] : Type2InstMap::GetInstance().mgrMap_) {
             cb(inst);

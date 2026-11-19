@@ -696,7 +696,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
 }
 
 // 将in_filename 做解码，解码的每帧yuv存入 outDir路径下的 1.yuv 2.yuv ...
-inline int DecodeMp4ToYuvFrames(const char* inFilename, std::string outDir = "")
+inline int DecodeMp4ToYuvFrames(const char* inFilename, const std::string& outDir = "")
 {
     if (!inFilename) {
         std::cout << "Invalid input filename" << std::endl;

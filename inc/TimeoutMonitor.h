@@ -15,7 +15,7 @@
 #include "ScopedUtils.h"
 
 template <class Fn, class TimeoutCb, class... Args>
-decltype(auto) TimeoutImpl(std::string fName, int32_t timeMs, Fn&& fn, TimeoutCb&& timeoutCb, Args&&... args)
+decltype(auto) TimeoutImpl(const std::string& fName, int32_t timeMs, Fn&& fn, TimeoutCb&& timeoutCb, Args&&... args)
 {
     using R = std::invoke_result_t<Fn, Args...>;
     // always capture by reference [&] and forward arguments to avoid template args' cvr(const
@@ -56,7 +56,7 @@ decltype(auto) TimeoutImpl(std::string fName, int32_t timeMs, Fn&& fn, TimeoutCb
 // timeoutCb: timeout callback function when timeout happens;
 // args: parameter of the function fn.
 template <class Fn, class TimeoutCb, class... Args>
-decltype(auto) TimeoutMonitor(std::string fName, int32_t timeMs, Fn&& fn, TimeoutCb&& timeoutCb, Args&&... args)
+decltype(auto) TimeoutMonitor(const std::string& fName, int32_t timeMs, Fn&& fn, TimeoutCb&& timeoutCb, Args&&... args)
 {
     static_assert(std::is_invocable_v<Fn, Args...>);
     static_assert(std::is_invocable_v<TimeoutCb>);
@@ -68,7 +68,7 @@ decltype(auto) TimeoutMonitor(std::string fName, int32_t timeMs, Fn&& fn, Timeou
 // 这里偏特化一个常用的场景，超时后直接调用linux的abort()终止进程
 // （一般用于HIDL接口的IPC调用服务端接口的方法，超时须abort()防止IPC超时的场景）
 template <class Fn, class... Args>
-decltype(auto) TimeoutAbortMonitor(std::string fName, int32_t timeout, Fn&& fn, Args&&... args)
+decltype(auto) TimeoutAbortMonitor(const std::string& fName, int32_t timeout, Fn&& fn, Args&&... args)
 {
     // abort(), Actively kill process
     return TimeoutMonitor(fName, timeout, std::forward<Fn>(fn), abort, std::forward<Args>(args)...);
