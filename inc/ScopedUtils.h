@@ -48,14 +48,14 @@ public:
     using ClockType = std::chrono::steady_clock;
 
     explicit ScopedTimer(const char* file, int line, const char* func)
-        : m_file(file),
-          m_line(line),
-          m_func(func),
-          m_start{ClockType::now()}
+        : file_(file),
+          line_(line),
+          func_(func),
+          start_{ClockType::now()}
     {
-        if (m_file != nullptr && m_func != nullptr) {
-            PV(m_file, ": L", m_line, m_func, " () begin");
-            // LOGI("%s:%d %s() begin", m_file, m_line, m_func);
+        if (file_ != nullptr && func_ != nullptr) {
+            PV(file_, ": L", line_, func_, " () begin");
+            // LOGI("%s:%d %s() begin", file_, line_, func_);
         }
     };
 
@@ -66,20 +66,20 @@ public:
 
     ~ScopedTimer()
     {
-        if (m_file != nullptr && m_func != nullptr) {
+        if (file_ != nullptr && func_ != nullptr) {
             auto stop = ClockType::now();
-            auto duration = stop - m_start;
+            auto duration = stop - start_;
             auto us = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-            PV(m_file, ": L", m_line, m_func, " () end, cost time: ", us, " us");
-            // LOGI("%s:%d %s() end, cost time: %lld us", m_file, m_line, m_func, us);
+            PV(file_, ": L", line_, func_, " () end, cost time: ", us, " us");
+            // LOGI("%s:%d %s() end, cost time: %lld us", file_, line_, func_, us);
         }
     }
 
 private:
-    const char* m_file{};
-    int m_line{};
-    const char* m_func{};
-    ClockType::time_point m_start{};
+    const char* file_{};
+    int line_{};
+    const char* func_{};
+    ClockType::time_point start_{};
 };
 
 /*
@@ -91,13 +91,13 @@ private:
 class ScopedLogger {
 public:
     explicit ScopedLogger(const char* file, int line, const char* func)
-        : m_file(file),
-          m_line(line),
-          m_func(func)
+        : file_(file),
+          line_(line),
+          func_(func)
     {
-        if (m_file != nullptr && m_func != nullptr) {
-            PV(m_file, ": L", m_line, m_func, " () enter");
-            // LOGI("%s:%d %s() enter", m_file, m_line, m_func);
+        if (file_ != nullptr && func_ != nullptr) {
+            PV(file_, ": L", line_, func_, " () enter");
+            // LOGI("%s:%d %s() enter", file_, line_, func_);
         }
     };
 
@@ -108,37 +108,37 @@ public:
 
     ~ScopedLogger()
     {
-        if (m_file != nullptr && m_func != nullptr) {
-            PV(m_file, ": L", m_line, m_func, " () exit");
-            // LOGI("%s:%d %s() exit", m_file, m_line, m_func);
+        if (file_ != nullptr && func_ != nullptr) {
+            PV(file_, ": L", line_, func_, " () exit");
+            // LOGI("%s:%d %s() exit", file_, line_, func_);
         }
     }
 
 private:
-    const char* m_file{};
-    int m_line{};
-    const char* m_func{};
+    const char* file_{};
+    int line_{};
+    const char* func_{};
 };
 
 template <typename Func>
 class ScopeGuard {
 public:
     ScopeGuard(Func&& fn)
-        : m_fn(fn),
-          m_active(true)
+        : fn_(std::forward<Func>(fn)),
+          active_(true)
     {}
     ~ScopeGuard()
     {
-        if (m_active) {
-            m_fn();
+        if (active_) {
+            fn_();
         }
     }
 
-    void dismiss() { m_active = false; }
+    void dismiss() { active_ = false; }
 
 private:
-    Func m_fn;
-    bool m_active{};
+    Func fn_;
+    bool active_{};
 };
 
 // tag dispatch
