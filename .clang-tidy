@@ -18,6 +18,10 @@ Checks: >
   -modernize-use-trailing-return-type,
   -readability-magic-numbers,
   -readability-identifier-length,
+  # performance-avoid-endl 不在 OpenHarmony 规范条目内：风格指南自身示例
+  # （规则 5.x 的 cout 输出示例）就在使用 std::endl。且 endl 附带 flush 语义，
+  # 机械替换为 '\n' 会改变日志刷盘时机，不是纯风格问题，故不作为门禁项。
+  -performance-avoid-endl,
   -clang-analyzer-optin.performance.Padding
 
 WarningsAsErrors: ''
@@ -62,10 +66,13 @@ CheckOptions:
     value: camelBack
   - key: readability-identifier-naming.ProtectedMemberSuffix
     value: '_'
+  # 规则 2.5.2 明确豁免 struct/union 的成员变量（保持小驼峰、不加后缀），
+  # 但 clang-tidy 的 PublicMember* 同时覆盖 class 与 struct 的公有成员，
+  # 没有 StructMember* 之类的独立选项可以区分。因此这里只约束命名风格、
+  # 不约束后缀：否则 HdrConfig、Params 等聚合体的每个字段都会被误报。
+  # class 的成员仍由 PrivateMemberSuffix 强制加下划线。
   - key: readability-identifier-naming.PublicMemberCase
     value: camelBack
-  - key: readability-identifier-naming.PublicMemberSuffix
-    value: '_'
 
   # 全局变量：g_ 前缀（规则 2.5.1）
   - key: readability-identifier-naming.GlobalVariableCase
