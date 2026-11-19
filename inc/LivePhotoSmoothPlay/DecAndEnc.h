@@ -812,7 +812,7 @@ inline int DecodeMp4ToYuvFrames(const char* inFilename, std::string outDir = "")
     SwsCtxPtr swsCtx(nullptr);
 
     // Helper: 将单帧写入单独文件，文件名为 {index}.yuv
-    auto write_frame_to_file = [&](AVFrame* outFrame, int idx) -> int {
+    auto writeFrameToFile = [&](AVFrame* outFrame, int idx) -> int {
         fs::path fname = outputDir / (std::to_string(idx) + ".yuv");
         FILE* rawFp2{};
 #ifdef _WIN32
@@ -920,7 +920,7 @@ inline int DecodeMp4ToYuvFrames(const char* inFilename, std::string outDir = "")
                     outFrame = frame.get();
                 }
 
-                if (write_frame_to_file(outFrame, frameIndex) < 0) {
+                if (writeFrameToFile(outFrame, frameIndex) < 0) {
                     return -1;
                 }
 
@@ -1016,7 +1016,7 @@ inline int DecodeMp4ToYuvFrames(const char* inFilename, std::string outDir = "")
             outFrame = frame.get();
         }
 
-        if (write_frame_to_file(outFrame, frameIndex) < 0) {
+        if (writeFrameToFile(outFrame, frameIndex) < 0) {
             return -1;
         }
 

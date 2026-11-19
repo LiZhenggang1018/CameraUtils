@@ -13,19 +13,19 @@ namespace fs = std::filesystem;
 
 // 辅助模板：检查类型是否支持 << 运算符
 template <typename T, typename = void>
-struct is_printable : std::false_type {};
+struct IsPrintable : std::false_type {};
 
 template <typename T>
-struct is_printable<T, std::void_t<decltype(std::declval<std::ostream&>() << std::declval<T>())>> : std::true_type {};
+struct IsPrintable<T, std::void_t<decltype(std::declval<std::ostream&>() << std::declval<T>())>> : std::true_type {};
 
 template <typename T>
-inline constexpr bool is_printable_v = is_printable<T>::value;
+inline constexpr bool IS_PRINTABLE_V = IsPrintable<T>::value;
 
 // 基础写入函数，确保所有参数都支持 << 运算符
 template <typename T>
-void write_value(std::ostream& os, T&& value)
+void WriteValue(std::ostream& os, T&& value)
 {
-    static_assert(is_printable_v<std::remove_reference_t<T>>, "Type must support << operator");
+    static_assert(IS_PRINTABLE_V<std::remove_reference_t<T>>, "Type must support << operator");
     os << value;
 }
 
@@ -34,7 +34,7 @@ template <typename... Args>
 void Dump(const std::string& fileName, Args&&... args)
 {
     // 确保所有参数都支持 << 运算符
-    static_assert((is_printable_v<std::remove_reference_t<Args>> && ...), "All arguments must support << operator");
+    static_assert((IS_PRINTABLE_V<std::remove_reference_t<Args>> && ...), "All arguments must support << operator");
 
     // 1. 写入文件
     {
@@ -93,7 +93,7 @@ template <typename... Args>
 void DumpDetailed(const std::string& fileName, Args&&... args)
 {
     // 检查所有参数是否可打印
-    static_assert((is_printable_v<std::remove_reference_t<Args>> && ...), "All arguments must support << operator");
+    static_assert((IS_PRINTABLE_V<std::remove_reference_t<Args>> && ...), "All arguments must support << operator");
 
     // 1. 写入文件
     {
@@ -156,7 +156,7 @@ void DumpDetailed(const std::string& fileName, Args&&... args)
 }
 
 // 测试函数
-inline void testDumpFunctions()
+inline void TestDumpFunctions()
 {
     try {
         std::cout << "=== Test Dump Function ===\n";
@@ -194,7 +194,7 @@ inline void testDumpFunctions()
 
 // 模板特化示例：为特定类型提供不同的处理
 template <typename T>
-void write_specialized(std::ostream& os, const std::vector<T>& vec)
+void WriteSpecialized(std::ostream& os, const std::vector<T>& vec)
 {
     os << "[";
     for (size_t i = 0; i < vec.size(); ++i) {
@@ -208,7 +208,7 @@ void write_specialized(std::ostream& os, const std::vector<T>& vec)
 template <typename... Args>
 void DumpWithVector(const std::string& fileName, Args&&... args)
 {
-    static_assert((is_printable_v<std::remove_reference_t<Args>> && ...), "All arguments must support << operator");
+    static_assert((IS_PRINTABLE_V<std::remove_reference_t<Args>> && ...), "All arguments must support << operator");
 
     // 创建目录
     fs::path filePath = fileName;
@@ -238,7 +238,7 @@ inline void TestDumpUtils()
     std::cout << "C++17 Dump Function Example\n";
     std::cout << "============================\n\n";
 
-    testDumpFunctions();
+    TestDumpFunctions();
 
     //// 额外测试：使用vector等容器
     // std::cout << "\n=== Test with Containers ===\n";

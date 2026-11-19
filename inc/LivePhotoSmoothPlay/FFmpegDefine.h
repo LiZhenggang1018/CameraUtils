@@ -85,12 +85,12 @@ inline const std::string& LpCropFileImpl()
     return s;
 }
 
-inline const std::string& REG_IMG_CUR_FILE()
+inline const std::string& RegImgCurFile()
 {
     static const std::string s = LpSmoothPlayDataPath() + "2.jpg";
     return s;
 }
-inline const std::string& REG_IMG_REF_FILE()
+inline const std::string& RegImgRefFile()
 {
     static const std::string s = LpSmoothPlayDataPath() + "1.jpg";
     return s;
@@ -129,7 +129,7 @@ inline const std::unordered_map<std::string, int> VID_FILE_TO_LAST_VID_FRAME_IDX
 
 // ---------- 编译期常量（不需要改） ----------
 inline constexpr int LAST_VID_FRAME_IDX = 275;
-inline constexpr int TransFrameNum = 20;
+inline constexpr int TRANS_FRAME_NUM = 20;
 
 inline constexpr int YUV_W = 720;
 inline constexpr int YUV_H = 1584;
@@ -176,7 +176,7 @@ inline const std::string& YuvWhFileImpl()
 }
 
 #define REG_RESULT_DIR (RegResultDirImpl())
-#define vidToCoverScaleRatioFile (VidToCoverScaleRatioFileImpl())
+#define VID_TO_COVER_SCALE_RATIO_FILE (VidToCoverScaleRatioFileImpl())
 #define CROP_REG_RESULT_DIR (CropRegResultDirImpl())
 #define YUV_WH_FILE (YuvWhFileImpl())
 
