@@ -110,11 +110,11 @@ inline void TestFindAndThenOrElse()
 
 // test code for OverloadNoCvt
 struct B1 {
-    int m_i{1};
+    int i_{1};
 };
 
 struct B2 {
-    float m_f{};
+    float f_{};
 };
 
 using C1 = std::variant<B1, B2>;
