@@ -2,11 +2,12 @@
 #define TESTS_TYPE2INSTMAPTEST_H
 
 #include <cassert>
+#include <cstdint>
 #include <iostream>
 #include <type_traits>
 #include "Type2InstMap.h"
 
-enum class IVEReqType { CAP, VID, AUD };
+enum class IVEReqType : std::uint8_t { CAP, VID, AUD };
 
 // ---------- 场景1：Inst 由 Type 构造，同时继承单例 ----------
 class RequestManager : public Singleton<RequestManager> {

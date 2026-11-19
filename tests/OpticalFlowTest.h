@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -29,7 +30,7 @@ inline const std::string& OpticalFlowDataPathImpl()
     return s;
 }
 
-enum class Mode { LK, DENSE, DIS, DEEP_FLOW, OVERLAY };
+enum class Mode : std::uint8_t { LK, DENSE, DIS, DEEP_FLOW, OVERLAY };
 
 inline const char* ModeName(Mode mode)
 {

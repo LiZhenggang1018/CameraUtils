@@ -1,6 +1,7 @@
 #ifndef TESTS_CLI_COMMANDTABLE_H
 #define TESTS_CLI_COMMANDTABLE_H
 
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <vector>
@@ -21,7 +22,7 @@
 namespace Cli {
 
 /// 命令分类：决定是否依赖外部资源
-enum class Label {
+enum class Label : std::uint8_t {
     UNIT,  ///< 纯内存运算，无外部依赖
     MEDIA, ///< 需要 data/ 目录下的媒体素材
     GUI    ///< 需要图形界面（imshow / waitKey）

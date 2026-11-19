@@ -5,6 +5,7 @@
 #define __PRETTY_FUNCTION__ __FUNCSIG__
 #endif
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -17,7 +18,7 @@
 #endif
 
 /* DO NOT INCLUDE THIS FILE INSIDE NAMESAPCE */
-enum ProbeEnum { PROBE_ENUM }; // for probe usage
+enum ProbeEnum : std::uint8_t { PROBE_ENUM }; // for probe usage
 namespace EnumTraits {
 
 inline constexpr size_t MAX_VALID_ENUMS = 128;

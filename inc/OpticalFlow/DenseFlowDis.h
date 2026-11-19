@@ -3,9 +3,11 @@
 
 #include "OpenCVCommon.h"
 
+#include <cstdint>
+
 class DenseFlowDis {
 public:
-    enum class Preset { ULTRA_FAST, FAST, MEDIUM };
+    enum class Preset : std::uint8_t { ULTRA_FAST, FAST, MEDIUM };
 
     explicit DenseFlowDis(Preset preset = Preset::FAST)
         : preset_(preset)

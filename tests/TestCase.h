@@ -1,6 +1,7 @@
 #ifndef TESTS_TESTCASE_H
 #define TESTS_TESTCASE_H
 
+#include <cstdint>
 #include <numbers>
 
 #include "CoreUtils.h"
@@ -165,7 +166,7 @@ inline void TimeoutMonitorTest()
     testCase.Foo(3.14F);
 }
 
-enum Color { RED = 1, GREEN = 2, BLUE = 3 };
+enum Color : std::uint8_t { RED = 1, GREEN = 2, BLUE = 3 };
 
 inline void MiscTest()
 {

@@ -1,6 +1,7 @@
 ﻿#ifndef TESTS_MAGICENUMTEST_H
 #define TESTS_MAGICENUMTEST_H
 
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include "MagicEnumCommon.h"
@@ -8,7 +9,7 @@
 
 namespace MagicEnumTest {
 // 定义一个测试用枚举
-enum class Color : int { RED = -10, BLUE = 0, GREEN = 10 };
+enum class Color : std::int8_t { RED = -10, BLUE = 0, GREEN = 10 };
 
 inline void TestMagicEnum()
 {

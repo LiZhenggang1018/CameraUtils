@@ -10,6 +10,7 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstdint>
 #include <functional>
 #include <future>
 #include <map>
@@ -26,7 +27,7 @@ namespace {
 constexpr int64_t TIMEOUT_5S = 5000;
 }
 
-enum class SyncId : int32_t {
+enum class SyncId : std::uint8_t {
     CUSTOM_SIGNAL = 1,
     // add custom signal below
 };

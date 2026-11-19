@@ -53,6 +53,7 @@ LpFovTransitionOpt.h::GenFromLpToOptLp()
 
 #include "OpenCVCommon.h"
 
+#include <cstdint>
 #include <unordered_map>
 
 // ============================================================
@@ -60,7 +61,7 @@ LpFovTransitionOpt.h::GenFromLpToOptLp()
 //   - 全部免费 / 主库可用（不依赖 xfeatures2d）
 //   - SIFT 从 OpenCV 4.4 起在主库 features2d，如需高精度可扩展
 // ============================================================
-enum class FeatureDetectorType {
+enum class FeatureDetectorType : std::uint8_t {
     ORB, // 默认；5000 个特征点；二值描述符 → NORM_HAMMING
     SIFT,
     BRISK, // 二值描述符 → NORM_HAMMING
@@ -75,7 +76,7 @@ enum class FeatureDetectorType {
 //   - EUCLIDEAN：4 自由度，内部补成 3×3
 //   - TRANSLATION：2 自由度，中位数平移，不做 RANSAC
 // ============================================================
-enum class TransformType { HOMOGRAPHY, AFFINE, EUCLIDEAN, TRANSLATION };
+enum class TransformType : std::uint8_t { HOMOGRAPHY, AFFINE, EUCLIDEAN, TRANSLATION };
 
 // ============================================================
 // 配准结果
