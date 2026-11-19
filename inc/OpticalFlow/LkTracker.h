@@ -43,23 +43,23 @@ public:
 
     bool RemovePoint(const cv::Point2f& point, double radius = 8.0);
 
-    [[nodiscard]] const std::vector<cv::Point2f>& Points() const { return m_currPts; }
+    [[nodiscard]] const std::vector<cv::Point2f>& Points() const { return currPts_; }
 
-    [[nodiscard]] const std::vector<cv::Point2f>& PrevPoints() const { return m_prevPts; }
+    [[nodiscard]] const std::vector<cv::Point2f>& PrevPoints() const { return prevPts_; }
 
-    [[nodiscard]] int TrackedCount() const { return static_cast<int>(m_currPts.size()); }
+    [[nodiscard]] int TrackedCount() const { return static_cast<int>(currPts_.size()); }
 
     void SetMaxLevel(int level);
 
-    [[nodiscard]] int MaxLevel() const { return m_params.maxLevel; }
+    [[nodiscard]] int MaxLevel() const { return params_.maxLevel; }
 
     void SetFbThreshold(double threshold);
 
-    [[nodiscard]] double FbThreshold() const { return m_params.fbThreshold; }
+    [[nodiscard]] double FbThreshold() const { return params_.fbThreshold; }
 
-    void SetEnableFbFilter(bool enable) { m_params.enableFbFilter = enable; }
+    void SetEnableFbFilter(bool enable) { params_.enableFbFilter = enable; }
 
-    [[nodiscard]] bool IsFbFilterEnabled() const { return m_params.enableFbFilter; }
+    [[nodiscard]] bool IsFbFilterEnabled() const { return params_.enableFbFilter; }
 
     [[nodiscard]] double AverageFbError() const;
 
@@ -68,11 +68,11 @@ private:
 
     void Replenish(const cv::Mat& gray);
 
-    Params m_params;
-    std::vector<cv::Point2f> m_prevPts;
-    std::vector<cv::Point2f> m_currPts;
-    std::vector<float> m_lastFbErrors;
-    BiDirectionalLkFilter m_fbFilter;
+    Params params_;
+    std::vector<cv::Point2f> prevPts_;
+    std::vector<cv::Point2f> currPts_;
+    std::vector<float> lastFbErrors_;
+    BiDirectionalLkFilter fbFilter_;
 };
 
 #endif // INC_OPTICALFLOW_LKTRACKER_H
