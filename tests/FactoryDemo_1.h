@@ -26,28 +26,28 @@ public:
 
 // 具体类：Circle（构造函数只接受 radius）
 class Circle : public Shape {
-    std::string m_name;
-    double m_radius;
+    std::string name_;
+    double radius_;
 
 public:
     explicit Circle(double radius)
-        : m_name("Circle"),
-          m_radius(radius)
+        : name_("Circle"),
+          radius_(radius)
     {} // 构造函数不接受名称参数
-    void draw() const override { std::cout << "Circle[" << m_name << "] with radius " << m_radius << std::endl; }
+    void draw() const override { std::cout << "Circle[" << name_ << "] with radius " << radius_ << std::endl; }
 };
 
 // 具体类：Square（构造函数只接受 side）
 class Square : public Shape {
-    std::string m_name;
-    double m_side;
+    std::string name_;
+    double side_;
 
 public:
     explicit Square(double side)
-        : m_name("Square"),
-          m_side(side)
+        : name_("Square"),
+          side_(side)
     {}
-    void draw() const override { std::cout << "Square[" << m_name << "] with side " << m_side << std::endl; }
+    void draw() const override { std::cout << "Square[" << name_ << "] with side " << side_ << std::endl; }
 };
 
 // 需要额外增加的宏定义：
