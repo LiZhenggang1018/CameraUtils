@@ -160,6 +160,30 @@ if(_opencv_candidate AND EXISTS "${_opencv_candidate}")
     endif()
 endif()
 
+# ============================================================
+# OpenCV 模块清单：
+# - 只保留工程实际使用的模块，两个构建分支必须完全一致
+#   core      Mat / Ptr
+#   imgproc   cvtColor / warpAffine / warpPerspective
+#   highgui   imshow / waitKey
+#   imgcodecs imread / imwrite
+#   video     calcOpticalFlow* / DISOpticalFlow / goodFeaturesToTrack
+#   videoio   VideoCapture
+#   features2d ORB / SIFT / BRISK / AKAZE / BFMatcher / drawMatches
+#   calib3d   findHomography / estimateAffine2D
+#   flann     FlannBasedMatcher
+#   optflow   createOptFlow_DeepFlow        （contrib）
+#   ximgproc  guidedFilter                  （contrib）
+# ============================================================
+set(CAMERA_UTILS_OPENCV_MODULES
+    core imgproc highgui imgcodecs video videoio features2d calib3d flann)
+set(CAMERA_UTILS_OPENCV_CONTRIB_MODULES
+    optflow ximgproc)
+set(CAMERA_UTILS_OPENCV_COMPONENTS
+    ${CAMERA_UTILS_OPENCV_MODULES} ${CAMERA_UTILS_OPENCV_CONTRIB_MODULES})
+# BUILD_LIST 要求逗号分隔
+string(REPLACE ";" "," CAMERA_UTILS_OPENCV_BUILD_LIST "${CAMERA_UTILS_OPENCV_COMPONENTS}")
+
 if(_opencv_local_has_contrib)
     # ---------- 分支 A：本地已安装带 contrib 的 OpenCV ----------
     message(STATUS "OpenCV: 使用本地带 contrib 的安装: ${_opencv_candidate}")
@@ -189,8 +213,7 @@ if(_opencv_local_has_contrib)
         endif()
         message(STATUS "OpenCV: 显式指定 runtime=${OpenCV_RUNTIME} arch=${OpenCV_ARCH} (MSVC ${MSVC_VERSION})")
     endif()
-find_package(OpenCV REQUIRED COMPONENTS
-    core imgproc highgui features2d calib3d flann video videoio imgcodecs objdetect optflow photo stitching xphoto ximgproc stereo)
+find_package(OpenCV REQUIRED COMPONENTS ${CAMERA_UTILS_OPENCV_COMPONENTS})
     # ${OpenCV_LIBS} 和 ${OpenCV_INCLUDE_DIRS} 由 find_package 提供
 else()
     # ---------- 分支 B：从源码构建 ----------
@@ -213,7 +236,7 @@ else()
         GIT_SHALLOW    TRUE
         OPTIONS
             "OPENCV_EXTRA_MODULES_PATH=${opencv_contrib_SOURCE_DIR}/modules"
-            "BUILD_LIST=core,imgproc,highgui,features2d,calib3d,flann,video,imgcodecs,objdetect,optflow,photo,stitching,xphoto,ximgproc,stereo"
+            "BUILD_LIST=${CAMERA_UTILS_OPENCV_BUILD_LIST}"
             "BUILD_TESTS=OFF"
             "BUILD_PERF_TESTS=OFF"
             "BUILD_EXAMPLES=OFF"
@@ -228,23 +251,17 @@ else()
     )
 
     # 统一成与 find_package 分支相同的变量名，src/CMakeLists.txt 无需改
-    set(OpenCV_LIBS
-        opencv_core opencv_imgproc opencv_highgui opencv_features2d
-        opencv_calib3d opencv_flann opencv_video opencv_imgcodecs
-        opencv_objdetect opencv_optflow
-    )
-    set(OpenCV_INCLUDE_DIRS
-        "${opencv_SOURCE_DIR}/modules/core/include"
-        "${opencv_SOURCE_DIR}/modules/imgproc/include"
-        "${opencv_SOURCE_DIR}/modules/highgui/include"
-        "${opencv_SOURCE_DIR}/modules/features2d/include"
-        "${opencv_SOURCE_DIR}/modules/calib3d/include"
-        "${opencv_SOURCE_DIR}/modules/flann/include"
-        "${opencv_SOURCE_DIR}/modules/video/include"
-        "${opencv_SOURCE_DIR}/modules/imgcodecs/include"
-        "${opencv_SOURCE_DIR}/modules/objdetect/include"
-        "${opencv_contrib_SOURCE_DIR}/modules/optflow/include"
-    )
+    # 由上面的模块清单派生，保证两个分支的模块集合不会漂移
+    set(OpenCV_LIBS "")
+    set(OpenCV_INCLUDE_DIRS "")
+    foreach(_mod IN LISTS CAMERA_UTILS_OPENCV_MODULES)
+        list(APPEND OpenCV_LIBS "opencv_${_mod}")
+        list(APPEND OpenCV_INCLUDE_DIRS "${opencv_SOURCE_DIR}/modules/${_mod}/include")
+    endforeach()
+    foreach(_mod IN LISTS CAMERA_UTILS_OPENCV_CONTRIB_MODULES)
+        list(APPEND OpenCV_LIBS "opencv_${_mod}")
+        list(APPEND OpenCV_INCLUDE_DIRS "${opencv_contrib_SOURCE_DIR}/modules/${_mod}/include")
+    endforeach()
     message(STATUS "OpenCV: 源码构建模式，target 列表 = ${OpenCV_LIBS}")
 endif()
 
