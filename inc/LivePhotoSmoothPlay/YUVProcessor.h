@@ -68,8 +68,8 @@ public:
         cropY = (cropY / 2) * 2;
 
         // 计算裁剪后的区域
-        int cropWidth = width_ - 2 * cropX;
-        int cropHeight = height_ - 2 * cropY;
+        int cropWidth = width_ - (2 * cropX);
+        int cropHeight = height_ - (2 * cropY);
 
         if (cropWidth <= 0 || cropHeight <= 0) {
             std::cerr << "裁剪后尺寸太小: " << cropWidth << "x" << cropHeight << std::endl;
@@ -83,11 +83,11 @@ public:
         ProcessPlane(outputData.data(), 0, width_, height_, cropX, cropY, cropWidth, cropHeight, 1, 1);
 
         // 处理U分量（YUV420，UV分量尺寸减半）
-        ProcessPlane(outputData.data() + width_ * height_, width_ * height_, width_ / 2, height_ / 2, cropX / 2,
+        ProcessPlane(outputData.data() + (width_ * height_), width_ * height_, width_ / 2, height_ / 2, cropX / 2,
                      cropY / 2, cropWidth / 2, cropHeight / 2, 1, 1);
 
         // 处理V分量
-        ProcessPlane(outputData.data() + width_ * height_ * 5 / 4, width_ * height_ * 5 / 4, width_ / 2, height_ / 2,
+        ProcessPlane(outputData.data() + (width_ * height_ * 5 / 4), width_ * height_ * 5 / 4, width_ / 2, height_ / 2,
                      cropX / 2, cropY / 2, cropWidth / 2, cropHeight / 2, 1, 1);
 
         // 写入文件
@@ -125,17 +125,17 @@ private:
                 float fx = srcX - x1;
                 float fy = srcY - y1;
 
-                uint8_t v11 = inputPlane[y1 * planeWidth + x1];
-                uint8_t v12 = inputPlane[y1 * planeWidth + x2];
-                uint8_t v21 = inputPlane[y2 * planeWidth + x1];
-                uint8_t v22 = inputPlane[y2 * planeWidth + x2];
+                uint8_t v11 = inputPlane[(y1 * planeWidth) + x1];
+                uint8_t v12 = inputPlane[(y1 * planeWidth) + x2];
+                uint8_t v21 = inputPlane[(y2 * planeWidth) + x1];
+                uint8_t v22 = inputPlane[(y2 * planeWidth) + x2];
 
                 // 双线性插值
                 float interpolated =
-                    v11 * (1 - fx) * (1 - fy) + v12 * fx * (1 - fy) + v21 * (1 - fx) * fy + v22 * fx * fy;
+                    (v11 * (1 - fx) * (1 - fy)) + (v12 * fx * (1 - fy)) + (v21 * (1 - fx) * fy) + (v22 * fx * fy);
 
                 // 写入输出
-                output[y * planeWidth + x] = static_cast<uint8_t>(std::clamp(interpolated, 0.0f, 255.0f));
+                output[(y * planeWidth) + x] = static_cast<uint8_t>(std::clamp(interpolated, 0.0f, 255.0f));
             }
         }
     }

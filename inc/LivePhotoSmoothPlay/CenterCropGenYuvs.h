@@ -147,8 +147,8 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
                 int srcX = startX + xx;
                 int dstX = xx;
 
-                cropY[dstY * cropW + dstX] =
-                    y[static_cast<size_t>(srcY) * static_cast<size_t>(w) + static_cast<size_t>(srcX)];
+                cropY[(dstY * cropW) + dstX] =
+                    y[(static_cast<size_t>(srcY) * static_cast<size_t>(w)) + static_cast<size_t>(srcX)];
             }
         }
 
@@ -161,7 +161,7 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
                 int srcX = startXUv + xx;
                 int dstX = xx;
 
-                cropU[dstY * cropWUv + dstX] = u[srcY * (w / 2) + srcX];
+                cropU[(dstY * cropWUv) + dstX] = u[(srcY * (w / 2)) + srcX];
             }
         }
 
@@ -174,7 +174,7 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
                 int srcX = startXUv + xx;
                 int dstX = xx;
 
-                cropV[dstY * cropWUv + dstX] = v[srcY * (w / 2) + srcX];
+                cropV[(dstY * cropWUv) + dstX] = v[(srcY * (w / 2)) + srcX];
             }
         }
 
@@ -195,14 +195,14 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
         // 将裁剪后的数据复制到中心位置（保留作为回退方案）
         for (int yy = 0; yy < cropH; yy++) {
             for (int xx = 0; xx < cropW; xx++) {
-                fullCropY[(startY + yy) * w + (startX + xx)] = cropY[yy * cropW + xx];
+                fullCropY[((startY + yy) * w) + (startX + xx)] = cropY[(yy * cropW) + xx];
             }
         }
 
         for (int yy = 0; yy < cropHUv; yy++) {
             for (int xx = 0; xx < cropWUv; xx++) {
-                fullCropU[(startYUv + yy) * (w / 2) + (startXUv + xx)] = cropU[yy * cropWUv + xx];
-                fullCropV[(startYUv + yy) * (w / 2) + (startXUv + xx)] = cropV[yy * cropWUv + xx];
+                fullCropU[((startYUv + yy) * (w / 2)) + (startXUv + xx)] = cropU[(yy * cropWUv) + xx];
+                fullCropV[((startYUv + yy) * (w / 2)) + (startXUv + xx)] = cropV[(yy * cropWUv) + xx];
             }
         }
 

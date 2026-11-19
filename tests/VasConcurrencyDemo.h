@@ -55,7 +55,7 @@ struct Node1 : NodeBase {
     int ProcessFrame(int x) override
     {
         TimeConsuming();
-        auto t = x + 10 * x; // 11
+        auto t = x + (10 * x); // 11
         std::cout << "Node1::ProcessFrame result " << t << std::endl;
         return t;
     }
@@ -65,7 +65,7 @@ struct Node2 : NodeBase {
     int ProcessFrame(int x) override
     {
         TimeConsuming();
-        auto t = x + 100 * (x / 10); // 111
+        auto t = x + (100 * (x / 10)); // 111
         std::cout << "Node2::ProcessFrame result " << t << std::endl;
         return t;
     }
@@ -75,7 +75,7 @@ struct Node3 : NodeBase {
     int ProcessFrame(int x) override
     {
         TimeConsuming();
-        auto t = x + 1000 * (x / 100); // 1111
+        auto t = x + (1000 * (x / 100)); // 1111
         std::cout << "Node3::ProcessFrame result " << t << std::endl;
         return t;
     }

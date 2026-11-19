@@ -15,7 +15,7 @@ void DrawDenseFlowArrows(cv::Mat& image, const cv::Mat& flow, int step, double s
     for (int y = 0; y < flow.rows; y += step) {
         for (int x = 0; x < flow.cols; x += step) {
             const cv::Point2f fxy = flow.at<cv::Point2f>(y, x);
-            const cv::Point2f end(static_cast<float>(x + fxy.x * scale), static_cast<float>(y + fxy.y * scale));
+            const cv::Point2f end(static_cast<float>(x + (fxy.x * scale)), static_cast<float>(y + (fxy.y * scale)));
 
             cv::arrowedLine(image, cv::Point(x, y), cv::Point(cvRound(end.x), cvRound(end.y)), color, 1, cv::LINE_AA, 0,
                             0.2);

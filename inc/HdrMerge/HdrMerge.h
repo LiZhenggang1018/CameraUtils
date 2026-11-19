@@ -131,7 +131,7 @@ inline cv::Rect ComputeCommonRoi(const cv::Mat& alignedLow, const cv::Mat& align
         const int h = reference.rows;
         const int bx = static_cast<int>(w * cfg.cropRatio);
         const int by = static_cast<int>(h * cfg.cropRatio);
-        return cv::Rect(bx, by, w - 2 * bx, h - 2 * by);
+        return cv::Rect(bx, by, w - (2 * bx), h - (2 * by));
     }
 
     cv::Rect roiLow = DetectContentRoi(alignedLow, cfg.blackThreshold, cfg.blackRatio);
@@ -152,7 +152,7 @@ inline cv::Rect ComputeCommonRoi(const cv::Mat& alignedLow, const cv::Mat& align
         const int h = reference.rows;
         const int bx = static_cast<int>(w * cfg.cropRatio);
         const int by = static_cast<int>(h * cfg.cropRatio);
-        return cv::Rect(bx, by, w - 2 * bx, h - 2 * by);
+        return cv::Rect(bx, by, w - (2 * bx), h - (2 * by));
     }
 
     std::cout << "[HdrMerge] Content ROI: " << common << " (" << (areaRatio * 100) << "% of frame)" << std::endl;
@@ -445,11 +445,11 @@ inline cv::Mat DetectMotionLk(const cv::Mat& lowCropped, const cv::Mat& normalCr
 
     // 稀疏 → 稠密
     const int r = std::max(5, cfg.motionDilateRadius);
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(2 * r + 1, 2 * r + 1));
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size((2 * r) + 1, (2 * r) + 1));
     cv::dilate(sparseMask, sparseMask, kernel);
 
     cv::Mat dense;
-    cv::GaussianBlur(sparseMask, dense, cv::Size(2 * r + 1, 2 * r + 1), 0);
+    cv::GaussianBlur(sparseMask, dense, cv::Size((2 * r) + 1, (2 * r) + 1), 0);
     return dense;
 }
 
@@ -497,7 +497,7 @@ inline cv::Mat BuildMotionMask(const cv::Mat& lowCropped, const cv::Mat& normalC
 
     // 边缘平滑
     const int r = std::max(3, cfg.motionDilateRadius);
-    cv::GaussianBlur(mask, mask, cv::Size(2 * r + 1, 2 * r + 1), 0);
+    cv::GaussianBlur(mask, mask, cv::Size((2 * r) + 1, (2 * r) + 1), 0);
     const double nonzeroRatio = static_cast<double>(cv::countNonZero(mask)) / mask.total();
     if (nonzeroRatio > 0.5) {
         std::cerr << "[HdrMerge] Motion mask coverage too high (" << (nonzeroRatio * 100.0)
@@ -542,8 +542,8 @@ inline void ApplyGhostSuppressionMertens(cv::Mat& lowCropped, cv::Mat& normalCro
             for (int c = 0; c < 3; ++c) {
                 const uint8_t fillL = cv::saturate_cast<uint8_t>(n[x][c] * sLow);
                 const uint8_t fillH = cv::saturate_cast<uint8_t>(n[x][c] * sHigh);
-                l[x][c] = cv::saturate_cast<uint8_t>(l[x][c] * (1.0f - alpha) + fillL * alpha);
-                h[x][c] = cv::saturate_cast<uint8_t>(h[x][c] * (1.0f - alpha) + fillH * alpha);
+                l[x][c] = cv::saturate_cast<uint8_t>((l[x][c] * (1.0f - alpha)) + (fillL * alpha));
+                h[x][c] = cv::saturate_cast<uint8_t>((h[x][c] * (1.0f - alpha)) + (fillH * alpha));
             }
         }
     }

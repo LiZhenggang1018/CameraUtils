@@ -31,7 +31,7 @@ inline void DumpYuv(const YuvInfo& in, const std::string& out)
     // 计算YUV420文件大小
     size_t ySize = static_cast<size_t>(in.stride) * in.height;
     size_t uvSize = static_cast<size_t>(in.stride / 2) * (in.height / 2);
-    size_t totalSize = ySize + uvSize * 2; // Y + U + V
+    size_t totalSize = ySize + (uvSize * 2); // Y + U + V
 
     // 打开输出文件
     std::ofstream outFile(out, std::ios::binary);
@@ -75,7 +75,7 @@ inline void DumpYuv2Jpg(const YuvInfo& in, const std::string& out)
     size_t uvSize = static_cast<size_t>(stride / 2) * (h / 2);
 
     // 创建OpenCV矩阵表示YUV数据（I420格式）
-    cv::Mat yuvMat(h + h / 2, stride, CV_8UC1, in.pData);
+    cv::Mat yuvMat(h + (h / 2), stride, CV_8UC1, in.pData);
 
     // 方法1：使用cvtColor直接转换（需要去除padding）
     if (stride == w) {
@@ -102,11 +102,11 @@ inline void DumpYuv2Jpg(const YuvInfo& in, const std::string& out)
     } else {
         // 方法2：如果stride > width，需要去除padding
         // 创建一个连续的YUV数据（无padding）
-        cv::Mat yuvContinuous(h + h / 2, w, CV_8UC1);
+        cv::Mat yuvContinuous(h + (h / 2), w, CV_8UC1);
 
         // 复制Y平面（去除padding）
         for (int row = 0; row < h; ++row) {
-            const unsigned char* srcRow = in.pData + row * stride;
+            const unsigned char* srcRow = in.pData + (row * stride);
             unsigned char* dstRow = yuvContinuous.ptr(row);
             std::copy(srcRow, srcRow + w, dstRow);
         }
@@ -117,7 +117,7 @@ inline void DumpYuv2Jpg(const YuvInfo& in, const std::string& out)
         int uvStride = stride / 2;
 
         for (int row = 0; row < h / 2; ++row) {
-            const unsigned char* srcRow = in.pData + uStart + row * uvStride;
+            const unsigned char* srcRow = in.pData + uStart + (row * uvStride);
             unsigned char* dstRow = yuvContinuous.ptr(h + row);
             std::copy(srcRow, srcRow + uvWidth, dstRow);
         }
@@ -126,8 +126,8 @@ inline void DumpYuv2Jpg(const YuvInfo& in, const std::string& out)
         size_t vStart = ySize + uvSize;
 
         for (int row = 0; row < h / 2; ++row) {
-            const unsigned char* srcRow = in.pData + vStart + row * uvStride;
-            unsigned char* dstRow = yuvContinuous.ptr(h + h / 2 + row);
+            const unsigned char* srcRow = in.pData + vStart + (row * uvStride);
+            unsigned char* dstRow = yuvContinuous.ptr(h + (h / 2) + row);
             std::copy(srcRow, srcRow + uvWidth, dstRow);
         }
 
@@ -175,10 +175,10 @@ inline cv::Mat Yuv2BgrMat(const YuvInfo& in)
 
     if (stride == w) {
         // 如果stride等于width，直接使用
-        yuvContinuous = cv::Mat(h + h / 2, w, CV_8UC1, in.pData);
+        yuvContinuous = cv::Mat(h + (h / 2), w, CV_8UC1, in.pData);
     } else {
         // 否则需要去除padding
-        yuvContinuous = cv::Mat(h + h / 2, w, CV_8UC1);
+        yuvContinuous = cv::Mat(h + (h / 2), w, CV_8UC1);
 
         size_t ySize = static_cast<size_t>(stride) * h;
         size_t uvSize = static_cast<size_t>(stride / 2) * (h / 2);
@@ -187,7 +187,7 @@ inline cv::Mat Yuv2BgrMat(const YuvInfo& in)
 
         // 复制Y平面
         for (int row = 0; row < h; ++row) {
-            const unsigned char* srcRow = in.pData + row * stride;
+            const unsigned char* srcRow = in.pData + (row * stride);
             unsigned char* dstRow = yuvContinuous.ptr(row);
             std::copy(srcRow, srcRow + w, dstRow);
         }
@@ -195,7 +195,7 @@ inline cv::Mat Yuv2BgrMat(const YuvInfo& in)
         // 复制U平面
         size_t uStart = ySize;
         for (int row = 0; row < h / 2; ++row) {
-            const unsigned char* srcRow = in.pData + uStart + row * uvStride;
+            const unsigned char* srcRow = in.pData + uStart + (row * uvStride);
             unsigned char* dstRow = yuvContinuous.ptr(h + row);
             std::copy(srcRow, srcRow + uvWidth, dstRow);
         }
@@ -203,8 +203,8 @@ inline cv::Mat Yuv2BgrMat(const YuvInfo& in)
         // 复制V平面
         size_t vStart = ySize + uvSize;
         for (int row = 0; row < h / 2; ++row) {
-            const unsigned char* srcRow = in.pData + vStart + row * uvStride;
-            unsigned char* dstRow = yuvContinuous.ptr(h + h / 2 + row);
+            const unsigned char* srcRow = in.pData + vStart + (row * uvStride);
+            unsigned char* dstRow = yuvContinuous.ptr(h + (h / 2) + row);
             std::copy(srcRow, srcRow + uvWidth, dstRow);
         }
     }
@@ -239,7 +239,7 @@ inline void DumpYuv2JpgOptimized(const YuvInfo& in, const std::string& out)
     // 方法：使用OpenCV的步长感知转换
     // 创建Y、U、V平面的Mat视图
     cv::Mat yPlane(h, stride, CV_8UC1, in.pData);
-    cv::Mat uvPlane(h / 2, stride / 2, CV_8UC2, in.pData + stride * h);
+    cv::Mat uvPlane(h / 2, stride / 2, CV_8UC2, in.pData + (stride * h));
 
     // 裁剪出有效区域（去除padding）
     cv::Rect yRoi(0, 0, w, h);
@@ -307,7 +307,7 @@ inline void AlphaMergeYuvs(const YuvInfo& yuv1, const YuvInfo& yuv2, double yuv1
 
     size_t ySize = static_cast<size_t>(stride) * h;
     size_t uvSize = static_cast<size_t>(stride / 2) * (h / 2);
-    size_t totalSize = ySize + uvSize * 2; // Y + U + V
+    size_t totalSize = ySize + (uvSize * 2); // Y + U + V
 
     // 验证数据大小
     if (stride < w) {
@@ -325,7 +325,7 @@ inline void AlphaMergeYuvs(const YuvInfo& yuv1, const YuvInfo& yuv2, double yuv1
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
             size_t idx = yOffset + x;
-            double mixed = yuv1.pData[idx] * yuv1AlphaRatio + yuv2.pData[idx] * yuv2AlphaRatio;
+            double mixed = (yuv1.pData[idx] * yuv1AlphaRatio) + (yuv2.pData[idx] * yuv2AlphaRatio);
             outData[idx] = static_cast<unsigned char>(std::clamp(mixed, 0.0, 255.0));
         }
         yOffset += stride;
@@ -343,7 +343,7 @@ inline void AlphaMergeYuvs(const YuvInfo& yuv1, const YuvInfo& yuv2, double yuv1
     for (int y = 0; y < uvHeight; ++y) {
         for (int x = 0; x < uvWidth; ++x) {
             size_t idx = uStart + uOffset + x;
-            double mixed = yuv1.pData[idx] * yuv1AlphaRatio + yuv2.pData[idx] * yuv2AlphaRatio;
+            double mixed = (yuv1.pData[idx] * yuv1AlphaRatio) + (yuv2.pData[idx] * yuv2AlphaRatio);
             outData[idx] = static_cast<unsigned char>(std::clamp(mixed, 0.0, 255.0));
         }
         uOffset += uvStride;
@@ -354,7 +354,7 @@ inline void AlphaMergeYuvs(const YuvInfo& yuv1, const YuvInfo& yuv2, double yuv1
     for (int y = 0; y < uvHeight; ++y) {
         for (int x = 0; x < uvWidth; ++x) {
             size_t idx = vStart + vOffset + x;
-            double mixed = yuv1.pData[idx] * yuv1AlphaRatio + yuv2.pData[idx] * yuv2AlphaRatio;
+            double mixed = (yuv1.pData[idx] * yuv1AlphaRatio) + (yuv2.pData[idx] * yuv2AlphaRatio);
             outData[idx] = static_cast<unsigned char>(std::clamp(mixed, 0.0, 255.0));
         }
         vOffset += uvStride;
@@ -400,15 +400,15 @@ inline void AlphaMergeYuvsOpenCV(const YuvInfo& yuv1, const YuvInfo& yuv2, doubl
 
     // 使用OpenCV处理YUV数据
     // 创建OpenCV矩阵表示YUV数据（I420格式），注意步长参数
-    cv::Mat yuvMat1(h + h / 2, stride, CV_8UC1, yuv1.pData);
-    cv::Mat yuvMat2(h + h / 2, stride, CV_8UC1, yuv2.pData);
+    cv::Mat yuvMat1(h + (h / 2), stride, CV_8UC1, yuv1.pData);
+    cv::Mat yuvMat2(h + (h / 2), stride, CV_8UC1, yuv2.pData);
 
     // 提取Y、U、V平面
     cv::Mat yPlane1 = yuvMat1.rowRange(0, h);
-    cv::Mat uvPlane1 = yuvMat1.rowRange(h, h + h / 2);
+    cv::Mat uvPlane1 = yuvMat1.rowRange(h, h + (h / 2));
 
     cv::Mat yPlane2 = yuvMat2.rowRange(0, h);
-    cv::Mat uvPlane2 = yuvMat2.rowRange(h, h + h / 2);
+    cv::Mat uvPlane2 = yuvMat2.rowRange(h, h + (h / 2));
 
     // 分离UV平面为U和V
     cv::Mat uvChannels1[2], uvChannels2[2];
@@ -441,14 +441,14 @@ inline void AlphaMergeYuvsOpenCV(const YuvInfo& yuv1, const YuvInfo& yuv2, doubl
     uvMixed = uvMixed.reshape(1, h / 2);
 
     // 创建输出YUV矩阵
-    cv::Mat outYuvMat(h + h / 2, stride, CV_8UC1);
+    cv::Mat outYuvMat(h + (h / 2), stride, CV_8UC1);
 
     // 复制Y平面
     cv::Mat yOut = outYuvMat.rowRange(0, h);
     yMixed.copyTo(yOut);
 
     // 复制UV平面
-    cv::Mat uvOut = outYuvMat.rowRange(h, h + h / 2);
+    cv::Mat uvOut = outYuvMat.rowRange(h, h + (h / 2));
     uvMixed.copyTo(uvOut);
 
     // 写入输出文件
@@ -467,7 +467,7 @@ inline YuvInfo LoadYuvFromFile(const std::string& filename, int width, int heigh
     // 计算YUV420文件大小
     size_t ySize = static_cast<size_t>(stride) * height;
     size_t uvSize = static_cast<size_t>(stride / 2) * (height / 2);
-    size_t totalSize = ySize + uvSize * 2;
+    size_t totalSize = ySize + (uvSize * 2);
 
     // 读取文件
     std::ifstream file(filename, std::ios::binary);

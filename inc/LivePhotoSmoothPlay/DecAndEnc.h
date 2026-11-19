@@ -309,7 +309,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                         bool readOk = true;
                         for (int y = 0; y < repFrame->height && readOk; ++y) {
                             size_t want = static_cast<size_t>(repFrame->width);
-                            size_t got = fread(repFrame->data[0] + static_cast<size_t>(y) * repFrame->linesize[0], 1,
+                            size_t got = fread(repFrame->data[0] + (static_cast<size_t>(y) * repFrame->linesize[0]), 1,
                                                want, repFp.get());
                             if (got != want) {
                                 readOk = false;
@@ -317,7 +317,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                         }
                         for (int y = 0; y < repFrame->height / 2 && readOk; ++y) {
                             size_t want = static_cast<size_t>(repFrame->width / 2);
-                            size_t got = fread(repFrame->data[1] + static_cast<size_t>(y) * repFrame->linesize[1], 1,
+                            size_t got = fread(repFrame->data[1] + (static_cast<size_t>(y) * repFrame->linesize[1]), 1,
                                                want, repFp.get());
                             if (got != want) {
                                 readOk = false;
@@ -325,7 +325,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                         }
                         for (int y = 0; y < repFrame->height / 2 && readOk; ++y) {
                             size_t want = static_cast<size_t>(repFrame->width / 2);
-                            size_t got = fread(repFrame->data[2] + static_cast<size_t>(y) * repFrame->linesize[2], 1,
+                            size_t got = fread(repFrame->data[2] + (static_cast<size_t>(y) * repFrame->linesize[2]), 1,
                                                want, repFp.get());
                             if (got != want) {
                                 readOk = false;
@@ -454,7 +454,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                 for (int y = 0; y < repFrame->height && readOk; ++y) {
                     size_t want = static_cast<size_t>(repFrame->width);
                     size_t got =
-                        fread(repFrame->data[0] + static_cast<size_t>(y) * repFrame->linesize[0], 1, want, repFp.get());
+                        fread(repFrame->data[0] + (static_cast<size_t>(y) * repFrame->linesize[0]), 1, want, repFp.get());
                     if (got != want) {
                         readOk = false;
                     }
@@ -462,7 +462,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                 for (int y = 0; y < repFrame->height / 2 && readOk; ++y) {
                     size_t want = static_cast<size_t>(repFrame->width / 2);
                     size_t got =
-                        fread(repFrame->data[1] + static_cast<size_t>(y) * repFrame->linesize[1], 1, want, repFp.get());
+                        fread(repFrame->data[1] + (static_cast<size_t>(y) * repFrame->linesize[1]), 1, want, repFp.get());
                     if (got != want) {
                         readOk = false;
                     }
@@ -470,7 +470,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                 for (int y = 0; y < repFrame->height / 2 && readOk; ++y) {
                     size_t want = static_cast<size_t>(repFrame->width / 2);
                     size_t got =
-                        fread(repFrame->data[2] + static_cast<size_t>(y) * repFrame->linesize[2], 1, want, repFp.get());
+                        fread(repFrame->data[2] + (static_cast<size_t>(y) * repFrame->linesize[2]), 1, want, repFp.get());
                     if (got != want) {
                         readOk = false;
                     }
@@ -590,7 +590,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
             for (int y = 0; y < repFrame->height && readOk; ++y) {
                 size_t want = static_cast<size_t>(repFrame->width);
                 size_t got =
-                    fread(repFrame->data[0] + static_cast<size_t>(y) * repFrame->linesize[0], 1, want, repFp.get());
+                    fread(repFrame->data[0] + (static_cast<size_t>(y) * repFrame->linesize[0]), 1, want, repFp.get());
                 if (got != want) {
                     readOk = false;
                 }
@@ -598,7 +598,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
             for (int y = 0; y < repFrame->height / 2 && readOk; ++y) {
                 size_t want = static_cast<size_t>(repFrame->width / 2);
                 size_t got =
-                    fread(repFrame->data[1] + static_cast<size_t>(y) * repFrame->linesize[1], 1, want, repFp.get());
+                    fread(repFrame->data[1] + (static_cast<size_t>(y) * repFrame->linesize[1]), 1, want, repFp.get());
                 if (got != want) {
                     readOk = false;
                 }
@@ -606,7 +606,7 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
             for (int y = 0; y < repFrame->height / 2 && readOk; ++y) {
                 size_t want = static_cast<size_t>(repFrame->width / 2);
                 size_t got =
-                    fread(repFrame->data[2] + static_cast<size_t>(y) * repFrame->linesize[2], 1, want, repFp.get());
+                    fread(repFrame->data[2] + (static_cast<size_t>(y) * repFrame->linesize[2]), 1, want, repFp.get());
                 if (got != want) {
                     readOk = false;
                 }
@@ -830,14 +830,14 @@ inline int DecodeMp4ToYuvFrames(const char* inFilename, std::string outDir = "")
 
         // Y plane
         for (int y = 0; y < height; ++y) {
-            if (fwrite(outFrame->data[0] + (size_t)y * outFrame->linesize[0], 1, width, fp2.get()) != (size_t)width) {
+            if (fwrite(outFrame->data[0] + ((size_t)y * outFrame->linesize[0]), 1, width, fp2.get()) != (size_t)width) {
                 std::cout << "写入 Y 平面失败: " << fname.string() << std::endl;
                 return -1;
             }
         }
         // U plane
         for (int y = 0; y < height / 2; ++y) {
-            if (fwrite(outFrame->data[1] + (size_t)y * outFrame->linesize[1], 1, width / 2, fp2.get()) !=
+            if (fwrite(outFrame->data[1] + ((size_t)y * outFrame->linesize[1]), 1, width / 2, fp2.get()) !=
                 (size_t)(width / 2)) {
                 std::cout << "写入 U 平面失败: " << fname.string() << std::endl;
                 return -1;
@@ -845,7 +845,7 @@ inline int DecodeMp4ToYuvFrames(const char* inFilename, std::string outDir = "")
         }
         // V plane
         for (int y = 0; y < height / 2; ++y) {
-            if (fwrite(outFrame->data[2] + (size_t)y * outFrame->linesize[2], 1, width / 2, fp2.get()) !=
+            if (fwrite(outFrame->data[2] + ((size_t)y * outFrame->linesize[2]), 1, width / 2, fp2.get()) !=
                 (size_t)(width / 2)) {
                 std::cout << "写入 V 平面失败: " << fname.string() << std::endl;
                 return -1;
@@ -1183,8 +1183,8 @@ inline void DecodeCropEncode(const char* inputFilename, const char* outputFilena
     // 计算裁剪区域（中心不变）
     int cropLeft = static_cast<int>(std::floor(orig_w * (xCropRatio / 2.0)));
     int cropTop = static_cast<int>(std::floor(orig_h * (yCropRatio / 2.0)));
-    int newW = orig_w - 2 * cropLeft;
-    int newH = orig_h - 2 * cropTop;
+    int newW = orig_w - (2 * cropLeft);
+    int newH = orig_h - (2 * cropTop);
     if (newW <= 0 || newH <= 0) {
         std::cout << "Crop size invalid after applying ratios" << std::endl;
         return;
@@ -1365,16 +1365,16 @@ inline void DecodeCropEncode(const char* inputFilename, const char* outputFilena
                     int planeH = (p == 0) ? orig_h : (orig_h / 2);
                     int planeW = (p == 0) ? orig_w : (orig_w / 2);
                     for (int r = 0; r < planeH; ++r) {
-                        memcpy(yuvFullPtr->data[p] + (size_t)r * yuvFullPtr->linesize[p],
-                               decodedPtr->data[p] + (size_t)r * decodedPtr->linesize[p], static_cast<size_t>(planeW));
+                        memcpy(yuvFullPtr->data[p] + ((size_t)r * yuvFullPtr->linesize[p]),
+                               decodedPtr->data[p] + ((size_t)r * decodedPtr->linesize[p]), static_cast<size_t>(planeW));
                     }
                 }
             }
 
             // 在 YUV420P full 上执行中心裁剪 -> cropped
             for (int r = 0; r < newH; ++r) {
-                uint8_t* dst = croppedPtr->data[0] + (size_t)r * croppedPtr->linesize[0];
-                uint8_t* src = yuvFullPtr->data[0] + (size_t)(r + cropTop) * yuvFullPtr->linesize[0] + cropLeft;
+                uint8_t* dst = croppedPtr->data[0] + ((size_t)r * croppedPtr->linesize[0]);
+                uint8_t* src = yuvFullPtr->data[0] + ((size_t)(r + cropTop) * yuvFullPtr->linesize[0]) + cropLeft;
                 memcpy(dst, src, static_cast<size_t>(newW));
             }
             int cropLeftChroma = cropLeft / 2;
@@ -1382,15 +1382,15 @@ inline void DecodeCropEncode(const char* inputFilename, const char* outputFilena
             int newWChroma = newW / 2;
             int newHChroma = newH / 2;
             for (int r = 0; r < newHChroma; ++r) {
-                uint8_t* dstu = croppedPtr->data[1] + (size_t)r * croppedPtr->linesize[1];
+                uint8_t* dstu = croppedPtr->data[1] + ((size_t)r * croppedPtr->linesize[1]);
                 uint8_t* srcu =
-                    yuvFullPtr->data[1] + (size_t)(r + cropTopChroma) * yuvFullPtr->linesize[1] + cropLeftChroma;
+                    yuvFullPtr->data[1] + ((size_t)(r + cropTopChroma) * yuvFullPtr->linesize[1]) + cropLeftChroma;
                 memcpy(dstu, srcu, static_cast<size_t>(newWChroma));
             }
             for (int r = 0; r < newHChroma; ++r) {
-                uint8_t* dstv = croppedPtr->data[2] + (size_t)r * croppedPtr->linesize[2];
+                uint8_t* dstv = croppedPtr->data[2] + ((size_t)r * croppedPtr->linesize[2]);
                 uint8_t* srcv =
-                    yuvFullPtr->data[2] + (size_t)(r + cropTopChroma) * yuvFullPtr->linesize[2] + cropLeftChroma;
+                    yuvFullPtr->data[2] + ((size_t)(r + cropTopChroma) * yuvFullPtr->linesize[2]) + cropLeftChroma;
                 memcpy(dstv, srcv, static_cast<size_t>(newWChroma));
             }
 
@@ -1463,16 +1463,16 @@ inline void DecodeCropEncode(const char* inputFilename, const char* outputFilena
                 int planeH = (p == 0) ? orig_h : (orig_h / 2);
                 int planeW = (p == 0) ? orig_w : (orig_w / 2);
                 for (int r = 0; r < planeH; ++r) {
-                    memcpy(yuvFullPtr->data[p] + (size_t)r * yuvFullPtr->linesize[p],
-                           decodedPtr->data[p] + (size_t)r * decodedPtr->linesize[p], static_cast<size_t>(planeW));
+                    memcpy(yuvFullPtr->data[p] + ((size_t)r * yuvFullPtr->linesize[p]),
+                           decodedPtr->data[p] + ((size_t)r * decodedPtr->linesize[p]), static_cast<size_t>(planeW));
                 }
             }
         }
 
         // 裁剪到 cropped
         for (int r = 0; r < newH; ++r) {
-            uint8_t* dst = croppedPtr->data[0] + (size_t)r * croppedPtr->linesize[0];
-            uint8_t* src = yuvFullPtr->data[0] + (size_t)(r + cropTop) * yuvFullPtr->linesize[0] + cropLeft;
+            uint8_t* dst = croppedPtr->data[0] + ((size_t)r * croppedPtr->linesize[0]);
+            uint8_t* src = yuvFullPtr->data[0] + ((size_t)(r + cropTop) * yuvFullPtr->linesize[0]) + cropLeft;
             memcpy(dst, src, static_cast<size_t>(newW));
         }
         int cropLeftCh = cropLeft / 2;
@@ -1480,13 +1480,13 @@ inline void DecodeCropEncode(const char* inputFilename, const char* outputFilena
         int newWCh = newW / 2;
         int newHCh = newH / 2;
         for (int r = 0; r < newHCh; ++r) {
-            uint8_t* dstu = croppedPtr->data[1] + (size_t)r * croppedPtr->linesize[1];
-            uint8_t* srcu = yuvFullPtr->data[1] + (size_t)(r + cropTopCh) * yuvFullPtr->linesize[1] + cropLeftCh;
+            uint8_t* dstu = croppedPtr->data[1] + ((size_t)r * croppedPtr->linesize[1]);
+            uint8_t* srcu = yuvFullPtr->data[1] + ((size_t)(r + cropTopCh) * yuvFullPtr->linesize[1]) + cropLeftCh;
             memcpy(dstu, srcu, static_cast<size_t>(newWCh));
         }
         for (int r = 0; r < newHCh; ++r) {
-            uint8_t* dstv = croppedPtr->data[2] + (size_t)r * croppedPtr->linesize[2];
-            uint8_t* srcv = yuvFullPtr->data[2] + (size_t)(r + cropTopCh) * yuvFullPtr->linesize[2] + cropLeftCh;
+            uint8_t* dstv = croppedPtr->data[2] + ((size_t)r * croppedPtr->linesize[2]);
+            uint8_t* srcv = yuvFullPtr->data[2] + ((size_t)(r + cropTopCh) * yuvFullPtr->linesize[2]) + cropLeftCh;
             memcpy(dstv, srcv, static_cast<size_t>(newWCh));
         }
 
