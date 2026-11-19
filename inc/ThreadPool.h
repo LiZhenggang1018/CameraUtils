@@ -42,7 +42,6 @@ private:
     inline void WorkerThread();
     inline void Shutdown();
 
-private:
     std::vector<std::thread> workers_;
     std::queue<std::function<void()>> tasks_;
 

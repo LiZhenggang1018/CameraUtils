@@ -136,7 +136,7 @@ private:
     mutable std::shared_mutex listenersMtx_;
     std::unordered_map<size_t, std::vector<ListenerEntry>> listeners_;
     std::atomic<bool> isDispatching_;
-    inline static constexpr int NUM_THREADS{8};
+    static constexpr int NUM_THREADS{8};
     ThreadPool pool_{NUM_THREADS};
 
     // 分发事件到特定类型的监听器

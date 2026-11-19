@@ -127,7 +127,6 @@ private:
         }
     }
 
-private:
     mutable std::mutex creatorTblMutex_;
     std::unordered_map<KType, CreatorType> creatorTbl_;
 };

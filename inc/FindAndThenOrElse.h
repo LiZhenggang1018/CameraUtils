@@ -64,10 +64,9 @@ auto Find(const Container& c, const T& value)
     // 如果没有找到值，返回默认构造的 find_result
     if (it == std::end(c)) {
         return FindResult<T>();
-    } else {
-        // 否则返回找到的值
-        return FindResult<T>(*it);
     }
+    // 否则返回找到的值
+    return FindResult<T>(*it);
 }
 
 #endif // INC_FINDANDTHENORELSE_H

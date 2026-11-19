@@ -96,9 +96,8 @@ inline void DumpYuv2Jpg(const YuvInfo& in, const std::string& out)
 
         if (!cv::imwrite(out, bgrMat, compressionParams)) {
             throw std::runtime_error("Failed to save JPEG image: " + out);
-        } else {
-            PV("succeed to save jpg image to", out);
         }
+        PV("succeed to save jpg image to", out);
     } else {
         // 方法2：如果stride > width，需要去除padding
         // 创建一个连续的YUV数据（无padding）

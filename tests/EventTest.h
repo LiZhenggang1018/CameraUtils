@@ -50,7 +50,7 @@ public:
         s_->SendEvent(msg);
     }
 
-    ~S() {};
+    ~S() = default;
 
 private:
     std::shared_ptr<EventSender> s_;
