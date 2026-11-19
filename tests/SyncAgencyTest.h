@@ -14,31 +14,31 @@ struct Sender {
 public:
     Sender()
     { // 构造函数中注册 SyncId::CUSTOM_SIGNAL，并设置状态为 RUNNABLE
-        m_syncNotifier = SyncAgency::GetInstance().Register(SyncId::CUSTOM_SIGNAL);
-        m_syncNotifier->SetState(SyncState::RUNNABLE);
+        syncNotifier_ = SyncAgency::GetInstance().Register(SyncId::CUSTOM_SIGNAL);
+        syncNotifier_->SetState(SyncState::RUNNABLE);
     };
     ~Sender()
     { // 析构函数中取消注册 SyncId::CUSTOM_SIGNAL
-        if (m_syncNotifier) {
-            SyncAgency::GetInstance().UnRegister(SyncId::CUSTOM_SIGNAL, m_syncNotifier);
+        if (syncNotifier_) {
+            SyncAgency::GetInstance().UnRegister(SyncId::CUSTOM_SIGNAL, syncNotifier_);
         }
     };
     void Foo()
-    { // Foo() shall trigger SyncId::CUSTOM_SIGNAL by m_syncNotifier->SetState(SyncState::DONE);
+    { // Foo() shall trigger SyncId::CUSTOM_SIGNAL by syncNotifier_->SetState(SyncState::DONE);
         std::this_thread::sleep_for(std::chrono::milliseconds(1500)); // 这里设置不同时间如1500/15000 ms来 测试case1&2
-        m_syncNotifier->SetState(SyncState::DONE); // 如下触发信号SyncId::CUSTOM_SIGNAL，通知接收方结束等待。
+        syncNotifier_->SetState(SyncState::DONE); // 如下触发信号SyncId::CUSTOM_SIGNAL，通知接收方结束等待。
         // std::this_thread::sleep_for(SYNC_SLEEP_TIME);
         // //即使SetState(SyncState::DONE)后立刻UnRegister，WaitSync依然能正常拿到这个信息并结束
     };
 
 private:
-    std::shared_ptr<SyncNotifier> m_syncNotifier{};
+    std::shared_ptr<SyncNotifier> syncNotifier_{};
 };
 
 struct Receiver {
 public:
     // Receiver::Bar() shall wait Sender::Foo() to trigger SyncId::CUSTOM_SIGNAL by
-    // m_syncNotifier->SetState(SyncState::DONE);
+    // syncNotifier_->SetState(SyncState::DONE);
     void Bar()
     {
         std::this_thread::sleep_for(SYNC_SLEEP_TIME);
