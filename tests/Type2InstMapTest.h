@@ -12,15 +12,15 @@ enum class IVEReqType { CAP, VID, AUD };
 class RequestManager : public Singleton<RequestManager> {
 public:
     RequestManager()
-        : m_type(IVEReqType::CAP)
+        : type_(IVEReqType::CAP)
     {}
     explicit RequestManager(IVEReqType type)
-        : m_type(type)
+        : type_(type)
     {}
-    void RemoveRequestData() const { std::cout << "RemoveRequestData type=" << static_cast<int>(m_type) << '\n'; }
+    void RemoveRequestData() const { std::cout << "RemoveRequestData type=" << static_cast<int>(type_) << '\n'; }
 
 private:
-    IVEReqType m_type;
+    IVEReqType type_;
 };
 
 class DefaultMgr : public Singleton<DefaultMgr> {
