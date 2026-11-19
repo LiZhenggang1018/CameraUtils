@@ -28,13 +28,13 @@ void PrintUsage(const char* exeName)
               << "Commands:\n";
 
     size_t width = 0;
-    for (const auto& cmd : cli::AllCommands()) {
+    for (const auto& cmd : Cli::AllCommands()) {
         width = std::max(width, cmd.name.size());
     }
 
     const char* currentLabel = nullptr;
-    for (const auto& cmd : cli::AllCommands()) {
-        const char* label = cli::LabelName(cmd.label);
+    for (const auto& cmd : Cli::AllCommands()) {
+        const char* label = Cli::LabelName(cmd.label);
         if (currentLabel == nullptr || std::string(currentLabel) != label) {
             std::cout << "\n  [" << label << "]\n";
             currentLabel = label;
@@ -49,10 +49,10 @@ void PrintUsage(const char* exeName)
               << "\n无参数运行时进入交互式菜单。\n";
 }
 
-bool ParseLabel(const std::string& text, cli::Label& out)
+bool ParseLabel(const std::string& text, Cli::Label& out)
 {
-    for (auto label : {cli::Label::Unit, cli::Label::Media, cli::Label::Gui}) {
-        if (text == cli::LabelName(label)) {
+    for (auto label : {Cli::Label::UNIT, Cli::Label::MEDIA, Cli::Label::GUI}) {
+        if (text == Cli::LabelName(label)) {
             out = label;
             return true;
         }
@@ -63,8 +63,8 @@ bool ParseLabel(const std::string& text, cli::Label& out)
 /// 交互式菜单：按模块分组列出命令，输入编号执行
 int RunMenu()
 {
-    const auto& commands = cli::AllCommands();
-    const bool hasMedia = cli::MediaDataAvailable();
+    const auto& commands = Cli::AllCommands();
+    const bool hasMedia = Cli::MediaDataAvailable();
 
     std::cout << "CameraUtils 交互菜单\n";
     if (!hasMedia) {
@@ -78,7 +78,7 @@ int RunMenu()
 
     for (size_t i = 0; i < commands.size(); ++i) {
         const auto& cmd = commands[i];
-        std::cout << std::setw(4) << (i + 1) << "  " << std::setw(6) << cli::LabelName(cmd.label) << "  " << cmd.name
+        std::cout << std::setw(4) << (i + 1) << "  " << std::setw(6) << Cli::LabelName(cmd.label) << "  " << cmd.name
                   << "  -  " << cmd.description << "\n";
     }
     std::cout << std::string(72, '-') << "\n";
@@ -105,9 +105,9 @@ int RunMenu()
     return cmd.run();
 }
 
-const cli::Command* FindCommand(const std::string& name)
+const Cli::Command* FindCommand(const std::string& name)
 {
-    for (const auto& cmd : cli::AllCommands()) {
+    for (const auto& cmd : Cli::AllCommands()) {
         if (cmd.name == name) {
             return &cmd;
         }
@@ -135,8 +135,8 @@ int main(int argc, char** argv)
     }
 
     if (first == "-l" || first == "--list") {
-        for (const auto& cmd : cli::AllCommands()) {
-            std::cout << cli::LabelName(cmd.label) << "\t" << cmd.name << "\t" << cmd.description << "\n";
+        for (const auto& cmd : Cli::AllCommands()) {
+            std::cout << Cli::LabelName(cmd.label) << "\t" << cmd.name << "\t" << cmd.description << "\n";
         }
         return 0;
     }
@@ -146,12 +146,12 @@ int main(int argc, char** argv)
             std::cerr << "--label 需要参数（unit | media | gui）\n";
             return 2;
         }
-        cli::Label wanted{};
+        Cli::Label wanted{};
         if (!ParseLabel(args[1], wanted)) {
             std::cerr << "未知类别: " << args[1] << "\n";
             return 2;
         }
-        for (const auto& cmd : cli::AllCommands()) {
+        for (const auto& cmd : Cli::AllCommands()) {
             if (cmd.label == wanted) {
                 std::cout << cmd.name << "\n";
             }
@@ -159,14 +159,14 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    const cli::Command* cmd = FindCommand(first);
+    const Cli::Command* cmd = FindCommand(first);
     if (cmd == nullptr) {
         std::cerr << "未知命令: " << first << "\n\n";
         PrintUsage(argv[0]);
         return 2;
     }
 
-    if (cmd->label == cli::Label::Media && !cli::MediaDataAvailable()) {
+    if (cmd->label == Cli::Label::MEDIA && !Cli::MediaDataAvailable()) {
         std::cerr << "命令 " << cmd->name << " 需要 data/ 目录，未找到\n";
         return 3;
     }

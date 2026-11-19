@@ -19,19 +19,19 @@ namespace {
 
 void PrintList()
 {
-    for (const auto& cmd : cli::AllCommands()) {
-        std::cout << cli::LabelName(cmd.label) << "\t" << cmd.name << "\n";
+    for (const auto& cmd : Cli::AllCommands()) {
+        std::cout << Cli::LabelName(cmd.label) << "\t" << cmd.name << "\n";
     }
 }
 
 int RunOne(const std::string& name)
 {
-    for (const auto& cmd : cli::AllCommands()) {
+    for (const auto& cmd : Cli::AllCommands()) {
         if (cmd.name != name) {
             continue;
         }
 
-        if (cmd.label == cli::Label::Media && !cli::MediaDataAvailable()) {
+        if (cmd.label == Cli::Label::MEDIA && !Cli::MediaDataAvailable()) {
             std::cerr << "[SKIP] " << name << " 需要 data/ 目录\n";
             return 77; // CTest 约定的 skip 码
         }

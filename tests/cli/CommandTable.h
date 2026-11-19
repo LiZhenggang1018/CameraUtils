@@ -18,13 +18,13 @@
 #include "TestCase.h"
 #include "Type2InstMapTest.h"
 
-namespace cli {
+namespace Cli {
 
 /// 命令分类：决定是否依赖外部资源
 enum class Label {
-    Unit,  ///< 纯内存运算，无外部依赖
-    Media, ///< 需要 data/ 目录下的媒体素材
-    Gui    ///< 需要图形界面（imshow / waitKey）
+    UNIT,  ///< 纯内存运算，无外部依赖
+    MEDIA, ///< 需要 data/ 目录下的媒体素材
+    GUI    ///< 需要图形界面（imshow / waitKey）
 };
 
 struct Command {
@@ -37,11 +37,11 @@ struct Command {
 inline const char* LabelName(Label label)
 {
     switch (label) {
-    case Label::Unit:
+    case Label::UNIT:
         return "unit";
-    case Label::Media:
+    case Label::MEDIA:
         return "media";
-    case Label::Gui:
+    case Label::GUI:
         return "gui";
     }
     return "unknown";
@@ -58,89 +58,89 @@ inline const std::vector<Command>& AllCommands()
 {
     static const std::vector<Command> commands = {
         // ---------- 纯工具层 ----------
-        {"deque-blocking", "BlockingDeque 阻塞模式", Label::Unit,
+        {"deque-blocking", "BlockingDeque 阻塞模式", Label::UNIT,
          [] {
              TestInBlockingMode();
              return 0;
          }},
-        {"deque-nonblocking", "BlockingDeque 非阻塞模式", Label::Unit,
+        {"deque-nonblocking", "BlockingDeque 非阻塞模式", Label::UNIT,
          [] {
              TestInNonBlockingMode();
              return 0;
          }},
-        {"find-then-or-else", "Find/AndThen/OrElse", Label::Unit,
+        {"find-then-or-else", "Find/AndThen/OrElse", Label::UNIT,
          [] {
              TestFindAndThenOrElse();
              return 0;
          }},
-        {"overload-ref", "Overload 引用重载", Label::Unit,
+        {"overload-ref", "Overload 引用重载", Label::UNIT,
          [] {
              TestOverloadRef();
              return 0;
          }},
-        {"timeout-monitor", "TimeoutMonitor", Label::Unit,
+        {"timeout-monitor", "TimeoutMonitor", Label::UNIT,
          [] {
              TimeoutMonitorTest();
              return 0;
          }},
-        {"misc", "Misc：Enum2Str / Scoped / InstanceCounter", Label::Unit,
+        {"misc", "Misc：Enum2Str / Scoped / InstanceCounter", Label::UNIT,
          [] {
              MiscTest();
              return 0;
          }},
-        {"circular-queue", "CircularQueue", Label::Unit,
+        {"circular-queue", "CircularQueue", Label::UNIT,
          [] {
              TestCircularQueue();
              return 0;
          }},
-        {"overwrite-function", "OverwriteFunction", Label::Unit,
+        {"overwrite-function", "OverwriteFunction", Label::UNIT,
          [] {
              TestOverwriteFunction();
              return 0;
          }},
-        {"msg-queue", "MsgQueue 任务队列", Label::Unit,
+        {"msg-queue", "MsgQueue 任务队列", Label::UNIT,
          [] {
              MsgQueueTest();
              return 0;
          }},
-        {"event", "Event/EventDispatcher", Label::Unit,
+        {"event", "Event/EventDispatcher", Label::UNIT,
          [] {
              TestEvent();
              return 0;
          }},
-        {"factory-json", "GeneralFactory + Json 配置", Label::Unit,
+        {"factory-json", "GeneralFactory + Json 配置", Label::UNIT,
          [] {
              FactoryJsonTest();
              return 0;
          }},
-        {"sync-agency", "SyncAgency 跨模块同步", Label::Unit,
+        {"sync-agency", "SyncAgency 跨模块同步", Label::UNIT,
          [] {
              TestSyncAgency();
              return 0;
          }},
-        {"thread-pool", "ThreadPool", Label::Unit,
+        {"thread-pool", "ThreadPool", Label::UNIT,
          [] {
              ThreadPoolTest();
              return 0;
          }},
-        {"instance-counter", "InstanceCounter", Label::Unit,
+        {"instance-counter", "InstanceCounter", Label::UNIT,
          [] {
              InstanceCounterTest();
              return 0;
          }},
-        {"type2instmap", "Type2InstMap", Label::Unit,
+        {"type2instmap", "Type2InstMap", Label::UNIT,
          [] {
              Type2InstMapTest();
              return 0;
          }},
-        {"magic-enum", "MagicEnum 枚举转换", Label::Unit,
+        {"magic-enum", "MagicEnum 枚举转换", Label::UNIT,
          [] {
              MagicEnumTest::TestMagicEnum();
              return 0;
          }},
 
 #if VAS_HAS_STDEXEC
-        {"vas-concurrency", "stdexec 并发管线", Label::Unit,
+        {"vas-concurrency", "stdexec 并发管线", Label::UNIT,
          [] {
              VasConcurrencyTest();
              return 0;
@@ -148,58 +148,58 @@ inline const std::vector<Command>& AllCommands()
 #endif
 
         // ---------- OpenCV / FFmpeg / exiv2 ----------
-        {"exif", "Exiv2 读取 EXIF", Label::Unit,
+        {"exif", "Exiv2 读取 EXIF", Label::UNIT,
          [] {
              CameraUtils::Exif2Test();
              return 0;
          }},
 
         // ---------- 依赖媒体素材 ----------
-        {"ffmpeg", "FFmpeg 基础解码", Label::Media,
+        {"ffmpeg", "FFmpeg 基础解码", Label::MEDIA,
          [] {
              TestFFMpeg();
              return 0;
          }},
-        {"optical-flow-upsample", "光流 30→60 帧插值", Label::Media, [] { return Upsample30To60(); }},
-        {"hdr-merge", "HDR 融合", Label::Media,
+        {"optical-flow-upsample", "光流 30→60 帧插值", Label::MEDIA, [] { return Upsample30To60(); }},
+        {"hdr-merge", "HDR 融合", Label::MEDIA,
          [] {
              RunHdrMergeTest();
              return 0;
          }},
-        {"hdr-merge-multilevel", "HDR 融合（多档位）", Label::Media,
+        {"hdr-merge-multilevel", "HDR 融合（多档位）", Label::MEDIA,
          [] {
              RunHdrMergeMultiLevelTest();
              return 0;
          }},
-        {"hdr-merge-physical", "HDR 物理融合", Label::Media,
+        {"hdr-merge-physical", "HDR 物理融合", Label::MEDIA,
          [] {
              RunHdrMergePhysicalTest();
              return 0;
          }},
-        {"hdr-merge-ghost", "HDR 鬼影抑制", Label::Media,
+        {"hdr-merge-ghost", "HDR 鬼影抑制", Label::MEDIA,
          [] {
              RunHdrMergeGhostSuppressionTest();
              return 0;
          }},
-        {"livephoto", "LivePhoto 平滑播放", Label::Media,
+        {"livephoto", "LivePhoto 平滑播放", Label::MEDIA,
          [] {
              RunLivePhotoSmoothPlayTest();
              return 0;
          }},
-        {"livephoto-reg", "LivePhoto 图像配准", Label::Media,
+        {"livephoto-reg", "LivePhoto 图像配准", Label::MEDIA,
          [] {
              RegTest();
              return 0;
          }},
 
         // ---------- 需要图形界面 ----------
-        {"opencv-basic", "OpenCV 基础读写与显示", Label::Gui,
+        {"opencv-basic", "OpenCV 基础读写与显示", Label::GUI,
          [] {
              OpenCVTest();
              return 0;
          }},
-        {"optical-flow", "光流可视化（交互窗口）", Label::Gui, [] { return OpticalFlowTest(); }},
-        {"harris", "Harris 角点检测可视化", Label::Gui,
+        {"optical-flow", "光流可视化（交互窗口）", Label::GUI, [] { return OpticalFlowTest(); }},
+        {"harris", "Harris 角点检测可视化", Label::GUI,
          [] {
              HarrisTest();
              return 0;
@@ -208,6 +208,6 @@ inline const std::vector<Command>& AllCommands()
     return commands;
 }
 
-} // namespace cli
+} // namespace Cli
 
 #endif // TESTS_CLI_COMMANDTABLE_H
