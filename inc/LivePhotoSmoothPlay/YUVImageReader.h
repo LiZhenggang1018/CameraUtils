@@ -22,14 +22,14 @@ public:
      * @param filepath YUV文件路径
      * @return 转换后的BGR图像
      */
-    cv::Mat readYUV420P(const std::string& filepath);
+    cv::Mat readYUV420P(const std::string& filepath) const;
 
     /**
      * @brief 读取YUV420P文件并保持YUV格式（三个通道分离）
      * @param filepath YUV文件路径
      * @return 包含Y、U、V三个通道的向量
      */
-    std::vector<cv::Mat> readYUV420PChannels(const std::string& filepath);
+    std::vector<cv::Mat> readYUV420PChannels(const std::string& filepath) const;
 
     /**
      * @brief 将BGR图像保存为YUV420P文件
@@ -44,10 +44,10 @@ public:
 private:
     int width_;
     int height_;
-    int y_size_;
-    int uv_size_;
+    int ySize_;
+    int uvSize_;
 
-    void convertBGRtoYUV420P(const cv::Mat& bgr_image, std::vector<uint8_t>& yuv_data) const;
+    void convertBGRtoYUV420P(const cv::Mat& bgrImage, std::vector<uint8_t>& yuvData) const;
 };
 
 #endif // INC_LIVEPHOTOSMOOTHPLAY_YUVIMAGEREADER_H
