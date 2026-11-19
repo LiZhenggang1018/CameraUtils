@@ -1,7 +1,9 @@
 # ============================================================
 # camera_utils_tests：独立测试可执行文件（CTest 驱动）
 # ============================================================
-add_executable(camera_utils_tests TestMain.cpp)
+# HeaderCoverage.cpp 不含任何逻辑，只把无人包含的聚合头聚合进编译，
+# 使它们能被编译器与 clang-tidy 检查；详见该文件头部说明。
+add_executable(camera_utils_tests TestMain.cpp HeaderCoverage.cpp)
 
 target_include_directories(camera_utils_tests PRIVATE
     ${CMAKE_SOURCE_DIR}/tests
