@@ -16,6 +16,7 @@
 #include <cstring>
 #include <filesystem>
 #include <iostream>
+#include <ranges>
 #include <string>
 #include <vector>
 
@@ -437,12 +438,8 @@ inline cv::Mat DetectMotionLk(const cv::Mat& lowCropped, const cv::Mat& normalCr
     filter.Filter(gN, gH, pts, stablePrevH, stableCurrH, errH);
 
     auto isStable = [](const cv::Point2f& p, const std::vector<cv::Point2f>& stable) -> bool {
-        for (const auto& s : stable) {
-            if (std::abs(p.x - s.x) < 1.0F && std::abs(p.y - s.y) < 1.0F) {
-                return true;
-            }
-        }
-        return false;
+        return std::ranges::any_of(
+            stable, [&](const cv::Point2f& s) { return std::abs(p.x - s.x) < 1.0F && std::abs(p.y - s.y) < 1.0F; });
     };
 
     cv::Mat sparseMask = cv::Mat::zeros(gN.size(), CV_8UC1);

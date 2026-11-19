@@ -76,7 +76,8 @@ auto ThreadPool::EnqueMsg(F&& f, Args&&... args) -> std::future<std::invoke_resu
 {
 
     using R = std::invoke_result_t<F, Args...>;
-    auto task = std::make_shared<std::packaged_task<R()>>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
+    auto task = std::make_shared<std::packaged_task<R()>>(
+        [f = std::forward<F>(f), ... args = std::forward<Args>(args)]() mutable { return f(args...); });
 
     std::future<R> result = task->get_future();
 

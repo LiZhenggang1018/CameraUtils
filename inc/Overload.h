@@ -26,7 +26,7 @@ struct OverloadNoCvt : Ts... {
 
     // Prevent implicit type conversions
     template <typename T>
-    constexpr void operator()(T) const
+    constexpr void operator()(T /*unused*/) const
     {
         static_assert(ALWAYS_FALSE_VAL<T>, "Unsupported type");
     }

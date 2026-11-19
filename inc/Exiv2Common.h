@@ -60,8 +60,9 @@ inline ExposureInfo ReadExposureInfo(const std::string& filePath)
         if (itIso != exif.end()) {
             info.iso = static_cast<double>(itIso->toFloat());
         }
-    } catch (const Exiv2::Error&) {
+    } catch (const Exiv2::Error& e) {
         // 保持无效状态，由调用方决定回退策略
+        (void)e;
     }
     return info;
 }

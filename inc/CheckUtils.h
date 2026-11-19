@@ -102,7 +102,7 @@ inline bool StartsWith(const std::string& str, const std::string& prefix)
 
 // 辅助函数，用于递归展开元组并调用函数
 template <typename Func, typename Tuple, std::size_t... Index>
-void TupleForEachImpl(Func&& func, Tuple&& tuple, std::index_sequence<Index...>)
+void TupleForEachImpl(Func&& func, Tuple&& tuple, std::index_sequence<Index...> /*indices*/)
 {
     (func(std::get<Index>(tuple)), ...);
 }

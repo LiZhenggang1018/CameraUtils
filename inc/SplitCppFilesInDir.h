@@ -55,7 +55,7 @@ inline void SplitCppFilesInDir(std::string_view inDir, std::string_view outDir)
 
         // 按行切分，保留原始换行符
         std::vector<std::string> lines;
-        lines.reserve(content.size() / 32 + 1);
+        lines.reserve((content.size() / 32) + 1);
         std::size_t pos = 0;
         while (pos < content.size()) {
             auto nl = content.find('\n', pos);

@@ -164,10 +164,7 @@ inline int OpticalFlowTest()
             break;
         }
         case Mode::DENSE:
-        case Mode::DIS: {
-            display = denseColor.empty() ? state.currentFrame.clone() : denseColor.clone();
-            break;
-        }
+        case Mode::DIS:
         case Mode::DEEP_FLOW: {
             display = denseColor.empty() ? state.currentFrame.clone() : denseColor.clone();
             break;

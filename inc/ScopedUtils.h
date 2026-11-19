@@ -144,7 +144,7 @@ private:
 // tag dispatch
 struct ScopeGuardOnExit {};
 template <typename Func>
-static inline ScopeGuard<Func> operator+(ScopeGuardOnExit, Func&& fn)
+static inline ScopeGuard<Func> operator+(ScopeGuardOnExit /*tag*/, Func&& fn)
 {
     return ScopeGuard<Func>(std::forward<Func>(fn));
 }

@@ -31,7 +31,7 @@ public:
     }
 
     // 拷贝构造函数
-    Counter(const Counter&)
+    Counter(const Counter& /*other*/)
     {
         ++cnt_;
         // PV(typeid(Derived).name(), "copy ctor at", static_cast<Derived*>(this), ",current count
@@ -40,7 +40,7 @@ public:
     }
 
     // 移动构造函数
-    Counter(Counter&&) noexcept
+    Counter(Counter&& /*other*/) noexcept
     {
         ++cnt_;
         // PV(typeid(Derived).name(), "move ctor at", static_cast<Derived*>(this), ",current count

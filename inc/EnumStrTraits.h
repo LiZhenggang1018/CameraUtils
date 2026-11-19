@@ -160,8 +160,8 @@ struct EnumStrInfo<Enum, Ev, false, false> : EnumStrInfo<Enum, Ev + 1> {};
 template <typename Enum, ULT<Enum> Ev, bool valid>
 struct EnumStrInfo<Enum, Ev, true, valid> {
     static constexpr size_t VALID_ENUMS = 0;
-    static constexpr std::string_view Value2Str(ULT<Enum>) { return "InvalidEnumValue"; }
-    static constexpr std::optional<Enum> Str2Enum(std::string_view, size_t) { return std::nullopt; }
+    static constexpr std::string_view Value2Str(ULT<Enum> /*val*/) { return "InvalidEnumValue"; }
+    static constexpr std::optional<Enum> Str2Enum(std::string_view /*str*/, size_t /*hash*/) { return std::nullopt; }
 };
 
 template <typename Enum, typename = std::enable_if_t<std::is_enum_v<Enum>>>
