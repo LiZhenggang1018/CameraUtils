@@ -4,6 +4,11 @@
 # opt-in 的字节填充优化检查在此排除：HdrConfig 等配置结构按功能分组排列字段以便阅读，
 # 只在启动时构造一次、不在热点路径上。NOLINTNEXTLINE 对 clang-analyzer 检查无效，
 # 只能整体排除，否则 CI 的 clang-analyzer 硬门禁会失败。
+# performance-avoid-endl 同样排除：它不在 OpenHarmony 规范条目内，风格指南自身示例
+# （规则 5.x 的 cout 输出示例）就在使用 std::endl；且 endl 附带 flush 语义，
+# 机械替换为 '\n' 会改变日志刷盘时机，不是纯风格问题，故不作为门禁项。
+# 注意：Checks 是 YAML 块标量，块内 '#' 不是注释而是内容，故说明性文字一律写在块外，
+# 否则会与下一行条目粘连成非法 glob，导致该条目静默失效。
 Checks: >
   -*,
   bugprone-*,
@@ -18,9 +23,6 @@ Checks: >
   -modernize-use-trailing-return-type,
   -readability-magic-numbers,
   -readability-identifier-length,
-  # performance-avoid-endl 不在 OpenHarmony 规范条目内：风格指南自身示例
-  # （规则 5.x 的 cout 输出示例）就在使用 std::endl。且 endl 附带 flush 语义，
-  # 机械替换为 '\n' 会改变日志刷盘时机，不是纯风格问题，故不作为门禁项。
   -performance-avoid-endl,
   -clang-analyzer-optin.performance.Padding
 
