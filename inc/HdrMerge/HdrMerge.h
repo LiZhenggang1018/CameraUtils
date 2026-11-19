@@ -36,22 +36,22 @@ inline cv::Mat AlignToReference(const cv::Mat& reference, const cv::Mat& target,
             *outResult = result;
         }
 
-        if (result.registered_image.empty()) {
+        if (result.registeredImage.empty()) {
             std::cerr << "[HdrMerge] Align failed (empty registered_image), use resized original" << std::endl;
             cv::Mat fallback;
             cv::resize(target, fallback, reference.size());
             return fallback;
         }
 
-        if (result.num_inliers < 30 || result.rms_error > 5.0) {
-            std::cerr << "[HdrMerge] Warning: poor alignment (inliers=" << result.num_inliers
-                      << ", rms=" << result.rms_error << "), result may have artifacts" << std::endl;
+        if (result.numInliers < 30 || result.rmsError > 5.0) {
+            std::cerr << "[HdrMerge] Warning: poor alignment (inliers=" << result.numInliers
+                      << ", rms=" << result.rmsError << "), result may have artifacts" << std::endl;
         } else {
-            std::cout << "[HdrMerge] Align OK: inliers=" << result.num_inliers << ", rms=" << result.rms_error << " px"
+            std::cout << "[HdrMerge] Align OK: inliers=" << result.numInliers << ", rms=" << result.rmsError << " px"
                       << std::endl;
         }
 
-        return result.registered_image;
+        return result.registeredImage;
     } catch (const std::exception& e) {
         std::cerr << "[HdrMerge] Align exception: " << e.what() << ", use resized original" << std::endl;
         if (outResult) {
@@ -461,13 +461,12 @@ inline cv::Mat BuildMotionMask(const cv::Mat& lowCropped, const cv::Mat& normalC
                                const HdrConfig& cfg)
 {
     // 配准质量门控
-    const bool poorLow = regLow.num_inliers < 100 || regLow.rms_error > 3.0;
-    const bool poorHigh = regHigh.num_inliers < 100 || regHigh.rms_error > 3.0;
+    const bool poorLow = regLow.numInliers < 100 || regLow.rmsError > 3.0;
+    const bool poorHigh = regHigh.numInliers < 100 || regHigh.rmsError > 3.0;
     if (poorLow || poorHigh) {
         std::cerr << "[HdrMerge] Registration too poor for ghost suppression "
-                  << "(low: inliers=" << regLow.num_inliers << " rms=" << regLow.rms_error
-                  << "; high: inliers=" << regHigh.num_inliers << " rms=" << regHigh.rms_error << "), skip"
-                  << std::endl;
+                  << "(low: inliers=" << regLow.numInliers << " rms=" << regLow.rmsError
+                  << "; high: inliers=" << regHigh.numInliers << " rms=" << regHigh.rmsError << "), skip" << std::endl;
         return cv::Mat::zeros(normalCropped.size(), CV_8UC1);
     }
 
