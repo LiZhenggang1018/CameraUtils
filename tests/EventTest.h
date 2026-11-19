@@ -39,28 +39,28 @@ inline void TestBasicEventDelivery()
 // example 2: shows sender receiver in different module/class
 struct S : public Counter<S> {
 public:
-    S() { m_s = std::make_shared<EventSender>("S"); };
+    S() { s_ = std::make_shared<EventSender>("S"); };
 
     void Send()
     {
         auto msg = MakeEvent<MessageEvent>("Hello World!");
         PV("send 1st");
-        m_s->SendEvent(msg);
+        s_->SendEvent(msg);
         PV("send 2nd");
-        m_s->SendEvent(msg);
+        s_->SendEvent(msg);
     }
 
     ~S() {};
 
 private:
-    std::shared_ptr<EventSender> m_s{};
+    std::shared_ptr<EventSender> s_{};
 };
 
 struct R : public Counter<R> {
 public:
     R()
     {
-        m_r = std::make_shared<EventReceiver>("R");
+        r_ = std::make_shared<EventReceiver>("R");
         Reg(); // Receiver can RegEvent at ctor and UnregEvent at dtor;
     };
 
@@ -73,13 +73,13 @@ public:
 
     void Reg()
     {
-        m_r->RegEvent<MessageEvent>([this](const EventVariant& event) { Cb(event); });
+        r_->RegEvent<MessageEvent>([this](const EventVariant& event) { Cb(event); });
     }
 
-    ~R() { m_r->UnregEvent<MessageEvent>(); };
+    ~R() { r_->UnregEvent<MessageEvent>(); };
 
 private:
-    std::shared_ptr<EventReceiver> m_r{};
+    std::shared_ptr<EventReceiver> r_{};
 };
 
 inline void TestEventInTwoModule()
