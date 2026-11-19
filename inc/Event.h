@@ -36,14 +36,14 @@ struct IEventSender {
 public:
     virtual ~IEventSender() = default;
     virtual void SendEvent(const EventVariant& event) = 0;
-    virtual std::string GetName() const = 0;
+    [[nodiscard]] virtual std::string GetName() const = 0;
 };
 
 // 事件监听器接口
 struct IEventReceiver {
     virtual ~IEventReceiver() = default;
     virtual void OnEvent(const EventVariant& event) = 0;
-    virtual std::string GetName() const = 0;
+    [[nodiscard]] virtual std::string GetName() const = 0;
 };
 
 using ReceiverCb = std::function<void(const EventVariant& event)>;

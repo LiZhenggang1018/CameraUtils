@@ -16,7 +16,7 @@ public:
     ~EventSender() override = default;
     DISALLOW_COPY_AND_MOVE(EventSender);
 
-    std::string GetName() const override { return name_; }
+    [[nodiscard]] std::string GetName() const override { return name_; }
 
     void SendEvent(const EventVariant& event) override { EventDispatcher::GetInstance().DispatchEvent(event); }
 
@@ -35,7 +35,7 @@ public:
     ~EventReceiver() override = default;
     DISALLOW_COPY_AND_MOVE(EventReceiver);
 
-    std::string GetName() const override { return name_; }
+    [[nodiscard]] std::string GetName() const override { return name_; }
 
     // 注册特定事件类型的监听器
     template <typename EventType>

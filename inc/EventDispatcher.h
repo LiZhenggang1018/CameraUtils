@@ -21,7 +21,7 @@ public:
     virtual ~IEventDispatcher() = default;
     virtual void DispatchEvent(const EventVariant& event) = 0;
     virtual void Clear() = 0;
-    virtual size_t GetTotalListenerCount() const = 0;
+    [[nodiscard]] virtual size_t GetTotalListenerCount() const = 0;
 };
 
 // 线程安全的事件分发器实现（单例模式）
@@ -36,8 +36,8 @@ private:
             : listener(l),
               name(l->GetName())
         {}
-        bool Expired() const { return listener.expired(); }
-        std::shared_ptr<IEventReceiver> Lock() const { return listener.lock(); }
+        [[nodiscard]] bool Expired() const { return listener.expired(); }
+        [[nodiscard]] std::shared_ptr<IEventReceiver> Lock() const { return listener.lock(); }
     };
 
 public:
@@ -122,7 +122,7 @@ public:
         std::cout << "All listeners cleared from EventDispatcher" << std::endl;
     }
 
-    size_t GetTotalListenerCount() const override
+    [[nodiscard]] size_t GetTotalListenerCount() const override
     {
         std::shared_lock lock(listenersMtx_);
         size_t count = 0;

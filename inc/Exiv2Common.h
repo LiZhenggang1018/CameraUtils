@@ -24,7 +24,7 @@ namespace CameraUtils {
 struct ExposureInfo {
     double timeSeconds = -1.0; // 秒
     double iso = -1.0;
-    bool Valid() const { return timeSeconds > 0.0 && iso > 0.0; }
+    [[nodiscard]] bool Valid() const { return timeSeconds > 0.0 && iso > 0.0; }
 };
 
 // ============================================================
