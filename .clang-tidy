@@ -89,6 +89,11 @@ CheckOptions:
   # 否则会把函数局部常量与普通 const 成员误判为违规。
   - key: readability-identifier-naming.ConstantCase
     value: camelBack
+  # const 的类成员变量（如 capacity_、numThreads_）会同时命中 Constant 规则与
+  # 成员后缀规则：成员规则要求带后下划线，而 camelBack 不接受尾随下划线，两条规则
+  # 互斥。这里让 Constant 规则放过带下划线后缀的名字，交给成员规则校验。
+  - key: readability-identifier-naming.ConstantIgnoredRegexp
+    value: '.*_$'
   - key: readability-identifier-naming.LocalConstantCase
     value: camelBack
   - key: readability-identifier-naming.GlobalConstantCase
@@ -99,6 +104,22 @@ CheckOptions:
     value: UPPER_CASE
   - key: readability-identifier-naming.MacroDefinitionCase
     value: UPPER_CASE
+  # 双下划线开头是编译器/标准库保留标识符，项目里只用于探测内建宏是否存在，
+  # 不是本工程自定义的宏，不应纳入命名规范。
+  - key: readability-identifier-naming.MacroDefinitionIgnoredRegexp
+    value: '^__.*$'
+  # nlohmann::json 通过 ADL 查找这两个名字作为序列化钩子，改名会直接破坏序列化，
+  # 属于外部约定，不可按本工程命名规范改名。
+  - key: readability-identifier-naming.FunctionIgnoredRegexp
+    value: '^(to_json|from_json)$'
+  # 类的静态数据成员带后下划线时，clang-tidy 仍会按全局变量规则（要求 g_ 前缀）报错。
+  # 这种情况应归成员规则管，放过带后缀的名字，避免误加 g_ 前缀。
+  - key: readability-identifier-naming.GlobalVariableIgnoredRegexp
+    value: '.*_$'
+  # begin/end 是标准容器迭代接口的约定名（range-for、std::begin 依赖），
+  # 属于语言/库协议，不可改名。
+  - key: readability-identifier-naming.ClassConstantIgnoredRegexp
+    value: '^(begin|end)$'
 
   - key: modernize-use-nullptr.NullMacros
     value: 'NULL'
