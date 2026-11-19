@@ -9,7 +9,7 @@ std::string AvErr(int err)
 {
     char buf[AV_ERROR_MAX_STRING_SIZE] = {};
     av_strerror(err, buf, sizeof(buf));
-    return std::string(buf);
+    return {buf};
 }
 
 } // namespace

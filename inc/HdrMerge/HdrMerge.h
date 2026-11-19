@@ -120,10 +120,10 @@ inline cv::Rect DetectContentRoi(const cv::Mat& img, int blackThreshold = 5, dou
     }
 
     if (top >= bottom || left >= right) {
-        return cv::Rect(0, 0, w, h);
+        return {0, 0, w, h};
     }
 
-    return cv::Rect(left, top, right - left + 1, bottom - top + 1);
+    return {left, top, right - left + 1, bottom - top + 1};
 }
 
 // ============================================================
@@ -137,7 +137,7 @@ inline cv::Rect ComputeCommonRoi(const cv::Mat& alignedLow, const cv::Mat& align
         const int h = reference.rows;
         const int bx = static_cast<int>(w * cfg.cropRatio);
         const int by = static_cast<int>(h * cfg.cropRatio);
-        return cv::Rect(bx, by, w - (2 * bx), h - (2 * by));
+        return {bx, by, w - (2 * bx), h - (2 * by)};
     }
 
     cv::Rect roiLow = DetectContentRoi(alignedLow, cfg.blackThreshold, cfg.blackRatio);
@@ -158,7 +158,7 @@ inline cv::Rect ComputeCommonRoi(const cv::Mat& alignedLow, const cv::Mat& align
         const int h = reference.rows;
         const int bx = static_cast<int>(w * cfg.cropRatio);
         const int by = static_cast<int>(h * cfg.cropRatio);
-        return cv::Rect(bx, by, w - (2 * bx), h - (2 * by));
+        return {bx, by, w - (2 * bx), h - (2 * by)};
     }
 
     std::cout << "[HdrMerge] Content ROI: " << common << " (" << (areaRatio * 100) << "% of frame)" << std::endl;

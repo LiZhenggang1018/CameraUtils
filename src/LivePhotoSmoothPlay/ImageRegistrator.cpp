@@ -211,7 +211,7 @@ cv::Mat ImageRegistrator::EstimateTransform(const std::vector<cv::KeyPoint>& key
         std::cerr << "Warning: EstimateTransform failed or inliers_mask size mismatch"
                   << " (matches=" << matches.size() << ", mask=" << inliersMask.size() << ")" << std::endl;
         inlierMatches.clear();
-        return cv::Mat();
+        return {};
     }
 
     // 提取内点匹配（修复坑 4：现在通过引用传回，最终存进 RegistrationResult::inlier_matches）
