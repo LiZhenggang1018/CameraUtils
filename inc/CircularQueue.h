@@ -164,9 +164,9 @@ private:
     size_t head_{};
     size_t tail_{};
     T* buffer_{};
-    std::mutex mutex_{};
-    std::condition_variable notFull_{};
-    std::condition_variable notEmpty_{};
+    std::mutex mutex_;
+    std::condition_variable notFull_;
+    std::condition_variable notEmpty_;
 };
 
 // 阻塞式，队列空时Pop()会阻塞等待

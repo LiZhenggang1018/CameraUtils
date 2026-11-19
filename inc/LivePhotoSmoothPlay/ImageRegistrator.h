@@ -106,12 +106,12 @@ enum class TransformType { HOMOGRAPHY, AFFINE, EUCLIDEAN, TRANSLATION };
 //      若换 4K 分辨率且要求亚像素精度，可扩展为 Point2d。
 // ============================================================
 struct RegistrationResult {
-    cv::Mat registeredImage{}; // target 对齐到 reference 的结果（已求逆 warp）
-    cv::Mat transformMatrix{}; // ⚠️ reference → target 方向
-    std::vector<cv::KeyPoint> keypoints1{};
-    std::vector<cv::KeyPoint> keypoints2{};
-    std::vector<cv::DMatch> goodMatches{};   // Lowe's ratio 过滤后（含误匹配）
-    std::vector<cv::DMatch> inlierMatches{}; // RANSAC 验证后的内点（更可信）
+    cv::Mat registeredImage; // target 对齐到 reference 的结果（已求逆 warp）
+    cv::Mat transformMatrix; // ⚠️ reference → target 方向
+    std::vector<cv::KeyPoint> keypoints1;
+    std::vector<cv::KeyPoint> keypoints2;
+    std::vector<cv::DMatch> goodMatches;   // Lowe's ratio 过滤后（含误匹配）
+    std::vector<cv::DMatch> inlierMatches; // RANSAC 验证后的内点（更可信）
     int numInliers{};                        // = inlier_matches.size()
     double rmsError{};                       // 内点重投影均方根误差（像素）
 };

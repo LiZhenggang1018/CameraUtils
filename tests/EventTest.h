@@ -53,7 +53,7 @@ public:
     ~S() {};
 
 private:
-    std::shared_ptr<EventSender> s_{};
+    std::shared_ptr<EventSender> s_;
 };
 
 struct R : public Counter<R> {
@@ -79,7 +79,7 @@ public:
     ~R() { r_->UnregEvent<MessageEvent>(); };
 
 private:
-    std::shared_ptr<EventReceiver> r_{};
+    std::shared_ptr<EventReceiver> r_;
 };
 
 inline void TestEventInTwoModule()

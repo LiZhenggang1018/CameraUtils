@@ -21,7 +21,7 @@ public:
     void SendEvent(const EventVariant& event) override { EventDispatcher::GetInstance().DispatchEvent(event); }
 
 private:
-    std::string name_{};
+    std::string name_;
 };
 
 // EventReceiver Instance's life circle must be managed by std::shared_ptr or std::weak_ptr
@@ -55,8 +55,8 @@ public:
     void OnEvent(const EventVariant& event) override { cb_(event); }
 
 private:
-    std::string name_{};
-    ReceiverCb cb_{};
+    std::string name_;
+    ReceiverCb cb_;
 };
 
 #endif // INC_EVENTCOMPONENTS_H

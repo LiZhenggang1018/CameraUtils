@@ -77,9 +77,9 @@ public:
 
 private:
     SyncId syncId_{};
-    mutable std::mutex mutex_{};
+    mutable std::mutex mutex_;
     bool isReady_{true};
-    std::condition_variable cv_{};
+    std::condition_variable cv_;
 };
 
 class SyncAgency final : public Singleton<SyncAgency> {
@@ -148,8 +148,8 @@ public:
 
 private:
     // 同一个SyncId可以对应多个SyncNotifier实例，即有多个Receiver在等待同一个SyncId
-    std::multimap<SyncId, std::shared_ptr<SyncNotifier>> notifiers_{};
-    mutable std::mutex mutex_{};
+    std::multimap<SyncId, std::shared_ptr<SyncNotifier>> notifiers_;
+    mutable std::mutex mutex_;
 };
 
 #endif

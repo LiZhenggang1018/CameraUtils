@@ -43,15 +43,15 @@ private:
     inline void Shutdown();
 
 private:
-    std::vector<std::thread> workers_{};
-    std::queue<std::function<void()>> tasks_{};
+    std::vector<std::thread> workers_;
+    std::queue<std::function<void()>> tasks_;
 
     mutable std::mutex queueMutex_;
     std::condition_variable cond_;
     std::condition_variable complete_;
 
-    std::atomic<bool> stop_{};
-    std::atomic<size_t> activeTasks_{};
+    std::atomic<bool> stop_;
+    std::atomic<size_t> activeTasks_;
 };
 
 // 实现

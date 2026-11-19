@@ -163,7 +163,7 @@ public:
     bool GetDumpEnable() const { return enableDump_.load(); }
 
 private:
-    std::atomic<int> enableDump_{};
+    std::atomic<int> enableDump_;
 };
 
 inline void Save2Json(const nlohmann::json& j, const std::string& jsonName, int i = DEFAULT_INDENT)

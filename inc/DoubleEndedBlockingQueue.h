@@ -80,8 +80,8 @@ public:
 
 private:
     std::deque<T> deque_{};
-    mutable std::mutex mutex_{};
-    std::condition_variable cond_{};
+    mutable std::mutex mutex_;
+    std::condition_variable cond_;
     int maxSize_{}; // deque最大size
     bool isRunning_{};
     std::chrono::milliseconds timeoutMs_{}; // 阻塞调用时最大超时时间 timeoutMs

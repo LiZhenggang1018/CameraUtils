@@ -32,7 +32,7 @@ public:
     };
 
 private:
-    std::shared_ptr<SyncNotifier> syncNotifier_{};
+    std::shared_ptr<SyncNotifier> syncNotifier_;
 };
 
 struct Receiver {

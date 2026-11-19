@@ -50,7 +50,7 @@ using ReceiverCb = std::function<void(const EventVariant& event)>;
 
 // 自定义事件类型定义
 struct MessageEvent {
-    std::string value{};
+    std::string value;
 };
 
 // 辅助函数来检查事件类型

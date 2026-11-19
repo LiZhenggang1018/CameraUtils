@@ -29,8 +29,8 @@ class EventDispatcher : public IEventDispatcher, public Singleton<EventDispatche
 private:
     // 监听器条目
     struct ListenerEntry {
-        std::weak_ptr<IEventReceiver> listener{};
-        std::string name{};
+        std::weak_ptr<IEventReceiver> listener;
+        std::string name;
 
         explicit ListenerEntry(const std::shared_ptr<IEventReceiver>& l)
             : listener(l),
@@ -133,9 +133,9 @@ public:
     }
 
 private:
-    mutable std::shared_mutex listenersMtx_{};
-    std::unordered_map<size_t, std::vector<ListenerEntry>> listeners_{};
-    std::atomic<bool> isDispatching_{};
+    mutable std::shared_mutex listenersMtx_;
+    std::unordered_map<size_t, std::vector<ListenerEntry>> listeners_;
+    std::atomic<bool> isDispatching_;
     inline static constexpr int NUM_THREADS{8};
     ThreadPool pool_{NUM_THREADS};
 

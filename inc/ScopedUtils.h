@@ -79,7 +79,7 @@ private:
     const char* file_{};
     int line_{};
     const char* func_{};
-    ClockType::time_point start_{};
+    ClockType::time_point start_;
 };
 
 /*
