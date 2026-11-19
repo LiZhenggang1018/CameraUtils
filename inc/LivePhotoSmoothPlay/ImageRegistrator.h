@@ -175,7 +175,7 @@ private:
     // 注：mutable 允许在 const 方法里更新；当前单线程使用，若将来多线程共享
     //     同一 ImageRegistrator 实例，需要加锁或改为每线程独立实例。
     cv::Ptr<cv::Feature2D> createDetector(FeatureDetectorType type) const;
-    mutable std::unordered_map<int, cv::Ptr<cv::Feature2D>> m_detectorCache;
+    mutable std::unordered_map<int, cv::Ptr<cv::Feature2D>> detectorCache_;
 };
 
 /**
