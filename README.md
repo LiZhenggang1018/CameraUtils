@@ -97,7 +97,6 @@ camera_utils_tests.exe magic-enum
 ```
 inc/
   CoreUtils.h             纯标准库工具层聚合头
-  Utils.h                 兼容聚合头（已标记 @deprecated）
   OpticalFlow/*.h         光流/配准
   LivePhotoSmoothPlay/*.h LivePhoto 平滑播放
   HdrMerge/*.h            HDR 融合
