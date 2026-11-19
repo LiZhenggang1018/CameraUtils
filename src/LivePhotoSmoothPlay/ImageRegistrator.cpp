@@ -16,7 +16,7 @@
 #pragma comment(lib, "ole32.lib")
 #endif
 
-cv::Ptr<cv::Feature2D> ImageRegistrator::createDetector(FeatureDetectorType type) const
+cv::Ptr<cv::Feature2D> ImageRegistrator::CreateDetector(FeatureDetectorType type) const
 {
     const int key = static_cast<int>(type);
     auto it = detectorCache_.find(key);
@@ -50,7 +50,7 @@ cv::Ptr<cv::Feature2D> ImageRegistrator::createDetector(FeatureDetectorType type
     return detector;
 }
 
-std::tuple<std::vector<cv::KeyPoint>, cv::Mat> ImageRegistrator::detectFeatures(const cv::Mat& image,
+std::tuple<std::vector<cv::KeyPoint>, cv::Mat> ImageRegistrator::DetectFeatures(const cv::Mat& image,
                                                                                 FeatureDetectorType detectorType)
 {
     // 修复坑 6（兼容性）：支持 BGR / BGRA / GRAY 三种输入
@@ -65,7 +65,7 @@ std::tuple<std::vector<cv::KeyPoint>, cv::Mat> ImageRegistrator::detectFeatures(
         throw std::runtime_error("不支持的图像通道数: " + std::to_string(image.channels()));
     }
 
-    auto detector = createDetector(detectorType); // 缓存命中
+    auto detector = CreateDetector(detectorType); // 缓存命中
     std::vector<cv::KeyPoint> keypoints;
     cv::Mat descriptors;
 
@@ -74,7 +74,7 @@ std::tuple<std::vector<cv::KeyPoint>, cv::Mat> ImageRegistrator::detectFeatures(
     return {keypoints, descriptors};
 }
 
-std::vector<cv::DMatch> ImageRegistrator::matchFeatures(const cv::Mat& descriptors1, const cv::Mat& descriptors2,
+std::vector<cv::DMatch> ImageRegistrator::MatchFeatures(const cv::Mat& descriptors1, const cv::Mat& descriptors2,
                                                         FeatureDetectorType detectorType)
 {
     if (descriptors1.empty() || descriptors2.empty()) {
@@ -131,7 +131,7 @@ std::vector<cv::DMatch> ImageRegistrator::matchFeatures(const cv::Mat& descripto
     return goodMatches;
 }
 
-cv::Mat ImageRegistrator::estimateTransform(const std::vector<cv::KeyPoint>& keypoints1,
+cv::Mat ImageRegistrator::EstimateTransform(const std::vector<cv::KeyPoint>& keypoints1,
                                             const std::vector<cv::KeyPoint>& keypoints2,
                                             const std::vector<cv::DMatch>& matches, TransformType transformType,
                                             std::vector<cv::DMatch>& inlierMatches)
@@ -206,7 +206,7 @@ cv::Mat ImageRegistrator::estimateTransform(const std::vector<cv::KeyPoint>& key
 
     // 修复（之前 #10）：inliers_mask 空检查，避免越界
     if (transform.empty() || inliersMask.size() != matches.size()) {
-        std::cerr << "Warning: estimateTransform failed or inliers_mask size mismatch"
+        std::cerr << "Warning: EstimateTransform failed or inliers_mask size mismatch"
                   << " (matches=" << matches.size() << ", mask=" << inliersMask.size() << ")" << std::endl;
         inlierMatches.clear();
         return cv::Mat();
@@ -224,7 +224,7 @@ cv::Mat ImageRegistrator::estimateTransform(const std::vector<cv::KeyPoint>& key
     return transform;
 }
 
-cv::Mat ImageRegistrator::applyTransform(const cv::Mat& image, const cv::Mat& transform, const cv::Size& outputSize)
+cv::Mat ImageRegistrator::ApplyTransform(const cv::Mat& image, const cv::Mat& transform, const cv::Size& outputSize)
 {
     if (transform.empty()) {
         throw std::runtime_error("变换矩阵为空");
@@ -243,7 +243,7 @@ cv::Mat ImageRegistrator::applyTransform(const cv::Mat& image, const cv::Mat& tr
     return registeredImage;
 }
 
-RegistrationResult ImageRegistrator::registerImages(const cv::Mat& referenceImg, const cv::Mat& targetImg,
+RegistrationResult ImageRegistrator::RegisterImages(const cv::Mat& referenceImg, const cv::Mat& targetImg,
                                                     FeatureDetectorType detectorType, TransformType transformType)
 {
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -252,21 +252,21 @@ RegistrationResult ImageRegistrator::registerImages(const cv::Mat& referenceImg,
 
     // 1. 检测特征点
     std::cout << "检测特征点..." << std::endl;
-    auto [keypoints1, descriptors1] = detectFeatures(referenceImg, detectorType);
-    auto [keypoints2, descriptors2] = detectFeatures(targetImg, detectorType);
+    auto [keypoints1, descriptors1] = DetectFeatures(referenceImg, detectorType);
+    auto [keypoints2, descriptors2] = DetectFeatures(targetImg, detectorType);
 
     std::cout << "参考图像特征点数: " << keypoints1.size() << std::endl;
     std::cout << "目标图像特征点数: " << keypoints2.size() << std::endl;
 
     // 2. 匹配特征点
     std::cout << "匹配特征点..." << std::endl;
-    result.goodMatches = matchFeatures(descriptors1, descriptors2, detectorType);
+    result.goodMatches = MatchFeatures(descriptors1, descriptors2, detectorType);
     std::cout << "匹配点数: " << result.goodMatches.size() << std::endl;
 
     // 3. 估计变换矩阵（修复坑 4：inlier_matches 存进 result）
     std::cout << "估计变换矩阵..." << std::endl;
     result.transformMatrix =
-        estimateTransform(keypoints1, keypoints2, result.goodMatches, transformType, result.inlierMatches);
+        EstimateTransform(keypoints1, keypoints2, result.goodMatches, transformType, result.inlierMatches);
 
     result.numInliers = static_cast<int>(result.inlierMatches.size());
     std::cout << "内点数: " << result.numInliers << std::endl;
@@ -300,7 +300,7 @@ RegistrationResult ImageRegistrator::registerImages(const cv::Mat& referenceImg,
 
     // 4. 应用变换
     std::cout << "应用变换..." << std::endl;
-    result.registeredImage = applyTransform(targetImg, warpToRef, referenceImg.size());
+    result.registeredImage = ApplyTransform(targetImg, warpToRef, referenceImg.size());
 
     // 5. RMS 误差（修复坑 2：内部已说明是"内点重投影误差"，不是"整图像素差"）
     result.rmsError = 0.0;
@@ -332,7 +332,7 @@ RegistrationResult ImageRegistrator::registerImages(const cv::Mat& referenceImg,
     return result;
 }
 
-cv::Mat ImageRegistrator::drawMatches(const cv::Mat& img1, const cv::Mat& img2,
+cv::Mat ImageRegistrator::DrawMatches(const cv::Mat& img1, const cv::Mat& img2,
                                       const std::vector<cv::KeyPoint>& keypoints1,
                                       const std::vector<cv::KeyPoint>& keypoints2,
                                       const std::vector<cv::DMatch>& matches)
@@ -343,7 +343,7 @@ cv::Mat ImageRegistrator::drawMatches(const cv::Mat& img1, const cv::Mat& img2,
     return matchesImg;
 }
 
-void ImageRegistrator::saveRegistrationResults(const RegistrationResult& result, const std::string& outputDir)
+void ImageRegistrator::SaveRegistrationResults(const RegistrationResult& result, const std::string& outputDir)
 {
     std::filesystem::create_directories(outputDir);
 
@@ -538,7 +538,7 @@ cv::Mat RegFromMats(const cv::Mat& targetImg, const cv::Mat& referenceImg, const
         }
 
         ImageRegistrator registrator;
-        auto result = registrator.registerImages(referenceImg, targetImg, detector, transform);
+        auto result = registrator.RegisterImages(referenceImg, targetImg, detector, transform);
 
         if (result.registeredImage.empty() || result.transformMatrix.empty()) {
             std::cerr << "Registration failed: empty registered_image or transform_matrix" << std::endl;
@@ -546,11 +546,11 @@ cv::Mat RegFromMats(const cv::Mat& targetImg, const cv::Mat& referenceImg, const
         }
 
         // 基础产物：registered_image.jpg / transform_matrix.txt / matches.txt / inlier_matches.txt
-        registrator.saveRegistrationResults(result, outputDir);
+        registrator.SaveRegistrationResults(result, outputDir);
 
         // 03：特征匹配
         cv::Mat matchesImg =
-            registrator.drawMatches(referenceImg, targetImg, result.keypoints1, result.keypoints2, result.goodMatches);
+            registrator.DrawMatches(referenceImg, targetImg, result.keypoints1, result.keypoints2, result.goodMatches);
         cv::imwrite(outputDir + "/03_feature_matches.jpg", matchesImg);
 
         // 04：半透明叠加
@@ -587,13 +587,13 @@ int RegYuv(const std::string& curYuvFile, const std::string& refYuvFile, const s
     try {
         YUVImageReader reader(width, height);
 
-        cv::Mat refImg = reader.readYUV420P(refYuvFile);
+        cv::Mat refImg = reader.ReadYuv420P(refYuvFile);
         if (refImg.empty()) {
             std::cerr << "Failed to read reference YUV: " << refYuvFile << std::endl;
             return 1;
         }
 
-        cv::Mat curImg = reader.readYUV420P(curYuvFile);
+        cv::Mat curImg = reader.ReadYuv420P(curYuvFile);
         if (curImg.empty()) {
             std::cerr << "Failed to read target YUV: " << curYuvFile << std::endl;
             return 2;
@@ -608,7 +608,7 @@ int RegYuv(const std::string& curYuvFile, const std::string& refYuvFile, const s
         }
 
         // 07：配准后的 YUV（RegYuv 特有）
-        reader.saveAsYUV420P(registered, outputDir + "/07_registered_image.yuv");
+        reader.SaveAsYuv420P(registered, outputDir + "/07_registered_image.yuv");
         std::cout << "[RegYuv] saved 07_registered_image.yuv" << std::endl;
 
         return 0;

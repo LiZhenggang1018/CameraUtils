@@ -33,7 +33,7 @@ LpFovTransitionOpt.h::GenFromLpToOptLp()
               LAST_VID_FRAME_YUV,     ← 参考图 = 最后视频帧
               COVER_FRAME_YUV,        ← 目标图 = 封面帧
               REG_RESULT_DIR)         ← 输出目录
-            ├─ YUVImageReader::readYUV420P × 2         ← YUV → BGR
+            ├─ YUVImageReader::ReadYuv420P × 2         ← YUV → BGR
             ├─ ImageRegistrator::registerImages(       ← ★ 本文档的主角
             │       reference_img = 视频帧,
             │       target_img    = 封面帧,
@@ -139,14 +139,14 @@ public:
      * @note registered_image 是"target 对齐到 reference"的结果，可直接使用。
      * @note transform_matrix 是 reference→target，需用 registered_image 或自行求逆。
      */
-    RegistrationResult registerImages(const cv::Mat& referenceImg, const cv::Mat& targetImg,
+    RegistrationResult RegisterImages(const cv::Mat& referenceImg, const cv::Mat& targetImg,
                                       FeatureDetectorType detectorType = FeatureDetectorType::ORB,
                                       TransformType transformType = TransformType::HOMOGRAPHY);
 
     /**
      * @brief 绘制匹配结果可视化
      */
-    cv::Mat drawMatches(const cv::Mat& img1, const cv::Mat& img2, const std::vector<cv::KeyPoint>& keypoints1,
+    cv::Mat DrawMatches(const cv::Mat& img1, const cv::Mat& img2, const std::vector<cv::KeyPoint>& keypoints1,
                         const std::vector<cv::KeyPoint>& keypoints2, const std::vector<cv::DMatch>& matches);
 
     /**
@@ -156,25 +156,25 @@ public:
      *        - matches.txt（good_matches，兼容旧工具）
      *        - inlier_matches.txt（RANSAC 内点，精确调试用）
      */
-    void saveRegistrationResults(const RegistrationResult& result, const std::string& outputDir);
+    void SaveRegistrationResults(const RegistrationResult& result, const std::string& outputDir);
 
 private:
-    std::tuple<std::vector<cv::KeyPoint>, cv::Mat> detectFeatures(const cv::Mat& image,
+    std::tuple<std::vector<cv::KeyPoint>, cv::Mat> DetectFeatures(const cv::Mat& image,
                                                                   FeatureDetectorType detectorType);
 
-    std::vector<cv::DMatch> matchFeatures(const cv::Mat& descriptors1, const cv::Mat& descriptors2,
+    std::vector<cv::DMatch> MatchFeatures(const cv::Mat& descriptors1, const cv::Mat& descriptors2,
                                           FeatureDetectorType detectorType);
 
-    cv::Mat estimateTransform(const std::vector<cv::KeyPoint>& keypoints1, const std::vector<cv::KeyPoint>& keypoints2,
+    cv::Mat EstimateTransform(const std::vector<cv::KeyPoint>& keypoints1, const std::vector<cv::KeyPoint>& keypoints2,
                               const std::vector<cv::DMatch>& matches, TransformType transformType,
                               std::vector<cv::DMatch>& inlierMatches);
 
-    cv::Mat applyTransform(const cv::Mat& image, const cv::Mat& transform, const cv::Size& outputSize);
+    cv::Mat ApplyTransform(const cv::Mat& image, const cv::Mat& transform, const cv::Size& outputSize);
 
     // 修复坑 5：检测器缓存（首次创建后复用，避免每次 detectFeatures 都 new）
     // 注：mutable 允许在 const 方法里更新；当前单线程使用，若将来多线程共享
     //     同一 ImageRegistrator 实例，需要加锁或改为每线程独立实例。
-    cv::Ptr<cv::Feature2D> createDetector(FeatureDetectorType type) const;
+    cv::Ptr<cv::Feature2D> CreateDetector(FeatureDetectorType type) const;
     mutable std::unordered_map<int, cv::Ptr<cv::Feature2D>> detectorCache_;
 };
 
