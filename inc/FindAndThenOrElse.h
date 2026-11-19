@@ -1,4 +1,4 @@
-﻿#ifndef INC_FINDANDTHENORELSE_H
+#ifndef INC_FINDANDTHENORELSE_H
 #define INC_FINDANDTHENORELSE_H
 
 #include <algorithm>
@@ -28,7 +28,7 @@ class FindResult {
 public:
     FindResult() = default;
     explicit FindResult(T value)
-        : m_value{value}
+        : value_{value}
     {}
 
     // AndThen()接受一个回调函数
@@ -36,8 +36,8 @@ public:
     const FindResult<T>& AndThen(Func&& func) const
     {
         // 只有当我们有值时才调用回调函数
-        if (m_value.has_value()) {
-            std::forward<Func>(func)(m_value.value());
+        if (value_.has_value()) {
+            std::forward<Func>(func)(value_.value());
         }
         return *this;
     }
@@ -46,14 +46,14 @@ public:
     template <typename Func>
     void OrElse(Func&& func) const
     {
-        if (!m_value.has_value()) {
+        if (!value_.has_value()) {
             std::forward<Func>(func)();
         }
     }
 
 private:
     // 不确定是否找到了值使用 optional存储可能的搜索结果
-    std::optional<T> m_value{std::nullopt};
+    std::optional<T> value_{std::nullopt};
 };
 // 查找函数，用于在在顺序容器中查找值
 template <typename Container, typename T>
