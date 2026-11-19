@@ -239,14 +239,14 @@ void CleanFlowNaN(cv::Mat& flow)
 // ============================================================
 void FrameInterpolator::ComputeFlow(const cv::Mat& from, const cv::Mat& to, cv::Mat& flow) const
 {
-    if (m_params.flowDownscale >= 1.0 || m_params.flowDownscale <= 0.0) {
+    if (params_.flowDownscale >= 1.0 || params_.flowDownscale <= 0.0) {
         // 全分辨率：直接调 internal
         ComputeFlowInternal(from, to, flow);
         return;
     }
 
     // 降分辨率：resize → 算光流 → upsample → 缩放位移
-    const double s = m_params.flowDownscale;
+    const double s = params_.flowDownscale;
     cv::Mat fromSmall, toSmall;
     cv::resize(from, fromSmall, cv::Size(), s, s, cv::INTER_AREA);
     cv::resize(to, toSmall, cv::Size(), s, s, cv::INTER_AREA);
@@ -270,16 +270,16 @@ void FrameInterpolator::ComputeFlow(const cv::Mat& from, const cv::Mat& to, cv::
 void FrameInterpolator::ComputeFlowInternal(const cv::Mat& from, const cv::Mat& to, cv::Mat& flow) const
 {
     // ---------- 后端 0：Farneback ----------
-    if (m_params.flowBackend == 0) {
+    if (params_.flowBackend == 0) {
         cv::calcOpticalFlowFarneback(from, to, flow, 0.5, 3, 15, 3, 5, 1.1, 0);
         return;
     }
 
     // ---------- 大位移处理（仅全分辨率 + DIS 时有效）----------
     cv::Mat initialFlow;
-    if (m_params.maxCoarseLevels > 0 && m_params.flowBackend == 1 &&
-        m_params.flowDownscale >= 1.0) { // ← 关键：降分辨率时跳过，避免重复
-        const double coarseScale = std::pow(0.5, m_params.maxCoarseLevels);
+    if (params_.maxCoarseLevels > 0 && params_.flowBackend == 1 &&
+        params_.flowDownscale >= 1.0) { // ← 关键：降分辨率时跳过，避免重复
+        const double coarseScale = std::pow(0.5, params_.maxCoarseLevels);
         cv::Mat fromCoarse, toCoarse;
         cv::resize(from, fromCoarse, cv::Size(), coarseScale, coarseScale, cv::INTER_AREA);
         cv::resize(to, toCoarse, cv::Size(), coarseScale, coarseScale, cv::INTER_AREA);
@@ -291,7 +291,7 @@ void FrameInterpolator::ComputeFlowInternal(const cv::Mat& from, const cv::Mat& 
     }
 
     // ---------- 后端 2：TV-L1 ----------
-    if (m_params.flowBackend == 2) {
+    if (params_.flowBackend == 2) {
         try {
             cv::Ptr<cv::optflow::DualTVL1OpticalFlow> tvl1 = cv::optflow::DualTVL1OpticalFlow::create();
             tvl1->setScalesNumber(5);
@@ -319,7 +319,7 @@ void FrameInterpolator::ComputeFlowInternal(const cv::Mat& from, const cv::Mat& 
 
     // ---------- 后端 1：DIS ----------
     int preset = cv::DISOpticalFlow::PRESET_ULTRAFAST;
-    switch (m_params.disPreset) {
+    switch (params_.disPreset) {
     case 1:
         preset = cv::DISOpticalFlow::PRESET_FAST;
         break;
@@ -356,7 +356,7 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev, const cv::Mat& curr, c
     //   不能写成 `cv::Mat prevForFlow = prevGray;` 再传进去
     cv::Mat prevForFlow;
     cv::Mat currForFlow;
-    if (m_params.enableBilateralPreprocess) {
+    if (params_.enableBilateralPreprocess) {
         constexpr double bs = 8.0;
         cv::bilateralFilter(prevGray, prevForFlow, 5, bs, bs); // prevForFlow 是空 Mat，OpenCV 内部会分配新内存
         cv::bilateralFilter(currGray, currForFlow, 5, bs, bs);
@@ -371,7 +371,7 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev, const cv::Mat& curr, c
     ComputeFlow(currForFlow, prevForFlow, flowBwdRaw);
 
     // ★ 开关 2：光流后处理
-    if (m_params.enableFlowPostProcess) {
+    if (params_.enableFlowPostProcess) {
         PostProcessFlow(flowFwdRaw, prevGray, flowFwd);
         PostProcessFlow(flowBwdRaw, currGray, flowBwd);
     } else {
@@ -380,17 +380,17 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev, const cv::Mat& curr, c
     }
 
     // ★ 开关 3：时域平滑
-    if (m_params.enableTemporalSmooth && !m_prevFlowFwd.empty() && m_prevFlowFwd.size() == flowFwd.size() &&
-        m_prevFlowFwd.type() == flowFwd.type()) {
+    if (params_.enableTemporalSmooth && !prevFlowFwd_.empty() && prevFlowFwd_.size() == flowFwd.size() &&
+        prevFlowFwd_.type() == flowFwd.type()) {
 
         cv::Mat mag = ComputeFlowMagnitude(flowFwd);
         cv::Mat smallMask8;
-        cv::compare(mag, cv::Scalar(m_params.temporalMagThreshold), smallMask8, cv::CMP_LT);
+        cv::compare(mag, cv::Scalar(params_.temporalMagThreshold), smallMask8, cv::CMP_LT);
         cv::Mat smallMask;
         smallMask8.convertTo(smallMask, CV_32F, 1.0 / 255.0);
 
         cv::Mat smoothFlow;
-        cv::addWeighted(flowFwd, m_params.temporalAlpha, m_prevFlowFwd, 1.0 - m_params.temporalAlpha, 0.0, smoothFlow);
+        cv::addWeighted(flowFwd, params_.temporalAlpha, prevFlowFwd_, 1.0 - params_.temporalAlpha, 0.0, smoothFlow);
 
         cv::Mat mask2;
         cv::Mat ch[2] = {smallMask, smallMask};
@@ -403,7 +403,7 @@ void FrameInterpolator::ComputeFlows(const cv::Mat& prev, const cv::Mat& curr, c
         flowFwd = flowFwdSmoothed;
     }
 
-    m_prevFlowFwd = flowFwd.clone();
+    prevFlowFwd_ = flowFwd.clone();
 }
 
 // ============================================================
@@ -428,14 +428,14 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev, const cv::Mat& cu
     cv::Mat warpedPrev = WarpToMid(prev, flowFwd, gridX, gridY, t);
     cv::Mat warpedCurr = WarpToMid(curr, flowBwd, gridX, gridY, -(1.0 - t));
 
-    cv::Mat confidence = ComputeConfidence(flowFwd, flowBwd, gridX, gridY, m_params.fbThreshold);
-    if (m_params.confidenceBlurSigma > 0.0) {
-        cv::GaussianBlur(confidence, confidence, cv::Size(0, 0), m_params.confidenceBlurSigma);
+    cv::Mat confidence = ComputeConfidence(flowFwd, flowBwd, gridX, gridY, params_.fbThreshold);
+    if (params_.confidenceBlurSigma > 0.0) {
+        cv::GaussianBlur(confidence, confidence, cv::Size(0, 0), params_.confidenceBlurSigma);
     }
 
     cv::Mat staticMask;
-    if (m_params.enableStaticProtect) {
-        staticMask = ComputeStaticMask(flowFwd, m_params.staticMagThreshold);
+    if (params_.enableStaticProtect) {
+        staticMask = ComputeStaticMask(flowFwd, params_.staticMagThreshold);
         cv::GaussianBlur(staticMask, staticMask, cv::Size(0, 0), 2.0);
     } else {
         staticMask = cv::Mat::zeros(h, w, CV_32F);
@@ -455,11 +455,11 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev, const cv::Mat& cu
 
     cv::Mat magFwd = ComputeFlowMagnitude(flowFwd);
     cv::Mat occWeight8;
-    cv::compare(magFwd, cv::Scalar(m_params.staticMagThreshold), occWeight8, cv::CMP_GT);
+    cv::compare(magFwd, cv::Scalar(params_.staticMagThreshold), occWeight8, cv::CMP_GT);
     cv::Mat occWeight;
     occWeight8.convertTo(occWeight, CV_32F, 1.0 / 255.0);
-    if (m_params.occlusionBlurSigma > 0.0) {
-        cv::GaussianBlur(occWeight, occWeight, cv::Size(0, 0), m_params.occlusionBlurSigma);
+    if (params_.occlusionBlurSigma > 0.0) {
+        cv::GaussianBlur(occWeight, occWeight, cv::Size(0, 0), params_.occlusionBlurSigma);
     }
 
     cv::Mat warpedAvg;
@@ -503,9 +503,9 @@ cv::Mat FrameInterpolator::BlendFromFlows(const cv::Mat& prev, const cv::Mat& cu
     result32F.convertTo(coarseResult, prev.type());
 
     // ★ 开关 4：拉普拉斯金字塔融合
-    if (m_params.enableLaplacianBlend) {
+    if (params_.enableLaplacianBlend) {
         try {
-            int lv = std::max(2, std::min(4, m_params.laplacianLevels));
+            int lv = std::max(2, std::min(4, params_.laplacianLevels));
             cv::Mat result = LaplacianBlend(prev, curr, wpF, wcF, confidence, t, lv);
             return result;
         } catch (const cv::Exception& e) {
