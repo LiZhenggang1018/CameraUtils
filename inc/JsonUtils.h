@@ -156,14 +156,14 @@ public:
         nlohmann::json j = nlohmann::json::parse(ifs, nullptr, false);
         CHECK_AND_RETURN(j.is_discarded());
         auto configParams = j.template get<JsonConfigParams>();
-        m_enableDump = configParams.enableDump;
-        PV(m_enableDump.load());
+        enableDump_ = configParams.enableDump;
+        PV(enableDump_.load());
     }
 
-    bool GetDumpEnable() const { return m_enableDump.load(); }
+    bool GetDumpEnable() const { return enableDump_.load(); }
 
 private:
-    std::atomic<int> m_enableDump{};
+    std::atomic<int> enableDump_{};
 };
 
 inline void Save2Json(const nlohmann::json& j, const std::string& jsonName, int i = DEFAULT_INDENT)
