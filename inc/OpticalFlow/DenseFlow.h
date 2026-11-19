@@ -6,13 +6,13 @@
 class DenseFlowFarneback {
 public:
     struct Params {
-        double pyrScale_ = 0.5;
-        int levels_ = 3;
-        int winsize_ = 15;
-        int iterations_ = 3;
-        int polyN_ = 5;
-        double polySigma_ = 1.1;
-        int flags_ = 0;
+        double pyrScale = 0.5;
+        int levels = 3;
+        int winsize = 15;
+        int iterations = 3;
+        int polyN = 5;
+        double polySigma = 1.1;
+        int flags = 0;
     };
 
     DenseFlowFarneback() = default;
@@ -25,15 +25,15 @@ public:
     {
         cv::Mat flow;
 
-        cv::calcOpticalFlowFarneback(prevGray, gray, flow, params_.pyrScale_, params_.levels_, params_.winsize_,
-                                     params_.iterations_, params_.polyN_, params_.polySigma_, params_.flags_);
+        cv::calcOpticalFlowFarneback(prevGray, gray, flow, params_.pyrScale, params_.levels, params_.winsize,
+                                     params_.iterations, params_.polyN, params_.polySigma, params_.flags);
 
         return flow;
     }
 
-    void SetWinsize(int winsize) { params_.winsize_ = winsize; }
+    void SetWinsize(int winsize) { params_.winsize = winsize; }
 
-    [[nodiscard]] int Winsize() const { return params_.winsize_; }
+    [[nodiscard]] int Winsize() const { return params_.winsize; }
 
 private:
     Params params_;

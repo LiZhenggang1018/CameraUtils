@@ -18,7 +18,7 @@ inline const std::string& ImageRegInFileImpl()
 }
 
 // 辅助函数：如果图像尺寸超过 maxSize，则等比例缩放并返回，否则返回原图
-inline cv::Mat fitToScreen(const cv::Mat& img, int maxSize = 800)
+inline cv::Mat FitToScreen(const cv::Mat& img, int maxSize = 800)
 {
     int h = img.rows, w = img.cols;
     if (h <= maxSize && w <= maxSize)
@@ -58,8 +58,8 @@ inline void HarrisTest()
     lambda2.convertTo(lambda2, CV_8U);
 
     // 显示：使用 fitToScreen 限制显示尺寸
-    cv::imshow("Lambda1", fitToScreen(lambda1, 800));
-    cv::imshow("Lambda2", fitToScreen(lambda2, 800));
+    cv::imshow("Lambda1", FitToScreen(lambda1, 800));
+    cv::imshow("Lambda2", FitToScreen(lambda2, 800));
 
     // Shi-Tomasi 角点二值图
     // 直接使用两个特征值中较小的那个作为角点强度。一个像素只有在两个方向上都存在显著变化（两个特征值都足够大）时才被认为是角点，而最小特征值恰好能衡量"较弱方向的变化量"。
@@ -70,7 +70,7 @@ inline void HarrisTest()
     // 其实等价于cv::goodFeaturesToTrack(gray, corners, maxCorners, qualityLevel, minDistance); // qualityLevel
     // 即我们上面设置的0.01，
     // 当然goodFeaturesToTrack()额外做了非极大值抑制，而我们没有，故因此可能在角点附近产生多个相邻响应。
-    cv::imshow("Shi-Tomasi corners", fitToScreen(corners, 800));
+    cv::imshow("Shi-Tomasi corners", FitToScreen(corners, 800));
 
     // 特征向量方向图
     cv::Mat rgb;
@@ -83,7 +83,7 @@ inline void HarrisTest()
             cv::line(rgb, pt, pt + cv::Point(v2x * 5, v2y * 5), cv::Scalar(0, 255, 0), 1);
         }
     }
-    cv::imshow("Eigenvectors", fitToScreen(rgb, 800));
+    cv::imshow("Eigenvectors", FitToScreen(rgb, 800));
 
     cv::waitKey(0);
 }

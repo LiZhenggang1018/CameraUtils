@@ -81,9 +81,9 @@ bool FfmpegVideoWriter::Open(const std::string& path, int width, int height, int
     AVDictionary* opts = nullptr;
     av_dict_set(&opts, "preset", enc.preset.c_str(), 0);
     if (enc.crf >= 0) {
-        char crf_buf[16];
-        std::snprintf(crf_buf, sizeof(crf_buf), "%d", enc.crf);
-        av_dict_set(&opts, "crf", crf_buf, 0);
+        char crfBuf[16];
+        std::snprintf(crfBuf, sizeof(crfBuf), "%d", enc.crf);
+        av_dict_set(&opts, "crf", crfBuf, 0);
     }
 
     ret = avcodec_open2(codecCtx_, codec, &opts);
