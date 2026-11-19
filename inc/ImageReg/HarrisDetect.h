@@ -21,8 +21,9 @@ inline const std::string& ImageRegInFileImpl()
 inline cv::Mat FitToScreen(const cv::Mat& img, int maxSize = 800)
 {
     int h = img.rows, w = img.cols;
-    if (h <= maxSize && w <= maxSize)
+    if (h <= maxSize && w <= maxSize) {
         return img;
+    }
     double scale = std::min((double)maxSize / w, (double)maxSize / h);
     cv::Mat resized;
     cv::resize(img, resized, cv::Size(), scale, scale, cv::INTER_LINEAR);
@@ -32,8 +33,9 @@ inline cv::Mat FitToScreen(const cv::Mat& img, int maxSize = 800)
 inline void HarrisTest()
 {
     cv::Mat gray = cv::imread(ImageRegInFileImpl(), cv::IMREAD_GRAYSCALE);
-    if (gray.empty())
+    if (gray.empty()) {
         return;
+    }
 
     cv::Mat eigen;
     // cornerEigenValsAndVecs计算图像每个像素邻域内 结构张量（structure tensor） 的特征值与特征向量

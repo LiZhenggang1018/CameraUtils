@@ -1335,8 +1335,9 @@ inline void DecodeCropEncode(const char* inputFilename, const char* outputFilena
 
         while (ret >= 0) {
             ret = avcodec_receive_frame(decCtxPtr.get(), decodedPtr.get());
-            if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+            if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
                 break;
+            }
             if (ret < 0) {
                 std::cout << "Error while receiving a frame from the decoder" << std::endl;
                 return;
@@ -1421,8 +1422,9 @@ inline void DecodeCropEncode(const char* inputFilename, const char* outputFilena
             }
             while (true) {
                 int recvRet = avcodec_receive_packet(encCtxPtr.get(), pktPtr.get());
-                if (recvRet == AVERROR(EAGAIN) || recvRet == AVERROR_EOF)
+                if (recvRet == AVERROR(EAGAIN) || recvRet == AVERROR_EOF) {
                     break;
+                }
                 if (recvRet < 0) {
                     std::cout << "Error while receiving a packet from the encoder" << std::endl;
                     return;

@@ -277,8 +277,9 @@ inline int RegCoverFrameToLastVidFrame(int width, int height, const std::string&
                 std::string rowStr;
                 for (int j = 0; j < result.transformMatrix.cols; j++) {
                     rowStr += std::to_string(result.transformMatrix.at<double>(i, j));
-                    if (j < result.transformMatrix.cols - 1)
+                    if (j < result.transformMatrix.cols - 1) {
                         rowStr += ", ";
+                    }
                 }
                 cv::putText(reportImg, rowStr, cv::Point(70, yOffset), cv::FONT_HERSHEY_SIMPLEX, 0.5,
                             cv::Scalar(50, 50, 50), 1);

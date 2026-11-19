@@ -215,8 +215,9 @@ void PostProcessFlow(const cv::Mat& flowIn, const cv::Mat& guideGray, cv::Mat& f
 // 清理光流 NaN / Inf / 极端值
 void CleanFlowNaN(cv::Mat& flow)
 {
-    if (flow.empty() || flow.type() != CV_32FC2)
+    if (flow.empty() || flow.type() != CV_32FC2) {
         return;
+    }
 
     std::vector<cv::Mat> parts(2);
     cv::split(flow, parts);
@@ -331,10 +332,11 @@ void FrameInterpolator::ComputeFlowInternal(const cv::Mat& from, const cv::Mat& 
         break;
     }
     cv::Ptr<cv::DISOpticalFlow> dis = cv::DISOpticalFlow::create(preset);
-    if (!initialFlow.empty())
+    if (!initialFlow.empty()) {
         flow = initialFlow;
-    else
+    } else {
         flow.release();
+    }
     dis->calc(from, to, flow);
 }
 

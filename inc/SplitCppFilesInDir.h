@@ -21,29 +21,35 @@ inline void SplitCppFilesInDir(std::string_view inDir, std::string_view outDir)
     const fs::path inPath(inDir);
     const fs::path outPath(outDir);
 
-    if (!fs::is_directory(inPath, ec))
+    if (!fs::is_directory(inPath, ec)) {
         return;
+    }
 
     // 确保输出目录存在
     fs::create_directories(outPath, ec);
 
     for (const auto& entry : fs::directory_iterator(inPath, ec)) {
-        if (ec)
+        if (ec) {
             break;
-        if (!entry.is_regular_file(ec))
+        }
+        if (!entry.is_regular_file(ec)) {
             continue;
+        }
 
         // 只处理 .h / .cpp（扩展名不区分大小写）
         std::string ext = entry.path().extension().string();
-        for (auto& c : ext)
+        for (auto& c : ext) {
             c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-        if (ext != ".h" && ext != ".cpp")
+        }
+        if (ext != ".h" && ext != ".cpp") {
             continue;
+        }
 
         // 读入整个文件
         std::ifstream in(entry.path(), std::ios::binary);
-        if (!in)
+        if (!in) {
             continue;
+        }
         std::string content((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
         in.close();
 
@@ -71,8 +77,9 @@ inline void SplitCppFilesInDir(std::string_view inDir, std::string_view outDir)
 
             // inDir == outDir 时会指向同一文件，直接跳过以免自我覆盖
             std::error_code eqEc;
-            if (fs::equivalent(originalPath, target, eqEc) && !eqEc)
+            if (fs::equivalent(originalPath, target, eqEc) && !eqEc) {
                 continue;
+            }
 
             std::error_code cpEc;
             fs::copy_file(originalPath, target, fs::copy_options::overwrite_existing, cpEc);
@@ -86,12 +93,14 @@ inline void SplitCppFilesInDir(std::string_view inDir, std::string_view outDir)
                                                      : outPath / (stem + "_" + std::to_string(partIndex) + extStr);
 
             std::ofstream out(target, std::ios::binary | std::ios::trunc);
-            if (!out)
+            if (!out) {
                 continue;
+            }
 
             const std::size_t end = std::min(start + kMaxLines, lines.size());
-            for (std::size_t i = start; i < end; ++i)
+            for (std::size_t i = start; i < end; ++i) {
                 out << lines[i];
+            }
         }
     }
 }

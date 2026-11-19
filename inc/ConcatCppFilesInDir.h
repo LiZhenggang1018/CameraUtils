@@ -19,8 +19,9 @@ namespace {
 
 inline std::string ToLower(std::string s)
 {
-    for (auto& c : s)
+    for (auto& c : s) {
         c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
     return s;
 }
 
@@ -29,23 +30,28 @@ inline std::string ToLower(std::string s)
 inline bool ParsePartSuffix(const std::string& stem, std::string& base, int& part)
 {
     auto pos = stem.rfind('_');
-    if (pos == std::string::npos || pos == 0)
+    if (pos == std::string::npos || pos == 0) {
         return false;
+    }
 
     std::string numStr = stem.substr(pos + 1);
-    if (numStr.empty() || numStr.size() > 9)
+    if (numStr.empty() || numStr.size() > 9) {
         return false; // 防溢出
-    if (numStr.size() > 1 && numStr[0] == '0')
+    }
+    if (numStr.size() > 1 && numStr[0] == '0') {
         return false; // 不允许 _01
+    }
 
     int n = 0;
     for (char c : numStr) {
-        if (!std::isdigit(static_cast<unsigned char>(c)))
+        if (!std::isdigit(static_cast<unsigned char>(c))) {
             return false;
+        }
         n = n * 10 + (c - '0');
     }
-    if (n < 1)
+    if (n < 1) {
         return false;
+    }
 
     base = stem.substr(0, pos);
     part = n;
@@ -60,8 +66,9 @@ inline void ConcatCppFilesInDir(std::string_view inDir, std::string_view outDir)
     const fs::path inPath(inDir);
     const fs::path outPath(outDir);
 
-    if (!fs::is_directory(inPath, ec))
+    if (!fs::is_directory(inPath, ec)) {
         return;
+    }
     fs::create_directories(outPath, ec);
 
     // 1) 收集 inDir 下所有 .h / .cpp 文件
@@ -76,15 +83,18 @@ inline void ConcatCppFilesInDir(std::string_view inDir, std::string_view outDir)
 
     std::vector<Entry> entries;
     for (const auto& de : fs::directory_iterator(inPath, ec)) {
-        if (ec)
+        if (ec) {
             break;
-        if (!de.is_regular_file(ec))
+        }
+        if (!de.is_regular_file(ec)) {
             continue;
+        }
 
         std::string ext = de.path().extension().string();
         std::string extLower = ToLower(ext);
-        if (extLower != ".h" && extLower != ".cpp")
+        if (extLower != ".h" && extLower != ".cpp") {
             continue;
+        }
 
         Entry e;
         e.path = de.path();
@@ -97,8 +107,9 @@ inline void ConcatCppFilesInDir(std::string_view inDir, std::string_view outDir)
     // 2) 建立 (extLower, stem) 查询表，用于判断某个候选 base 是否"作为文件存在"
     std::unordered_set<std::string> stemSet;
     stemSet.reserve(entries.size() * 2);
-    for (const auto& e : entries)
+    for (const auto& e : entries) {
         stemSet.insert(e.extLower + "\x01" + e.stem);
+    }
 
     // 3) 确定每个文件的 baseStem / part
     //    解析出 "<base>_<N>" 且 inDir 中确实存在 "<base>.<ext>" 时，视为分片；
@@ -138,8 +149,9 @@ inline void ConcatCppFilesInDir(std::string_view inDir, std::string_view outDir)
             groups.emplace(std::move(key), std::move(g));
         } else {
             it->second.parts.push_back(&e);
-            if (e.part == 0)
+            if (e.part == 0) {
                 it->second.outExt = e.ext;
+            }
         }
     }
 
@@ -152,8 +164,9 @@ inline void ConcatCppFilesInDir(std::string_view inDir, std::string_view outDir)
         // 未分割（只有一个 part0 文件）→ 直接拷贝
         if (g.parts.size() == 1 && g.parts[0]->part == 0) {
             std::error_code eqEc;
-            if (fs::equivalent(g.parts[0]->path, target, eqEc) && !eqEc)
+            if (fs::equivalent(g.parts[0]->path, target, eqEc) && !eqEc) {
                 continue; // inDir == outDir，源和目标是同一文件
+            }
 
             std::error_code cpEc;
             fs::copy_file(g.parts[0]->path, target, fs::copy_options::overwrite_existing, cpEc);
@@ -171,14 +184,17 @@ inline void ConcatCppFilesInDir(std::string_view inDir, std::string_view outDir)
             }
             merged.append(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
         }
-        if (!readOk)
+        if (!readOk) {
             continue;
+        }
 
         std::ofstream out(target, std::ios::binary | std::ios::trunc);
-        if (!out)
+        if (!out) {
             continue;
-        if (!merged.empty())
+        }
+        if (!merged.empty()) {
             out.write(merged.data(), static_cast<std::streamsize>(merged.size()));
+        }
     }
 }
 

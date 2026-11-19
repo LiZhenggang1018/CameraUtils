@@ -186,48 +186,54 @@ inline const std::string& YuvWhFileImpl()
 struct AVFormatContextDeleter {
     void operator()(AVFormatContext* p) const noexcept
     {
-        if (p)
+        if (p) {
             avformat_close_input(&p);
+        }
     }
 };
 
 struct AVCodecContextDeleter {
     void operator()(AVCodecContext* p) const noexcept
     {
-        if (p)
+        if (p) {
             avcodec_free_context(&p);
+        }
     }
 };
 
 struct AVPacketDeleter {
     void operator()(AVPacket* p) const noexcept
     {
-        if (p)
+        if (p) {
             av_packet_free(&p);
+        }
     }
 };
 
 struct AVFrameDeleter {
     void operator()(AVFrame* p) const noexcept
     {
-        if (p)
+        if (p) {
             av_frame_free(&p);
+        }
     }
 };
 
 struct SwsContextDeleter {
     void operator()(SwsContext* p) const noexcept
     {
-        if (p)
+        if (p) {
             sws_freeContext(p);
+        }
     }
 };
 
 struct FileDeleter {
     void operator()(FILE* f) const noexcept
     {
-        if (f)
+        if (f) {
             std::fclose(f);
+        }
     }
 };
 

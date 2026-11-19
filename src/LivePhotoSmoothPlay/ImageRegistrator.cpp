@@ -424,12 +424,14 @@ cv::Mat LoadImageWithWIC(const std::string& path)
     std::wstring wpath;
     {
         const int len = MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, nullptr, 0);
-        if (len <= 0)
+        if (len <= 0) {
             return {};
+        }
         wpath.resize(static_cast<size_t>(len));
         MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, wpath.data(), len);
-        if (!wpath.empty() && wpath.back() == L'\0')
+        if (!wpath.empty() && wpath.back() == L'\0') {
             wpath.pop_back();
+        }
     }
 
     HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -446,54 +448,66 @@ cv::Mat LoadImageWithWIC(const std::string& path)
 
     do {
         hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory));
-        if (FAILED(hr))
+        if (FAILED(hr)) {
             break;
+        }
 
         hr = factory->CreateDecoderFromFilename(wpath.c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnLoad,
                                                 &decoder);
-        if (FAILED(hr))
+        if (FAILED(hr)) {
             break;
+        }
 
         hr = decoder->GetFrame(0, &frame);
-        if (FAILED(hr))
+        if (FAILED(hr)) {
             break;
+        }
 
         hr = factory->CreateFormatConverter(&converter);
-        if (FAILED(hr))
+        if (FAILED(hr)) {
             break;
+        }
 
         hr = converter->Initialize(frame, GUID_WICPixelFormat24bppBGR, WICBitmapDitherTypeNone, nullptr, 0.0,
                                    WICBitmapPaletteTypeCustom);
-        if (FAILED(hr))
+        if (FAILED(hr)) {
             break;
+        }
 
         UINT w = 0, h = 0;
         hr = converter->GetSize(&w, &h);
-        if (FAILED(hr) || w == 0 || h == 0)
+        if (FAILED(hr) || w == 0 || h == 0) {
             break;
+        }
 
         const UINT stride = w * 3;
         const UINT bufSize = stride * h;
         std::vector<uint8_t> buf(bufSize);
 
         hr = converter->CopyPixels(nullptr, stride, bufSize, buf.data());
-        if (FAILED(hr))
+        if (FAILED(hr)) {
             break;
+        }
 
         cv::Mat tmp(static_cast<int>(h), static_cast<int>(w), CV_8UC3, buf.data());
         result = tmp.clone();
     } while (false);
 
-    if (converter)
+    if (converter) {
         converter->Release();
-    if (frame)
+    }
+    if (frame) {
         frame->Release();
-    if (decoder)
+    }
+    if (decoder) {
         decoder->Release();
-    if (factory)
+    }
+    if (factory) {
         factory->Release();
-    if (needUninit)
+    }
+    if (needUninit) {
         CoUninitialize();
+    }
 
     return result;
 }

@@ -82,8 +82,9 @@ inline cv::Rect DetectContentRoi(const cv::Mat& img, int blackThreshold = 5, dou
         int blackCount = 0;
         const uint8_t* row = gray.ptr<uint8_t>(y);
         for (int x = 0; x < w; ++x) {
-            if (row[x] < blackThreshold)
+            if (row[x] < blackThreshold) {
                 ++blackCount;
+            }
         }
         return static_cast<double>(blackCount) / w >= blackRatio;
     };
@@ -91,27 +92,32 @@ inline cv::Rect DetectContentRoi(const cv::Mat& img, int blackThreshold = 5, dou
     auto isBlackCol = [&](int x) -> bool {
         int blackCount = 0;
         for (int y = 0; y < h; ++y) {
-            if (gray.at<uint8_t>(y, x) < blackThreshold)
+            if (gray.at<uint8_t>(y, x) < blackThreshold) {
                 ++blackCount;
+            }
         }
         return static_cast<double>(blackCount) / h >= blackRatio;
     };
 
     int top = 0;
-    while (top < h && isBlackRow(top))
+    while (top < h && isBlackRow(top)) {
         ++top;
+    }
 
     int bottom = h - 1;
-    while (bottom >= top && isBlackRow(bottom))
+    while (bottom >= top && isBlackRow(bottom)) {
         --bottom;
+    }
 
     int left = 0;
-    while (left < w && isBlackCol(left))
+    while (left < w && isBlackCol(left)) {
         ++left;
+    }
 
     int right = w - 1;
-    while (right >= left && isBlackCol(right))
+    while (right >= left && isBlackCol(right)) {
         --right;
+    }
 
     if (top >= bottom || left >= right) {
         return cv::Rect(0, 0, w, h);
@@ -340,15 +346,17 @@ inline cv::Mat TonemapHdr(const cv::Mat& hdr32f, const HdrConfig& cfg)
 // 灰度图的中位数（用于亮度归一化）
 inline double ComputeGrayMedian(const cv::Mat& gray)
 {
-    if (gray.empty())
+    if (gray.empty()) {
         return 0.0;
+    }
 
     cv::Mat flat = gray.reshape(1, 1);
     if (!flat.isContinuous()) {
         flat = flat.clone();
     }
-    if (flat.total() == 0)
+    if (flat.total() == 0) {
         return 0.0;
+    }
 
     std::vector<uint8_t> data(flat.data, flat.data + flat.total());
     const size_t mid = data.size() / 2;
@@ -513,8 +521,9 @@ inline cv::Mat BuildMotionMask(const cv::Mat& lowCropped, const cv::Mat& normalC
 inline void ApplyGhostSuppressionMertens(cv::Mat& lowCropped, cv::Mat& normalCropped, cv::Mat& highCropped,
                                          const cv::Mat& motionMask, const HdrConfig& cfg)
 {
-    if (motionMask.empty())
+    if (motionMask.empty()) {
         return;
+    }
 
     cv::Mat gLow, gNormal, gHigh;
     cv::cvtColor(lowCropped, gLow, cv::COLOR_BGR2GRAY);
@@ -534,8 +543,9 @@ inline void ApplyGhostSuppressionMertens(cv::Mat& lowCropped, cv::Mat& normalCro
         const cv::Vec3b* n = normalCropped.ptr<cv::Vec3b>(y);
 
         for (int x = 0; x < motionMask.cols; ++x) {
-            if (m[x] == 0)
+            if (m[x] == 0) {
                 continue;
+            }
 
             const float alpha = (m[x] / 255.0F) * strength;
 
@@ -558,8 +568,9 @@ inline void ApplyGhostSuppressionMertens(cv::Mat& lowCropped, cv::Mat& normalCro
 inline void ApplyGhostSuppressionPhysicalLinear(std::vector<cv::Mat>& linearImages, const cv::Mat& motionMask,
                                                 const HdrConfig& cfg)
 {
-    if (motionMask.empty() || linearImages.size() != 3)
+    if (motionMask.empty() || linearImages.size() != 3) {
         return;
+    }
 
     const float strength = static_cast<float>(std::clamp(cfg.ghostSuppressStrength, 0.0, 1.0));
 
@@ -574,8 +585,9 @@ inline void ApplyGhostSuppressionPhysicalLinear(std::vector<cv::Mat>& linearImag
         const cv::Vec3f* n = linNormal.ptr<cv::Vec3f>(y);
 
         for (int x = 0; x < motionMask.cols; ++x) {
-            if (m[x] == 0)
+            if (m[x] == 0) {
                 continue;
+            }
 
             const float alpha = (m[x] / 255.0F) * strength;
             for (int c = 0; c < 3; ++c) {
