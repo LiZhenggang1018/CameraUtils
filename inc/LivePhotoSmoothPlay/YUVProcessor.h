@@ -52,7 +52,7 @@ public:
     }
 
     // 裁剪并生成新YUV文件
-    bool cropAndResize(float crop_percent, const std::string& output_path)
+    bool cropAndResize(float crop_percent, const std::string& outputPath)
     {
         if (crop_percent <= 0 || crop_percent >= 100) {
             std::cerr << "裁剪比例必须在0-100之间" << std::endl;
@@ -91,7 +91,7 @@ public:
                      crop_x / 2, crop_y / 2, crop_width / 2, crop_height / 2, 1, 1);
 
         // 写入文件
-        return writeYUVFile(output_path, output_data);
+        return writeYUVFile(outputPath, output_data);
     }
 
 private:
