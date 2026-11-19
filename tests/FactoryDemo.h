@@ -21,28 +21,28 @@ public:
 
 // 2. 具体类：Circle（构造函数按值接收 name radius）
 class Circle : public Shape {
-    std::string m_name;
-    double m_radius;
+    std::string name_;
+    double radius_;
 
 public:
     Circle(std::string name, double radius)
-        : m_name(std::move(name)),
-          m_radius(radius)
+        : name_(std::move(name)),
+          radius_(radius)
     {}
-    void draw() const override { std::cout << "Circle[" << m_name << "] with radius " << m_radius << std::endl; }
+    void draw() const override { std::cout << "Circle[" << name_ << "] with radius " << radius_ << std::endl; }
 };
 
 // 具体类：Square（按值接收 name）
 class Square : public Shape {
-    std::string m_name;
-    double m_side;
+    std::string name_;
+    double side_;
 
 public:
     Square(std::string name, double side)
-        : m_name(std::move(name)),
-          m_side(side)
+        : name_(std::move(name)),
+          side_(side)
     {}
-    void draw() const override { std::cout << "Square[" << m_name << "] with side " << m_side << std::endl; }
+    void draw() const override { std::cout << "Square[" << name_ << "] with side " << side_ << std::endl; }
 };
 
 // 定义工厂类型（接口 Shape，键类型 string，传递名称，额外参数 double）
