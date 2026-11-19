@@ -11,7 +11,7 @@ YUVImageReader::YUVImageReader(int width, int height)
       uvSize_((width / 2) * (height / 2))
 {}
 
-cv::Mat YUVImageReader::readYUV420P(const std::string& filepath) const
+cv::Mat YUVImageReader::ReadYuv420P(const std::string& filepath) const
 {
     std::ifstream file(filepath, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
@@ -40,7 +40,7 @@ cv::Mat YUVImageReader::readYUV420P(const std::string& filepath) const
     return bgrImage;
 }
 
-std::vector<cv::Mat> YUVImageReader::readYUV420PChannels(const std::string& filepath) const
+std::vector<cv::Mat> YUVImageReader::ReadYuv420PChannels(const std::string& filepath) const
 {
     std::ifstream file(filepath, std::ios::binary);
     if (!file.is_open()) {
@@ -61,7 +61,7 @@ std::vector<cv::Mat> YUVImageReader::readYUV420PChannels(const std::string& file
     return {yPlane, uPlane, vPlane};
 }
 
-void YUVImageReader::convertBGRtoYUV420P(const cv::Mat& bgrImage, std::vector<uint8_t>& yuvData) const
+void YUVImageReader::ConvertBgrToYuv420P(const cv::Mat& bgrImage, std::vector<uint8_t>& yuvData) const
 {
     // 修复 #7：显式检查连续性，避免 ROI 视图读错
     CV_Assert(!bgrImage.empty());
@@ -69,7 +69,7 @@ void YUVImageReader::convertBGRtoYUV420P(const cv::Mat& bgrImage, std::vector<ui
     CV_Assert(bgrImage.isContinuous());
 
     // 修复 #3：用 COLOR_BGR2YUV_I420，一次性输出 limited-range I420
-    // 与 readYUV420P 的 COLOR_YUV2BGR_I420 自洽
+    // 与 ReadYuv420P 的 COLOR_YUV2BGR_I420 自洽
     cv::Mat yuv420;
     cv::cvtColor(bgrImage, yuv420, cv::COLOR_BGR2YUV_I420);
 
@@ -77,7 +77,7 @@ void YUVImageReader::convertBGRtoYUV420P(const cv::Mat& bgrImage, std::vector<ui
     std::memcpy(yuvData.data(), yuv420.data, yuvData.size());
 }
 
-void YUVImageReader::saveAsYUV420P(const cv::Mat& image, const std::string& filepath)
+void YUVImageReader::SaveAsYuv420P(const cv::Mat& image, const std::string& filepath)
 {
     if (image.empty()) {
         throw std::runtime_error("输入图像为空");
@@ -92,12 +92,12 @@ void YUVImageReader::saveAsYUV420P(const cv::Mat& image, const std::string& file
         const int interp = (image.cols > width_ || image.rows > height_) ? cv::INTER_AREA : cv::INTER_CUBIC;
         cv::resize(image, resizedImage, cv::Size(width_, height_), 0, 0, interp);
     } else {
-        // 关键：克隆，保证传入 convertBGRtoYUV420P 的是连续内存
+        // 关键：克隆，保证传入 ConvertBgrToYuv420P 的是连续内存
         resizedImage = image.clone();
     }
 
     std::vector<uint8_t> yuvData;
-    convertBGRtoYUV420P(resizedImage, yuvData);
+    ConvertBgrToYuv420P(resizedImage, yuvData);
 
     std::ofstream file(filepath, std::ios::binary);
     if (!file.is_open()) {

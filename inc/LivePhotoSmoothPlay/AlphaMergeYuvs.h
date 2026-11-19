@@ -86,15 +86,15 @@ inline void DumpYuv2Jpg(const YuvInfo& in, const std::string& out)
         cv::cvtColor(yuvMat, bgrMat, cv::COLOR_YUV2BGR_I420);
 
         // 保存为高质量JPEG
-        std::vector<int> compression_params;
-        compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
-        compression_params.push_back(95); // 高质量，0-100，95是很好的质量
-        compression_params.push_back(cv::IMWRITE_JPEG_PROGRESSIVE);
-        compression_params.push_back(1); // 启用渐进式JPEG
-        compression_params.push_back(cv::IMWRITE_JPEG_OPTIMIZE);
-        compression_params.push_back(1); // 启用优化
+        std::vector<int> compressionParams;
+        compressionParams.push_back(cv::IMWRITE_JPEG_QUALITY);
+        compressionParams.push_back(95); // 高质量，0-100，95是很好的质量
+        compressionParams.push_back(cv::IMWRITE_JPEG_PROGRESSIVE);
+        compressionParams.push_back(1); // 启用渐进式JPEG
+        compressionParams.push_back(cv::IMWRITE_JPEG_OPTIMIZE);
+        compressionParams.push_back(1); // 启用优化
 
-        if (!cv::imwrite(out, bgrMat, compression_params)) {
+        if (!cv::imwrite(out, bgrMat, compressionParams)) {
             throw std::runtime_error("Failed to save JPEG image: " + out);
         } else {
             PV("succeed to save jpg image to", out);
@@ -136,15 +136,15 @@ inline void DumpYuv2Jpg(const YuvInfo& in, const std::string& out)
         cv::cvtColor(yuvContinuous, bgrMat, cv::COLOR_YUV2BGR_I420);
 
         // 保存为高质量JPEG
-        std::vector<int> compression_params;
-        compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
-        compression_params.push_back(95); // 高质量
-        compression_params.push_back(cv::IMWRITE_JPEG_PROGRESSIVE);
-        compression_params.push_back(1); // 渐进式
-        compression_params.push_back(cv::IMWRITE_JPEG_OPTIMIZE);
-        compression_params.push_back(1); // 优化
+        std::vector<int> compressionParams;
+        compressionParams.push_back(cv::IMWRITE_JPEG_QUALITY);
+        compressionParams.push_back(95); // 高质量
+        compressionParams.push_back(cv::IMWRITE_JPEG_PROGRESSIVE);
+        compressionParams.push_back(1); // 渐进式
+        compressionParams.push_back(cv::IMWRITE_JPEG_OPTIMIZE);
+        compressionParams.push_back(1); // 优化
 
-        if (!cv::imwrite(out, bgrMat, compression_params)) {
+        if (!cv::imwrite(out, bgrMat, compressionParams)) {
             throw std::runtime_error("Failed to save JPEG image: " + out);
         }
     }
@@ -267,12 +267,12 @@ inline void DumpYuv2JpgOptimized(const YuvInfo& in, const std::string& out)
     cv::cvtColor(yuv420, bgrMat, cv::COLOR_YUV2BGR_I420);
 
     // 保存为高质量JPEG
-    std::vector<int> compression_params = {
+    std::vector<int> compressionParams = {
         cv::IMWRITE_JPEG_QUALITY,  95, cv::IMWRITE_JPEG_PROGRESSIVE,    1,
         cv::IMWRITE_JPEG_OPTIMIZE, 1,  cv::IMWRITE_JPEG_CHROMA_QUALITY, 95 // 色度质量
     };
 
-    if (!cv::imwrite(out, bgrMat, compression_params)) {
+    if (!cv::imwrite(out, bgrMat, compressionParams)) {
         throw std::runtime_error("Failed to save JPEG image: " + out);
     }
 }

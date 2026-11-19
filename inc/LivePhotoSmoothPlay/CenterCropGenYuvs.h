@@ -42,17 +42,17 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
     }
 
     // 确保输出目录存在（若 outDir 为空则使用当前目录）
-    fs::path out_path;
+    fs::path outPath;
     if (outDir.empty()) {
-        out_path = fs::current_path();
+        outPath = fs::current_path();
     } else {
-        out_path = fs::path(outDir);
+        outPath = fs::path(outDir);
     }
     std::error_code ec;
-    if (!fs::exists(out_path)) {
-        if (!fs::create_directories(out_path, ec)) {
+    if (!fs::exists(outPath)) {
+        if (!fs::create_directories(outPath, ec)) {
             if (ec) {
-                std::cerr << "Error: failed to create output directory: " << out_path.string() << " (" << ec.message()
+                std::cerr << "Error: failed to create output directory: " << outPath.string() << " (" << ec.message()
                           << ")" << std::endl;
                 return;
             }
@@ -84,13 +84,13 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
     int ySize = w * h;
     int uvSize = ySize / 4;
 
-    std::vector<unsigned char> Y(ySize);
-    std::vector<unsigned char> U(uvSize);
-    std::vector<unsigned char> V(uvSize);
+    std::vector<unsigned char> y(ySize);
+    std::vector<unsigned char> u(uvSize);
+    std::vector<unsigned char> v(uvSize);
 
-    std::copy(frameData.begin(), frameData.begin() + ySize, Y.begin());
-    std::copy(frameData.begin() + ySize, frameData.begin() + ySize + uvSize, U.begin());
-    std::copy(frameData.begin() + ySize + uvSize, frameData.end(), V.begin());
+    std::copy(frameData.begin(), frameData.begin() + ySize, y.begin());
+    std::copy(frameData.begin() + ySize, frameData.begin() + ySize + uvSize, u.begin());
+    std::copy(frameData.begin() + ySize + uvSize, frameData.end(), v.begin());
 
     // 生成num张裁剪后的YUV
     for (int n = 1; n <= num; n++) {
@@ -118,8 +118,8 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
         }
 
         // 计算UV尺寸（YUV420P中UV是Y的一半）
-        int cropW_UV = cropW / 2;
-        int cropH_UV = cropH / 2;
+        int cropWUv = cropW / 2;
+        int cropHUv = cropH / 2;
 
         // 计算起始位置
         int startX = (w - cropW) / 2;
@@ -128,12 +128,12 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
         // 确保起始位置是偶数
         startX = (startX / 2) * 2;
         startY = (startY / 2) * 2;
-        int startX_UV = startX / 2;
-        int startY_UV = startY / 2;
+        int startXUv = startX / 2;
+        int startYUv = startY / 2;
 
         // 创建裁剪后的YUV数据缓冲区
         int cropYSize = cropW * cropH;
-        int cropUVSize = cropW_UV * cropH_UV;
+        int cropUVSize = cropWUv * cropHUv;
         std::vector<unsigned char> cropY(cropYSize);
         std::vector<unsigned char> cropU(cropUVSize);
         std::vector<unsigned char> cropV(cropUVSize);
@@ -148,38 +148,38 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
                 int dstX = xx;
 
                 cropY[dstY * cropW + dstX] =
-                    Y[static_cast<size_t>(srcY) * static_cast<size_t>(w) + static_cast<size_t>(srcX)];
+                    y[static_cast<size_t>(srcY) * static_cast<size_t>(w) + static_cast<size_t>(srcX)];
             }
         }
 
         // 裁剪U分量
-        for (int yy = 0; yy < cropH_UV; yy++) {
-            int srcY = startY_UV + yy;
+        for (int yy = 0; yy < cropHUv; yy++) {
+            int srcY = startYUv + yy;
             int dstY = yy;
 
-            for (int xx = 0; xx < cropW_UV; xx++) {
-                int srcX = startX_UV + xx;
+            for (int xx = 0; xx < cropWUv; xx++) {
+                int srcX = startXUv + xx;
                 int dstX = xx;
 
-                cropU[dstY * cropW_UV + dstX] = U[srcY * (w / 2) + srcX];
+                cropU[dstY * cropWUv + dstX] = u[srcY * (w / 2) + srcX];
             }
         }
 
         // 裁剪V分量
-        for (int yy = 0; yy < cropH_UV; yy++) {
-            int srcY = startY_UV + yy;
+        for (int yy = 0; yy < cropHUv; yy++) {
+            int srcY = startYUv + yy;
             int dstY = yy;
 
-            for (int xx = 0; xx < cropW_UV; xx++) {
-                int srcX = startX_UV + xx;
+            for (int xx = 0; xx < cropWUv; xx++) {
+                int srcX = startXUv + xx;
                 int dstX = xx;
 
-                cropV[dstY * cropW_UV + dstX] = V[srcY * (w / 2) + srcX];
+                cropV[dstY * cropWUv + dstX] = v[srcY * (w / 2) + srcX];
             }
         }
 
         // 生成输出文件名（使用 filesystem 拼接）
-        fs::path yuvPath = out_path / ("crop" + std::to_string(n) + ".yuv");
+        fs::path yuvPath = outPath / ("crop" + std::to_string(n) + ".yuv");
         std::ofstream outputFile(yuvPath.string(), std::ios::binary);
 
         if (!outputFile.is_open()) {
@@ -199,15 +199,15 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
             }
         }
 
-        for (int yy = 0; yy < cropH_UV; yy++) {
-            for (int xx = 0; xx < cropW_UV; xx++) {
-                fullCropU[(startY_UV + yy) * (w / 2) + (startX_UV + xx)] = cropU[yy * cropW_UV + xx];
-                fullCropV[(startY_UV + yy) * (w / 2) + (startX_UV + xx)] = cropV[yy * cropW_UV + xx];
+        for (int yy = 0; yy < cropHUv; yy++) {
+            for (int xx = 0; xx < cropWUv; xx++) {
+                fullCropU[(startYUv + yy) * (w / 2) + (startXUv + xx)] = cropU[yy * cropWUv + xx];
+                fullCropV[(startYUv + yy) * (w / 2) + (startXUv + xx)] = cropV[yy * cropWUv + xx];
             }
         }
 
         // 新增逻辑：将裁剪的中心区域放大（resize）填满整个画幅，替代黑边填充
-        bool resized_ok = false;
+        bool resizedOk = false;
         try {
             if (cropYSize > 0 && cropUVSize > 0) {
                 // Y 分量 resize 到 full size (h x w)
@@ -216,11 +216,11 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
                 cv::resize(cropYMat, resizedYMat, cv::Size(w, h), 0, 0, cv::INTER_LINEAR);
 
                 // UV 分量 resize 到 full UV size (h/2 x w/2)
-                cv::Mat cropUMat(cropH_UV, cropW_UV, CV_8UC1, cropU.data());
+                cv::Mat cropUMat(cropHUv, cropWUv, CV_8UC1, cropU.data());
                 cv::Mat resizedUMat;
                 cv::resize(cropUMat, resizedUMat, cv::Size(w / 2, h / 2), 0, 0, cv::INTER_LINEAR);
 
-                cv::Mat cropVMat(cropH_UV, cropW_UV, CV_8UC1, cropV.data());
+                cv::Mat cropVMat(cropHUv, cropWUv, CV_8UC1, cropV.data());
                 cv::Mat resizedVMat;
                 cv::resize(cropVMat, resizedVMat, cv::Size(w / 2, h / 2), 0, 0, cv::INTER_LINEAR);
 
@@ -232,18 +232,18 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
                     std::memcpy(fullCropY.data(), resizedYMat.data, fullCropY.size());
                     std::memcpy(fullCropU.data(), resizedUMat.data, fullCropU.size());
                     std::memcpy(fullCropV.data(), resizedVMat.data, fullCropV.size());
-                    resized_ok = true;
+                    resizedOk = true;
                 }
             }
         } catch (const cv::Exception& e) {
             std::cerr << "Warning: OpenCV exception during resize: " << e.what() << std::endl;
-            resized_ok = false;
+            resizedOk = false;
         } catch (...) {
             std::cerr << "Warning: Unknown exception during resize" << std::endl;
-            resized_ok = false;
+            resizedOk = false;
         }
 
-        if (!resized_ok) {
+        if (!resizedOk) {
             // 如果 resize 失败，fullCrop 保持原先中心放置的方式（已在上面完成）
             std::cerr << "Info: Using centered crop (no upscale) for " << yuvPath.string() << std::endl;
         }
@@ -270,7 +270,7 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
                 cv::Mat bgrMat;
                 cv::cvtColor(yuvMat, bgrMat, cv::COLOR_YUV2BGR_I420);
 
-                fs::path jpgPath = out_path / ("crop" + std::to_string(n) + ".jpg");
+                fs::path jpgPath = outPath / ("crop" + std::to_string(n) + ".jpg");
                 if (!cv::imwrite(jpgPath.string(), bgrMat)) {
                     std::cerr << "Warning: Failed to write JPG: " << jpgPath.string() << std::endl;
                 }
@@ -285,7 +285,7 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
         }
 
         std::cout << "Generated: " << yuvPath.string() << " (crop ratio: " << currentCropRatio
-                  << ", crop size: " << cropW << "x" << cropH << ", upscale applied: " << (resized_ok ? "yes" : "no")
+                  << ", crop size: " << cropW << "x" << cropH << ", upscale applied: " << (resizedOk ? "yes" : "no")
                   << ")" << std::endl;
     }
 
@@ -328,10 +328,10 @@ inline void GenDiffFovYuvsFromCoverFrame()
     auto [x, y] = GetXYScaleFroMatrixVidToCover(); // 获取视频帧到封面帧的X、Y缩放比例
     double vidToCoverScaleRation = (x + y) / 2;    // 取平均值作为缩放比例
     auto ratio = (1 - vidToCoverScaleRation) / 2 /
-                 TransFrameNum; // 0.94是通过视频帧对齐到封面帧得到的H矩阵中的缩放比例，及：视频帧
-                                // （size） = 封面帧 94% w * 封面帧 94% h
+                 TRANS_FRAME_NUM; // 0.94是通过视频帧对齐到封面帧得到的H矩阵中的缩放比例，及：视频帧
+                                  // （size） = 封面帧 94% w * 封面帧 94% h
     PV("GenDiffFovYuvsFromCoverFrame:", x, y, vidToCoverScaleRation, ratio);
-    CenterCropGenYuvs(COVER_FRAME_YUV, YUV_W, YUV_H, TransFrameNum, ratio,
+    CenterCropGenYuvs(COVER_FRAME_YUV, YUV_W, YUV_H, TRANS_FRAME_NUM, ratio,
                       CROP_COVER_DIR); // crop1 FOV接近封面，cropLast FOV接近视频帧
 }
 
