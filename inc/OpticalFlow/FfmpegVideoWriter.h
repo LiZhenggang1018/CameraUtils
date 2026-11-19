@@ -29,8 +29,7 @@ public:
     // bitrate 只在 crf < 0 时生效
     bool Open(const std::string& path, int width, int height, int fps, int bitrate = 8000000);
 
-    bool Open(const std::string& path, int width, int height, int fps, int bitrate,
-              const EncoderParams& enc);
+    bool Open(const std::string& path, int width, int height, int fps, int bitrate, const EncoderParams& enc);
 
     bool WriteFrame(const cv::Mat& bgr);
 
