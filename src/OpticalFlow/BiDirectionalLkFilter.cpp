@@ -18,8 +18,8 @@ void BiDirectionalLkFilter::Filter(const cv::Mat& prevGray, const cv::Mat& gray,
     std::vector<uchar> forwardStatus;
     std::vector<float> forwardErr;
 
-    cv::calcOpticalFlowPyrLK(prevGray, gray, prevPts, forwardPts, forwardStatus, forwardErr, m_params.winSize,
-                             m_params.maxLevel, m_params.criteria);
+    cv::calcOpticalFlowPyrLK(prevGray, gray, prevPts, forwardPts, forwardStatus, forwardErr, params_.winSize,
+                             params_.maxLevel, params_.criteria);
 
     // 2) 收集前向成功的点，作为反向跟踪的输入
     std::vector<cv::Point2f> validPrev;
@@ -43,8 +43,8 @@ void BiDirectionalLkFilter::Filter(const cv::Mat& prevGray, const cv::Mat& gray,
     std::vector<uchar> backwardStatus;
     std::vector<float> backwardErr;
 
-    cv::calcOpticalFlowPyrLK(gray, prevGray, validForward, backwardPts, backwardStatus, backwardErr, m_params.winSize,
-                             m_params.maxLevel, m_params.criteria);
+    cv::calcOpticalFlowPyrLK(gray, prevGray, validForward, backwardPts, backwardStatus, backwardErr, params_.winSize,
+                             params_.maxLevel, params_.criteria);
 
     // 4) 前后向一致性检验：|prevPt - backward(forward(prevPt))|
     for (std::size_t i = 0; i < backwardStatus.size(); ++i) {
@@ -54,7 +54,7 @@ void BiDirectionalLkFilter::Filter(const cv::Mat& prevGray, const cv::Mat& gray,
 
         const float fbError = static_cast<float>(cv::norm(validPrev[i] - backwardPts[i]));
 
-        if (fbError < static_cast<float>(m_params.fbThreshold)) {
+        if (fbError < static_cast<float>(params_.fbThreshold)) {
             outPrevPts.push_back(validPrev[i]);
             outCurrPts.push_back(validForward[i]);
             outFbErrors.push_back(fbError);
