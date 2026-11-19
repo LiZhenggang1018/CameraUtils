@@ -58,152 +58,239 @@ inline const std::vector<Command>& AllCommands()
 {
     static const std::vector<Command> commands = {
         // ---------- 纯工具层 ----------
-        {"deque-blocking", "BlockingDeque 阻塞模式", Label::UNIT,
-         [] {
-             TestInBlockingMode();
-             return 0;
-         }},
-        {"deque-nonblocking", "BlockingDeque 非阻塞模式", Label::UNIT,
-         [] {
-             TestInNonBlockingMode();
-             return 0;
-         }},
-        {"find-then-or-else", "Find/AndThen/OrElse", Label::UNIT,
-         [] {
-             TestFindAndThenOrElse();
-             return 0;
-         }},
-        {"overload-ref", "Overload 引用重载", Label::UNIT,
-         [] {
-             TestOverloadRef();
-             return 0;
-         }},
-        {"timeout-monitor", "TimeoutMonitor", Label::UNIT,
-         [] {
-             TimeoutMonitorTest();
-             return 0;
-         }},
-        {"misc", "Misc：Enum2Str / Scoped / InstanceCounter", Label::UNIT,
-         [] {
-             MiscTest();
-             return 0;
-         }},
-        {"circular-queue", "CircularQueue", Label::UNIT,
-         [] {
-             TestCircularQueue();
-             return 0;
-         }},
-        {"overwrite-function", "OverwriteFunction", Label::UNIT,
-         [] {
-             TestOverwriteFunction();
-             return 0;
-         }},
-        {"msg-queue", "MsgQueue 任务队列", Label::UNIT,
-         [] {
-             MsgQueueTest();
-             return 0;
-         }},
-        {"event", "Event/EventDispatcher", Label::UNIT,
-         [] {
-             TestEvent();
-             return 0;
-         }},
-        {"factory-json", "GeneralFactory + Json 配置", Label::UNIT,
-         [] {
-             FactoryJsonTest();
-             return 0;
-         }},
-        {"sync-agency", "SyncAgency 跨模块同步", Label::UNIT,
-         [] {
-             TestSyncAgency();
-             return 0;
-         }},
-        {"thread-pool", "ThreadPool", Label::UNIT,
-         [] {
-             ThreadPoolTest();
-             return 0;
-         }},
-        {"instance-counter", "InstanceCounter", Label::UNIT,
-         [] {
-             InstanceCounterTest();
-             return 0;
-         }},
-        {"type2instmap", "Type2InstMap", Label::UNIT,
-         [] {
-             Type2InstMapTest();
-             return 0;
-         }},
-        {"magic-enum", "MagicEnum 枚举转换", Label::UNIT,
-         [] {
-             MagicEnumTest::TestMagicEnum();
-             return 0;
-         }},
+        {.name = "deque-blocking",
+         .description = "BlockingDeque 阻塞模式",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 TestInBlockingMode();
+                 return 0;
+             }},
+        {.name = "deque-nonblocking",
+         .description = "BlockingDeque 非阻塞模式",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 TestInNonBlockingMode();
+                 return 0;
+             }},
+        {.name = "find-then-or-else",
+         .description = "Find/AndThen/OrElse",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 TestFindAndThenOrElse();
+                 return 0;
+             }},
+        {.name = "overload-ref",
+         .description = "Overload 引用重载",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 TestOverloadRef();
+                 return 0;
+             }},
+        {.name = "timeout-monitor",
+         .description = "TimeoutMonitor",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 TimeoutMonitorTest();
+                 return 0;
+             }},
+        {.name = "misc",
+         .description = "Misc：Enum2Str / Scoped / InstanceCounter",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 MiscTest();
+                 return 0;
+             }},
+        {.name = "circular-queue",
+         .description = "CircularQueue",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 TestCircularQueue();
+                 return 0;
+             }},
+        {.name = "overwrite-function",
+         .description = "OverwriteFunction",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 TestOverwriteFunction();
+                 return 0;
+             }},
+        {.name = "msg-queue",
+         .description = "MsgQueue 任务队列",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 MsgQueueTest();
+                 return 0;
+             }},
+        {.name = "event",
+         .description = "Event/EventDispatcher",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 TestEvent();
+                 return 0;
+             }},
+        {.name = "factory-json",
+         .description = "GeneralFactory + Json 配置",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 FactoryJsonTest();
+                 return 0;
+             }},
+        {.name = "sync-agency",
+         .description = "SyncAgency 跨模块同步",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 TestSyncAgency();
+                 return 0;
+             }},
+        {.name = "thread-pool",
+         .description = "ThreadPool",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 ThreadPoolTest();
+                 return 0;
+             }},
+        {.name = "instance-counter",
+         .description = "InstanceCounter",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 InstanceCounterTest();
+                 return 0;
+             }},
+        {.name = "type2instmap",
+         .description = "Type2InstMap",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 Type2InstMapTest();
+                 return 0;
+             }},
+        {.name = "magic-enum",
+         .description = "MagicEnum 枚举转换",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 MagicEnumTest::TestMagicEnum();
+                 return 0;
+             }},
 
 #if VAS_HAS_STDEXEC
-        {"vas-concurrency", "stdexec 并发管线", Label::UNIT,
-         [] {
-             VasConcurrencyTest();
-             return 0;
-         }},
+        {.name = "vas-concurrency",
+         .description = "stdexec 并发管线",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 VasConcurrencyTest();
+                 return 0;
+             }},
 #endif
 
         // ---------- OpenCV / FFmpeg / exiv2 ----------
-        {"exif", "Exiv2 读取 EXIF", Label::UNIT,
-         [] {
-             CameraUtils::Exif2Test();
-             return 0;
-         }},
+        {.name = "exif",
+         .description = "Exiv2 读取 EXIF",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 CameraUtils::Exif2Test();
+                 return 0;
+             }},
 
         // ---------- 依赖媒体素材 ----------
-        {"ffmpeg", "FFmpeg 基础解码", Label::MEDIA,
-         [] {
-             TestFFMpeg();
-             return 0;
-         }},
-        {"optical-flow-upsample", "光流 30→60 帧插值", Label::MEDIA, [] { return Upsample30To60(); }},
-        {"hdr-merge", "HDR 融合", Label::MEDIA,
-         [] {
-             RunHdrMergeTest();
-             return 0;
-         }},
-        {"hdr-merge-multilevel", "HDR 融合（多档位）", Label::MEDIA,
-         [] {
-             RunHdrMergeMultiLevelTest();
-             return 0;
-         }},
-        {"hdr-merge-physical", "HDR 物理融合", Label::MEDIA,
-         [] {
-             RunHdrMergePhysicalTest();
-             return 0;
-         }},
-        {"hdr-merge-ghost", "HDR 鬼影抑制", Label::MEDIA,
-         [] {
-             RunHdrMergeGhostSuppressionTest();
-             return 0;
-         }},
-        {"livephoto", "LivePhoto 平滑播放", Label::MEDIA,
-         [] {
-             RunLivePhotoSmoothPlayTest();
-             return 0;
-         }},
-        {"livephoto-reg", "LivePhoto 图像配准", Label::MEDIA,
-         [] {
-             RegTest();
-             return 0;
-         }},
+        {.name = "ffmpeg",
+         .description = "FFmpeg 基础解码",
+         .label = Label::MEDIA,
+         .run =
+             [] {
+                 TestFFMpeg();
+                 return 0;
+             }},
+        {.name = "optical-flow-upsample",
+         .description = "光流 30→60 帧插值",
+         .label = Label::MEDIA,
+         .run = [] { return Upsample30To60(); }},
+        {.name = "hdr-merge",
+         .description = "HDR 融合",
+         .label = Label::MEDIA,
+         .run =
+             [] {
+                 RunHdrMergeTest();
+                 return 0;
+             }},
+        {.name = "hdr-merge-multilevel",
+         .description = "HDR 融合（多档位）",
+         .label = Label::MEDIA,
+         .run =
+             [] {
+                 RunHdrMergeMultiLevelTest();
+                 return 0;
+             }},
+        {.name = "hdr-merge-physical",
+         .description = "HDR 物理融合",
+         .label = Label::MEDIA,
+         .run =
+             [] {
+                 RunHdrMergePhysicalTest();
+                 return 0;
+             }},
+        {.name = "hdr-merge-ghost",
+         .description = "HDR 鬼影抑制",
+         .label = Label::MEDIA,
+         .run =
+             [] {
+                 RunHdrMergeGhostSuppressionTest();
+                 return 0;
+             }},
+        {.name = "livephoto",
+         .description = "LivePhoto 平滑播放",
+         .label = Label::MEDIA,
+         .run =
+             [] {
+                 RunLivePhotoSmoothPlayTest();
+                 return 0;
+             }},
+        {.name = "livephoto-reg",
+         .description = "LivePhoto 图像配准",
+         .label = Label::MEDIA,
+         .run =
+             [] {
+                 RegTest();
+                 return 0;
+             }},
 
         // ---------- 需要图形界面 ----------
-        {"opencv-basic", "OpenCV 基础读写与显示", Label::GUI,
-         [] {
-             OpenCVTest();
-             return 0;
-         }},
-        {"optical-flow", "光流可视化（交互窗口）", Label::GUI, [] { return OpticalFlowTest(); }},
-        {"harris", "Harris 角点检测可视化", Label::GUI,
-         [] {
-             HarrisTest();
-             return 0;
-         }},
+        {.name = "opencv-basic",
+         .description = "OpenCV 基础读写与显示",
+         .label = Label::GUI,
+         .run =
+             [] {
+                 OpenCVTest();
+                 return 0;
+             }},
+        {.name = "optical-flow",
+         .description = "光流可视化（交互窗口）",
+         .label = Label::GUI,
+         .run = [] { return OpticalFlowTest(); }},
+        {.name = "harris",
+         .description = "Harris 角点检测可视化",
+         .label = Label::GUI,
+         .run =
+             [] {
+                 HarrisTest();
+                 return 0;
+             }},
     };
     return commands;
 }

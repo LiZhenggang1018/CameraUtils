@@ -487,7 +487,7 @@ inline YuvInfo LoadYuvFromFile(const std::string& filename, int width, int heigh
     file.close();
 
     // 返回YuvInfo结构
-    return YuvInfo{data, width, height, stride};
+    return YuvInfo{.pData = data, .width = width, .height = height, .stride = stride};
 }
 
 // 辅助函数：释放YuvInfo中的内存

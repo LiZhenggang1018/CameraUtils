@@ -41,9 +41,30 @@ struct HdrConfig {
     int qualityLevel = 1;
 
     std::map<std::string, QualityPreset> qualityPresets = {
-        {"0", QualityPreset{0.8, 1.0, 1.0, false, 0.6, 1.2, 0.0, false}},
-        {"1", QualityPreset{1.2, 1.1, 1.0, true, 0.6, 1.2, 0.0, false}},
-        {"2", QualityPreset{1.5, 1.2, 1.2, true, 1.0, 1.5, 2.0, false}},
+        {"0", QualityPreset{.contrastWeight = 0.8,
+                            .saturationWeight = 1.0,
+                            .exposureWeight = 1.0,
+                            .enableUnsharpMask = false,
+                            .unsharpAmount = 0.6,
+                            .unsharpRadius = 1.2,
+                            .unsharpThreshold = 0.0,
+                            .enableDetailEnhance = false}},
+        {"1", QualityPreset{.contrastWeight = 1.2,
+                            .saturationWeight = 1.1,
+                            .exposureWeight = 1.0,
+                            .enableUnsharpMask = true,
+                            .unsharpAmount = 0.6,
+                            .unsharpRadius = 1.2,
+                            .unsharpThreshold = 0.0,
+                            .enableDetailEnhance = false}},
+        {"2", QualityPreset{.contrastWeight = 1.5,
+                            .saturationWeight = 1.2,
+                            .exposureWeight = 1.2,
+                            .enableUnsharpMask = true,
+                            .unsharpAmount = 1.0,
+                            .unsharpRadius = 1.5,
+                            .unsharpThreshold = 2.0,
+                            .enableDetailEnhance = false}},
     };
 
     // ---- 细粒度字段 ----

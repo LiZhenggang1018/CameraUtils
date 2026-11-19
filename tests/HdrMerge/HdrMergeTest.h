@@ -129,9 +129,9 @@ inline void RunHdrMergeGhostSuppressionTest()
     };
 
     const std::vector<Case> cases = {
-        {"ghost_mertens_diff", "mertens", "diff"},
-        {"ghost_physical_diff", "physical", "diff"},
-        {"ghost_mertens_flowdiff", "mertens", "flow+diff"},
+        {.label = "ghost_mertens_diff", .pipeline = "mertens", .ghostMode = "diff"},
+        {.label = "ghost_physical_diff", .pipeline = "physical", .ghostMode = "diff"},
+        {.label = "ghost_mertens_flowdiff", .pipeline = "mertens", .ghostMode = "flow+diff"},
     };
 
     for (const auto& c : cases) {

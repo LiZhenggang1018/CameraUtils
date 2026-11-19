@@ -60,7 +60,13 @@ inline AVStreamTempInfo GetAVStreamTempInfo(const std::string& filename)
             PV("time_base.num", timeBase.num, "time_base.den", timeBase.den, "height", height, "width", width,
                "sample_aspect_ratio.num", sampleAspectRatio.num, "sample_aspect_ratio.den", sampleAspectRatio.den,
                "bit_rate", bitRate, "pix_fmt", pixFmt, "framerate.num", framerate.num, "framerate.den", framerate.den);
-            info = {timeBase, height, width, sampleAspectRatio, bitRate, pixFmt, framerate};
+            info = {.timeBase = timeBase,
+                    .height = height,
+                    .width = width,
+                    .sampleAspectRatio = sampleAspectRatio,
+                    .bitRate = bitRate,
+                    .pixFmt = pixFmt,
+                    .framerate = framerate};
             break;
         }
     }
