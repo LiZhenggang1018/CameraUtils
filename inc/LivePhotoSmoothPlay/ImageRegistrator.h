@@ -106,14 +106,14 @@ enum class TransformType { HOMOGRAPHY, AFFINE, EUCLIDEAN, TRANSLATION };
 //      若换 4K 分辨率且要求亚像素精度，可扩展为 Point2d。
 // ============================================================
 struct RegistrationResult {
-    cv::Mat registered_image{}; // target 对齐到 reference 的结果（已求逆 warp）
-    cv::Mat transform_matrix{}; // ⚠️ reference → target 方向
+    cv::Mat registeredImage{}; // target 对齐到 reference 的结果（已求逆 warp）
+    cv::Mat transformMatrix{}; // ⚠️ reference → target 方向
     std::vector<cv::KeyPoint> keypoints1{};
     std::vector<cv::KeyPoint> keypoints2{};
-    std::vector<cv::DMatch> good_matches{};   // Lowe's ratio 过滤后（含误匹配）
-    std::vector<cv::DMatch> inlier_matches{}; // RANSAC 验证后的内点（更可信）
-    int num_inliers{};                        // = inlier_matches.size()
-    double rms_error{};                       // 内点重投影均方根误差（像素）
+    std::vector<cv::DMatch> goodMatches{};   // Lowe's ratio 过滤后（含误匹配）
+    std::vector<cv::DMatch> inlierMatches{}; // RANSAC 验证后的内点（更可信）
+    int numInliers{};                        // = inlier_matches.size()
+    double rmsError{};                       // 内点重投影均方根误差（像素）
 };
 
 // ============================================================
@@ -139,9 +139,9 @@ public:
      * @note registered_image 是"target 对齐到 reference"的结果，可直接使用。
      * @note transform_matrix 是 reference→target，需用 registered_image 或自行求逆。
      */
-    RegistrationResult registerImages(const cv::Mat& reference_img, const cv::Mat& target_img,
-                                      FeatureDetectorType detector_type = FeatureDetectorType::ORB,
-                                      TransformType transform_type = TransformType::HOMOGRAPHY);
+    RegistrationResult registerImages(const cv::Mat& referenceImg, const cv::Mat& targetImg,
+                                      FeatureDetectorType detectorType = FeatureDetectorType::ORB,
+                                      TransformType transformType = TransformType::HOMOGRAPHY);
 
     /**
      * @brief 绘制匹配结果可视化
@@ -156,20 +156,20 @@ public:
      *        - matches.txt（good_matches，兼容旧工具）
      *        - inlier_matches.txt（RANSAC 内点，精确调试用）
      */
-    void saveRegistrationResults(const RegistrationResult& result, const std::string& output_dir);
+    void saveRegistrationResults(const RegistrationResult& result, const std::string& outputDir);
 
 private:
     std::tuple<std::vector<cv::KeyPoint>, cv::Mat> detectFeatures(const cv::Mat& image,
-                                                                  FeatureDetectorType detector_type);
+                                                                  FeatureDetectorType detectorType);
 
     std::vector<cv::DMatch> matchFeatures(const cv::Mat& descriptors1, const cv::Mat& descriptors2,
-                                          FeatureDetectorType detector_type);
+                                          FeatureDetectorType detectorType);
 
     cv::Mat estimateTransform(const std::vector<cv::KeyPoint>& keypoints1, const std::vector<cv::KeyPoint>& keypoints2,
-                              const std::vector<cv::DMatch>& matches, TransformType transform_type,
-                              std::vector<cv::DMatch>& inlier_matches);
+                              const std::vector<cv::DMatch>& matches, TransformType transformType,
+                              std::vector<cv::DMatch>& inlierMatches);
 
-    cv::Mat applyTransform(const cv::Mat& image, const cv::Mat& transform, const cv::Size& output_size);
+    cv::Mat applyTransform(const cv::Mat& image, const cv::Mat& transform, const cv::Size& outputSize);
 
     // 修复坑 5：检测器缓存（首次创建后复用，避免每次 detectFeatures 都 new）
     // 注：mutable 允许在 const 方法里更新；当前单线程使用，若将来多线程共享
@@ -189,7 +189,7 @@ private:
  * @param transform   变换类型（默认 HOMOGRAPHY）
  * @return 0 成功，非 0 失败
  */
-int RegYuv(const std::string& curYuvFile, const std::string& refYuvFile, const std::string& output_dir, int width = 720,
+int RegYuv(const std::string& curYuvFile, const std::string& refYuvFile, const std::string& outputDir, int width = 720,
            int height = 1584, FeatureDetectorType detector = FeatureDetectorType::ORB,
            TransformType transform = TransformType::HOMOGRAPHY);
 
@@ -202,7 +202,7 @@ int RegYuv(const std::string& curYuvFile, const std::string& refYuvFile, const s
  *
  * 读取策略：先尝试 cv::imread，失败时降级到 WIC
  */
-int RegImg(const std::string& curImgFile, const std::string& refImgFile, const std::string& output_dir,
+int RegImg(const std::string& curImgFile, const std::string& refImgFile, const std::string& outputDir,
            FeatureDetectorType detector = FeatureDetectorType::ORB,
            TransformType transform = TransformType::HOMOGRAPHY);
 
