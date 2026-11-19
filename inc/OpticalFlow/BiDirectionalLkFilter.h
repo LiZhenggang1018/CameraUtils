@@ -16,31 +16,31 @@ public:
     BiDirectionalLkFilter() = default;
 
     explicit BiDirectionalLkFilter(const Params& params)
-        : m_params(params)
+        : params_(params)
     {}
 
     void Filter(const cv::Mat& prevGray, const cv::Mat& gray, const std::vector<cv::Point2f>& prevPts,
                 std::vector<cv::Point2f>& outPrevPts, std::vector<cv::Point2f>& outCurrPts,
                 std::vector<float>& outFbErrors) const;
 
-    void SetFbThreshold(double threshold) { m_params.fbThreshold = threshold; }
+    void SetFbThreshold(double threshold) { params_.fbThreshold = threshold; }
 
-    [[nodiscard]] double FbThreshold() const { return m_params.fbThreshold; }
+    [[nodiscard]] double FbThreshold() const { return params_.fbThreshold; }
 
-    void SetWinSize(const cv::Size& winSize) { m_params.winSize = winSize; }
+    void SetWinSize(const cv::Size& winSize) { params_.winSize = winSize; }
 
-    [[nodiscard]] cv::Size WinSize() const { return m_params.winSize; }
+    [[nodiscard]] cv::Size WinSize() const { return params_.winSize; }
 
-    void SetMaxLevel(int level) { m_params.maxLevel = level; }
+    void SetMaxLevel(int level) { params_.maxLevel = level; }
 
-    [[nodiscard]] int MaxLevel() const { return m_params.maxLevel; }
+    [[nodiscard]] int MaxLevel() const { return params_.maxLevel; }
 
-    void SetCriteria(const cv::TermCriteria& criteria) { m_params.criteria = criteria; }
+    void SetCriteria(const cv::TermCriteria& criteria) { params_.criteria = criteria; }
 
-    [[nodiscard]] cv::TermCriteria Criteria() const { return m_params.criteria; }
+    [[nodiscard]] cv::TermCriteria Criteria() const { return params_.criteria; }
 
 private:
-    Params m_params;
+    Params params_;
 };
 
 #endif
