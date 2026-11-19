@@ -3,8 +3,8 @@
 #include <utility>
 
 LkTracker::LkTracker(const Params& params)
-    : m_params(params),
-      m_fbFilter(MakeFbParams(params))
+    : params_(params),
+      fbFilter_(MakeFbParams(params))
 {}
 
 BiDirectionalLkFilter::Params LkTracker::MakeFbParams(const Params& params)
@@ -19,24 +19,24 @@ BiDirectionalLkFilter::Params LkTracker::MakeFbParams(const Params& params)
 
 void LkTracker::Reset()
 {
-    m_prevPts.clear();
-    m_currPts.clear();
-    m_lastFbErrors.clear();
+    prevPts_.clear();
+    currPts_.clear();
+    lastFbErrors_.clear();
 }
 
 void LkTracker::Detect(const cv::Mat& gray)
 {
-    m_currPts.clear();
+    currPts_.clear();
 
-    cv::goodFeaturesToTrack(gray, m_currPts, m_params.maxCorners, m_params.qualityLevel, m_params.minDistance,
-                            cv::noArray(), m_params.blockSize, m_params.useHarrisDetector, m_params.k);
+    cv::goodFeaturesToTrack(gray, currPts_, params_.maxCorners, params_.qualityLevel, params_.minDistance,
+                            cv::noArray(), params_.blockSize, params_.useHarrisDetector, params_.k);
 
-    m_prevPts = m_currPts;
+    prevPts_ = currPts_;
 }
 
 void LkTracker::Track(const cv::Mat& prevGray, const cv::Mat& gray)
 {
-    if (m_currPts.empty()) {
+    if (currPts_.empty()) {
         Detect(gray);
         return;
     }
@@ -44,34 +44,33 @@ void LkTracker::Track(const cv::Mat& prevGray, const cv::Mat& gray)
     std::vector<cv::Point2f> goodPrev;
     std::vector<cv::Point2f> goodCurr;
 
-    if (m_params.enableFbFilter) {
-        m_lastFbErrors.clear();
-        m_fbFilter.Filter(prevGray, gray, m_currPts, goodPrev, goodCurr, m_lastFbErrors);
+    if (params_.enableFbFilter) {
+        lastFbErrors_.clear();
+        fbFilter_.Filter(prevGray, gray, currPts_, goodPrev, goodCurr, lastFbErrors_);
     } else {
         std::vector<cv::Point2f> nextPts;
         std::vector<uchar> status;
         std::vector<float> err;
 
-        cv::calcOpticalFlowPyrLK(prevGray, gray, m_currPts, nextPts, status, err, m_params.winSize, m_params.maxLevel,
-                                 m_params.criteria);
+        cv::calcOpticalFlowPyrLK(prevGray, gray, currPts_, nextPts, status, err, params_.winSize, params_.maxLevel,
+                                 params_.criteria);
 
-        goodPrev.reserve(m_currPts.size());
-        goodCurr.reserve(m_currPts.size());
-        for (std::size_t i = 0; i < m_currPts.size(); ++i) {
+        goodPrev.reserve(currPts_.size());
+        goodCurr.reserve(currPts_.size());
+        for (std::size_t i = 0; i < currPts_.size(); ++i) {
             if (status[i] != 0) {
-                goodPrev.push_back(m_currPts[i]);
+                goodPrev.push_back(currPts_[i]);
                 goodCurr.push_back(nextPts[i]);
             }
         }
 
-        m_lastFbErrors.clear();
+        lastFbErrors_.clear();
     }
 
-    m_prevPts = std::move(goodPrev);
-    m_currPts = std::move(goodCurr);
+    prevPts_ = std::move(goodPrev);
+    currPts_ = std::move(goodCurr);
 
-    if (m_currPts.size() <
-        static_cast<std::size_t>(static_cast<double>(m_params.maxCorners) * m_params.replenishRatio)) {
+    if (currPts_.size() < static_cast<std::size_t>(static_cast<double>(params_.maxCorners) * params_.replenishRatio)) {
         Replenish(gray);
     }
 }
@@ -79,39 +78,39 @@ void LkTracker::Track(const cv::Mat& prevGray, const cv::Mat& gray)
 void LkTracker::Replenish(const cv::Mat& gray)
 {
     std::vector<cv::Point2f> candidates;
-    cv::goodFeaturesToTrack(gray, candidates, m_params.maxCorners, m_params.qualityLevel, m_params.minDistance,
-                            cv::noArray(), m_params.blockSize, m_params.useHarrisDetector, m_params.k);
+    cv::goodFeaturesToTrack(gray, candidates, params_.maxCorners, params_.qualityLevel, params_.minDistance,
+                            cv::noArray(), params_.blockSize, params_.useHarrisDetector, params_.k);
 
     for (const auto& point : candidates) {
         bool tooClose = false;
-        for (const auto& trackedPoint : m_currPts) {
-            if (cv::norm(point - trackedPoint) < m_params.minDistance) {
+        for (const auto& trackedPoint : currPts_) {
+            if (cv::norm(point - trackedPoint) < params_.minDistance) {
                 tooClose = true;
                 break;
             }
         }
 
         if (!tooClose) {
-            m_currPts.push_back(point);
-            m_prevPts.push_back(point);
+            currPts_.push_back(point);
+            prevPts_.push_back(point);
         }
     }
 }
 
 void LkTracker::AddPoint(const cv::Point2f& point)
 {
-    m_currPts.push_back(point);
-    m_prevPts.push_back(point);
+    currPts_.push_back(point);
+    prevPts_.push_back(point);
 }
 
 bool LkTracker::RemovePoint(const cv::Point2f& point, double radius)
 {
     bool removed = false;
 
-    for (std::size_t i = 0; i < m_currPts.size();) {
-        if (cv::norm(m_currPts[i] - point) <= radius) {
-            m_currPts.erase(m_currPts.begin() + static_cast<std::ptrdiff_t>(i));
-            m_prevPts.erase(m_prevPts.begin() + static_cast<std::ptrdiff_t>(i));
+    for (std::size_t i = 0; i < currPts_.size();) {
+        if (cv::norm(currPts_[i] - point) <= radius) {
+            currPts_.erase(currPts_.begin() + static_cast<std::ptrdiff_t>(i));
+            prevPts_.erase(prevPts_.begin() + static_cast<std::ptrdiff_t>(i));
             removed = true;
         } else {
             ++i;
@@ -123,26 +122,26 @@ bool LkTracker::RemovePoint(const cv::Point2f& point, double radius)
 
 void LkTracker::SetMaxLevel(int level)
 {
-    m_params.maxLevel = level;
-    m_fbFilter.SetMaxLevel(level);
+    params_.maxLevel = level;
+    fbFilter_.SetMaxLevel(level);
 }
 
 void LkTracker::SetFbThreshold(double threshold)
 {
-    m_params.fbThreshold = threshold;
-    m_fbFilter.SetFbThreshold(threshold);
+    params_.fbThreshold = threshold;
+    fbFilter_.SetFbThreshold(threshold);
 }
 
 double LkTracker::AverageFbError() const
 {
-    if (m_lastFbErrors.empty()) {
+    if (lastFbErrors_.empty()) {
         return 0.0;
     }
 
     double sum = 0.0;
-    for (const float error : m_lastFbErrors) {
+    for (const float error : lastFbErrors_) {
         sum += static_cast<double>(error);
     }
 
-    return sum / static_cast<double>(m_lastFbErrors.size());
+    return sum / static_cast<double>(lastFbErrors_.size());
 }
