@@ -1,5 +1,5 @@
-#ifndef TESTS_NONLINEARFILTERDEMO_H
-#define TESTS_NONLINEARFILTERDEMO_H
+﻿#ifndef TESTS_IMAGEPROCESSING_NONLINEARFILTERDEMO_H
+#define TESTS_IMAGEPROCESSING_NONLINEARFILTERDEMO_H
 
 #include <algorithm>
 #include <cstdio>
@@ -13,14 +13,14 @@
 
 #include "CommonEnv.h"
 
-// 非线性滤波交互式调参 demo（GUI，不进 ctest）。
-// 按键：
-//   m        切换滤波类型（median / bilateral）
-//   +/-      调整核尺寸（中值）或直径（双边）
-//   c/C      调整 sigmaColor（双边）
-//   s/S      调整 sigmaSpace（双边）
-//   r        重置参数
-//   q / ESC  退出
+// 闈炵嚎鎬ф护娉氦浜掑紡璋冨弬 demo锛圙UI锛屼笉杩?ctest锛夈€?
+// 鎸夐敭锛?
+//   m        鍒囨崲婊ゆ尝绫诲瀷锛坢edian / bilateral锛?
+//   +/-      璋冩暣鏍稿昂瀵革紙涓€硷級鎴栫洿寰勶紙鍙岃竟锛?
+//   c/C      璋冩暣 sigmaColor锛堝弻杈癸級
+//   s/S      璋冩暣 sigmaSpace锛堝弻杈癸級
+//   r        閲嶇疆鍙傛暟
+//   q / ESC  閫€鍑?
 inline int NonLinearFilterDemo()
 {
     const std::string inputPath = EnvRootPath() + "/data/ImageProcessing/NonLinearFilter/input.jpg";
@@ -103,4 +103,4 @@ inline int NonLinearFilterDemo()
     return 0;
 }
 
-#endif // TESTS_NONLINEARFILTERDEMO_H
+#endif // TESTS_IMAGEPROCESSING_NONLINEARFILTERDEMO_H
