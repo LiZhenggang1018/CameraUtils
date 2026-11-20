@@ -59,6 +59,7 @@ set(_unit_tests
     exposure-comp
     vignetting
     panorama
+    lk-tracker
     exif
 )
 
