@@ -8,6 +8,8 @@
 
 #include "CoreUtils.h"
 
+#include "Alignment/HomographyDemo.h"
+#include "Alignment/HomographyTest.h"
 #include "Exiv2Test.h"
 #include "FFMpegTest.h"
 #include "FeatureMatching/FeatureMatcherDemo.h"
@@ -256,6 +258,14 @@ inline const std::vector<Command>& AllCommands()
                  FeatureMatcherTest();
                  return 0;
              }},
+        {.name = "homography",
+         .description = "单应与 warping（配准 + warpPerspective）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 HomographyTest();
+                 return 0;
+             }},
 
 #if VAS_HAS_STDEXEC
         {.name = "vas-concurrency",
@@ -381,6 +391,10 @@ inline const std::vector<Command>& AllCommands()
          .description = "特征匹配 + RANSAC 演示",
          .label = Label::GUI,
          .run = [] { return FeatureMatcherDemo(); }},
+        {.name = "homography-demo",
+         .description = "单应 + warping 演示",
+         .label = Label::GUI,
+         .run = [] { return HomographyDemo(); }},
     };
     return commands;
 }
