@@ -1,4 +1,4 @@
-﻿#ifndef TESTS_IMAGEPROCESSING_PYRAMIDDEMO_H
+#ifndef TESTS_IMAGEPROCESSING_PYRAMIDDEMO_H
 #define TESTS_IMAGEPROCESSING_PYRAMIDDEMO_H
 
 #include <algorithm>
@@ -12,12 +12,12 @@
 
 #include "CommonEnv.h"
 
-// 閲戝瓧濉斾氦浜掑紡 demo锛圙UI锛屼笉杩?ctest锛夈€?
-// 灞曠ず楂樻柉閲戝瓧濉斿悇灞傦紙resize 鍒板悓涓€楂樺害骞抽摵锛夛紝鎸夐敭鍒囨崲鏄剧ず楂樻柉/鎷夋櫘鎷夋柉銆?
-// 鎸夐敭锛?
-//   g        鏄剧ず楂樻柉閲戝瓧濉?
-//   l        鏄剧ず鎷夋櫘鎷夋柉閲戝瓧濉旓紙鍚勫眰娈嬪樊褰掍竴鍖栨樉绀猴級
-//   q / ESC  閫€鍑?
+// 金字塔交互式 demo（GUI，不进 ctest）。
+// 展示高斯金字塔各层（resize 到同一高度平铺），按键切换显示高斯/拉普拉斯。
+// 按键：
+//   g        显示高斯金字塔
+//   l        显示拉普拉斯金字塔（各层残差归一化显示）
+//   q / ESC  退出
 inline int PyramidDemo()
 {
     const std::string inputPath = EnvRootPath() + "/data/ImageProcessing/Pyramid/input.jpg";
@@ -39,7 +39,7 @@ inline int PyramidDemo()
     bool showLaplacian = false;
     bool running = true;
     while (running) {
-        // 鍚勫眰 resize 鍒扮粺涓€楂樺害 256锛屾í鍚戝钩閾?
+        // 各层 resize 到统一高度 256，横向平铺
         const int tileHeight = 256;
         std::vector<cv::Mat> tiles;
         int totalWidth = 0;
