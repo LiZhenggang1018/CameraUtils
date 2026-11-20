@@ -39,6 +39,8 @@
 #include "MagicEnumTest.h"
 #include "OpenCVTest.h"
 #include "OpticalFlow/DenseFlowTest.h"
+#include "OpticalFlow/EisDemo.h"
+#include "OpticalFlow/EisTest.h"
 #include "OpticalFlow/FrameInterpolatorTest.h"
 #include "OpticalFlow/LkTrackerTest.h"
 #include "OpticalFlow/OpticalFlowTest.h"
@@ -333,6 +335,14 @@ inline const std::vector<Command>& AllCommands()
                  FrameInterpolatorTest();
                  return 0;
              }},
+        {.name = "eis",
+         .description = "EIS 电子防抖（全局运动估计 + 稳定化）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 EisTest();
+                 return 0;
+             }},
 
 #if VAS_HAS_STDEXEC
         {.name = "vas-concurrency",
@@ -430,6 +440,7 @@ inline const std::vector<Command>& AllCommands()
          .description = "光流可视化（交互窗口）",
          .label = Label::GUI,
          .run = [] { return OpticalFlowTest(); }},
+        {.name = "eis-demo", .description = "EIS 电子防抖演示", .label = Label::GUI, .run = [] { return EisDemo(); }},
         {.name = "linear-filter-demo",
          .description = "线性滤波调参演示（交互窗口）",
          .label = Label::GUI,
