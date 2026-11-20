@@ -95,7 +95,7 @@ config 序列化 + data 目录」全链路并验证结构，再滚动复制到�
 
 - 代码目录名对齐章节：
   - 第 3 章 → `inc/ImageProcessing/` + `src/ImageProcessing/`
-  - 第 7 章 → `inc/FeatureMatching/`（Harris 从 `inc/ImageReg/` 迁入）
+  - 第 7 章 → `inc/FeatureMatching/` + `src/FeatureMatching/`（`inc/ImageReg/` 整体删除）
   - 第 8 章 → `inc/Alignment/`
   - 第 9 章 → `inc/OpticalFlow/`（沿用现有）
   - 第 10 章 → 命名对齐为计算摄影（`HdrMerge` 目录重命名为计算摄影语义的目录名）
@@ -160,6 +160,29 @@ data/<Chapter>/<Algo>/
   与 `src/HdrMerge/` 相关代码在推进到第 10 章时重命名归入新目录（具体英文名 builder 定，
   与 `OpticalFlow`/`ImageProcessing` 命名风格一致）。
 
+## 第二个里程碑：第 7 章 Feature Detection & Matching
+
+拆三块（每块一个 self-contained 模块），对应工作「图像配准、多摄对齐」，是第 8 章「图像拼接」
+大 demo 的地基。
+
+| 块 | 内容 |
+|---|---|
+| 关键点检测 | Harris、Shi-Tomasi(GFTT)、FAST（可选补充 MSER） |
+| 局部特征 | SIFT、ORB、AKAZE（可运行）+ SURF（仅笔记讲述，不写代码） |
+| 匹配 + RANSAC | BruteForce + FLANN、Lowe's ratio test、cross-check、RANSAC 单应估计（可选 LMEDS） |
+
+**技术选型**：SIFT / ORB / AKAZE 可运行（OpenCV 主库 features2d，工程已配）；SURF 因
+本机 OpenCV 无 `xfeatures2d` contrib 模块，**仅在学习笔记里讲原理/背景/局限（与 SIFT 对比），
+不写代码**。
+
+**测试与 demo 输入**：
+- 测试用「合成图 + 已知几何变换」自动断言（能进 ctest，验证关键点数量/匹配正确率/内点数量）。
+- demo 用真实图 + 合成图看效果（`data/FeatureMatching/` 素材，找不到时生成合成图）。
+
+**清理**：删除 `inc/ImageReg/HarrisDetect.h`（旧 GUI 形态，不符合 self-contained 约定），连同
+`src/CMakeLists.txt` 里对 `inc/ImageReg` 的 include 引用一并删除。Harris 在「关键点检测」块里
+重新做成可复用库 API + 独立 demo/测试。
+
 ## 留给 builder 的部分
 
 - 每个算法的具体 OpenCV 调用与参数选择（在"读懂原理 + 调 OpenCV"目标下，由 builder 从书 +
@@ -178,6 +201,9 @@ data/<Chapter>/<Algo>/
 - 推进顺序 = 严格按书中章节顺序 3→7→8→9→10→11→12。
 - 节点大 demo = 图像拼接（8）、视频 EIS 防抖（9）、多帧融合 HDR+降噪（10）、双摄虚化（11~12）。
 - 第 3 章范围 = 线性滤波 + 非线性滤波 + 金字塔（完整），傅里叶（简单展示）。
+- 第 7 章范围 = 关键点检测（Harris/GFTT/FAST）+ 局部特征（SIFT/ORB/AKAZE 可运行，
+  SURF 仅笔记）+ 匹配+RANSAC（BruteForce/FLANN/ratio test/cross-check/RANSAC 单应）。
+- 第 7 章目录 = `FeatureMatching`，删除 `inc/ImageReg/`。
 - 调参 demo = 交互式 `imshow` GUI 窗口（`Label::GUI`，不进 CI）。
 - json 配置 = 仅参数有意义的算法才配，近无参用代码内常量。
 - 数据目录 = `data/<Chapter>/<Algo>/` 放输入输出与中间结果（本地，不入库）。
