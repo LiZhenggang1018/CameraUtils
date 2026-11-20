@@ -7,10 +7,14 @@ file(GLOB LIVE_PHOTO_SOURCES CONFIGURE_DEPENDS
 file(GLOB OPTICAL_FLOW_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/OpticalFlow/*.cpp"
 )
+file(GLOB IMAGE_PROCESSING_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/ImageProcessing/*.cpp"
+)
 
 add_library(camera_utils_core STATIC
     ${LIVE_PHOTO_SOURCES}
     ${OPTICAL_FLOW_SOURCES}
+    ${IMAGE_PROCESSING_SOURCES}
 )
 add_library(CameraUtils::core ALIAS camera_utils_core)
 
@@ -20,6 +24,7 @@ target_include_directories(camera_utils_core PUBLIC
     ${CMAKE_SOURCE_DIR}/inc/ImageReg
     ${CMAKE_SOURCE_DIR}/inc/OpticalFlow
     ${CMAKE_SOURCE_DIR}/inc/HdrMerge
+    ${CMAKE_SOURCE_DIR}/inc/ImageProcessing
 )
 target_include_directories(camera_utils_core SYSTEM PUBLIC
     ${OpenCV_INCLUDE_DIRS}
