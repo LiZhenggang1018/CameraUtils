@@ -21,11 +21,11 @@ inline cv::Mat MultiBandBlend(const cv::Mat& img1, const cv::Mat& img2, const cv
     if (img1.empty() || img2.empty() || mask1.empty() || mask2.empty() || levels <= 0) {
         return {};
     }
-    if (img1.size() != img2.size()) {
+    if (img1.size() != img2.size() || img1.size() != mask1.size() || img1.size() != mask2.size()) {
         return {};
     }
 
-    // 转 float 处理
+    // 转 float 处理，并在内部归一化掩码权重（mask1+mask2 归一化到 1，函数自洽）
     cv::Mat f1;
     cv::Mat f2;
     img1.convertTo(f1, CV_32F);
@@ -34,6 +34,12 @@ inline cv::Mat MultiBandBlend(const cv::Mat& img1, const cv::Mat& img2, const cv
     cv::Mat m2;
     mask1.convertTo(m1, CV_32F, 1.0 / 255.0);
     mask2.convertTo(m2, CV_32F, 1.0 / 255.0);
+
+    cv::Mat weightSum;
+    cv::add(m1, m2, weightSum);
+    weightSum.setTo(1.0, weightSum <= 1e-6);
+    cv::divide(m1, weightSum, m1);
+    cv::divide(m2, weightSum, m2);
 
     const int actualLevels = std::min(levels, ImageProcessing::Detail::MaxLevels(img1));
     if (actualLevels <= 0) {
