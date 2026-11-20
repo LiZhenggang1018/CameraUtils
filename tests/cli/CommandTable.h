@@ -10,7 +10,6 @@
 
 #include "Exiv2Test.h"
 #include "FFMpegTest.h"
-#include "HarrisDetect.h"
 #include "HdrMerge/HdrMergeTest.h"
 #include "ImageProcessing/FourierDemo.h"
 #include "ImageProcessing/LinearFilterDemo.h"
@@ -324,14 +323,6 @@ inline const std::vector<Command>& AllCommands()
          .description = "光流可视化（交互窗口）",
          .label = Label::GUI,
          .run = [] { return OpticalFlowTest(); }},
-        {.name = "harris",
-         .description = "Harris 角点检测可视化",
-         .label = Label::GUI,
-         .run =
-             [] {
-                 HarrisTest();
-                 return 0;
-             }},
         {.name = "linear-filter-demo",
          .description = "线性滤波调参演示（交互窗口）",
          .label = Label::GUI,
