@@ -14,6 +14,8 @@
 #include "Alignment/ExposureCompensationTest.h"
 #include "Alignment/HomographyDemo.h"
 #include "Alignment/HomographyTest.h"
+#include "Alignment/VignettingDemo.h"
+#include "Alignment/VignettingTest.h"
 #include "Exiv2Test.h"
 #include "FFMpegTest.h"
 #include "FeatureMatching/FeatureMatcherDemo.h"
@@ -286,6 +288,14 @@ inline const std::vector<Command>& AllCommands()
                  ExposureCompensationTest();
                  return 0;
              }},
+        {.name = "vignetting",
+         .description = "渐晕校正（径向衰减模型）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 VignettingTest();
+                 return 0;
+             }},
 
 #if VAS_HAS_STDEXEC
         {.name = "vas-concurrency",
@@ -423,6 +433,10 @@ inline const std::vector<Command>& AllCommands()
          .description = "曝光补偿演示",
          .label = Label::GUI,
          .run = [] { return ExposureCompensationDemo(); }},
+        {.name = "vignetting-demo",
+         .description = "渐晕校正演示",
+         .label = Label::GUI,
+         .run = [] { return VignettingDemo(); }},
     };
     return commands;
 }
