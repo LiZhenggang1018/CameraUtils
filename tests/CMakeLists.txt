@@ -52,6 +52,7 @@ set(_unit_tests
     pyramid
     keypoint-detect
     local-feature
+    feature-match
     exif
 )
 
