@@ -10,6 +10,8 @@
 
 #include "Exiv2Test.h"
 #include "FFMpegTest.h"
+#include "FeatureMatching/FeatureMatcherDemo.h"
+#include "FeatureMatching/FeatureMatcherTest.h"
 #include "FeatureMatching/KeypointDetectorDemo.h"
 #include "FeatureMatching/KeypointDetectorTest.h"
 #include "FeatureMatching/LocalFeatureDemo.h"
@@ -246,6 +248,14 @@ inline const std::vector<Command>& AllCommands()
                  LocalFeatureTest();
                  return 0;
              }},
+        {.name = "feature-match",
+         .description = "特征匹配 + RANSAC（BF/FLANN/ratio/RANSAC 单应）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 FeatureMatcherTest();
+                 return 0;
+             }},
 
 #if VAS_HAS_STDEXEC
         {.name = "vas-concurrency",
@@ -367,6 +377,10 @@ inline const std::vector<Command>& AllCommands()
          .description = "局部特征演示（SIFT/ORB/AKAZE）",
          .label = Label::GUI,
          .run = [] { return LocalFeatureDemo(); }},
+        {.name = "feature-match-demo",
+         .description = "特征匹配 + RANSAC 演示",
+         .label = Label::GUI,
+         .run = [] { return FeatureMatcherDemo(); }},
     };
     return commands;
 }
