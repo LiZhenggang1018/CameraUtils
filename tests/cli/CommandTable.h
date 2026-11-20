@@ -8,6 +8,8 @@
 
 #include "CoreUtils.h"
 
+#include "Alignment/BlendingDemo.h"
+#include "Alignment/BlendingTest.h"
 #include "Alignment/HomographyDemo.h"
 #include "Alignment/HomographyTest.h"
 #include "Exiv2Test.h"
@@ -266,6 +268,14 @@ inline const std::vector<Command>& AllCommands()
                  HomographyTest();
                  return 0;
              }},
+        {.name = "blending",
+         .description = "图像融合（多波段 blending）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 BlendingTest();
+                 return 0;
+             }},
 
 #if VAS_HAS_STDEXEC
         {.name = "vas-concurrency",
@@ -395,6 +405,10 @@ inline const std::vector<Command>& AllCommands()
          .description = "单应 + warping 演示",
          .label = Label::GUI,
          .run = [] { return HomographyDemo(); }},
+        {.name = "blending-demo",
+         .description = "图像融合（多波段 blending）演示",
+         .label = Label::GUI,
+         .run = [] { return BlendingDemo(); }},
     };
     return commands;
 }
