@@ -1,0 +1,46 @@
+# 换行符与编码规范
+# 源码文本统一 LF；.github 下保持 CRLF（AGENTS.md 约定）；二进制不转码。
+
+# 所有文本文件默认：git 内部存储 LF，检出时按各平台转换
+* text=auto
+
+# 源码与文档：强制 LF
+*.h text eol=lf
+*.hpp text eol=lf
+*.cpp text eol=lf
+*.cc text eol=lf
+*.cxx text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.cmake text eol=lf
+CMakeLists.txt text eol=lf
+*.clang-format text eol=lf
+*.clang-tidy text eol=lf
+*.cmake-format text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.editorconfig text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# .github 下的工作流/action 保持 CRLF（AGENTS.md 约定）
+.github/** text eol=crlf
+
+# PowerShell 脚本保持 CRLF（Windows 原生）
+*.ps1 text eol=crlf
+
+# 二进制文件不转码
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.bmp binary
+*.gif binary
+*.ico binary
+*.mp4 binary
+*.avi binary
+*.yuv binary
+*.exe binary
+*.dll binary
+*.lib binary
+*.pdb binary
