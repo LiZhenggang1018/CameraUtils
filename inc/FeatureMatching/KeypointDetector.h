@@ -10,7 +10,8 @@
 // 输入 CV_8UC1 灰度图；空输入安全返回空 vector。
 namespace FeatureMatching {
 
-// Harris 角点：blockSize 邻域、ksize Sobel 核、k 响应系数、threshold 角点响应阈值。
+// Harris 角点：blockSize 邻域、ksize Sobel 核、k 响应系数、threshold 归一化响应阈值（0~255）。
+// 响应经 NORM_MINMAX 归一化到 0~255 后再与 threshold 比较，KeyPoint::response 也存归一化值（尺度一致）。
 inline std::vector<cv::KeyPoint> HarrisCorners(const cv::Mat& gray, int blockSize, int ksize, double k,
                                                double threshold)
 {
@@ -26,8 +27,8 @@ inline std::vector<cv::KeyPoint> HarrisCorners(const cv::Mat& gray, int blockSiz
     std::vector<cv::KeyPoint> keypoints;
     for (int y = 0; y < dstNorm.rows; ++y) {
         for (int x = 0; x < dstNorm.cols; ++x) {
-            const auto response = dst.at<float>(y, x);
-            if (dstNorm.at<std::uint8_t>(y, x) >= threshold) {
+            const auto response = static_cast<float>(dstNorm.at<std::uint8_t>(y, x));
+            if (response >= threshold) {
                 keypoints.emplace_back(cv::Point2f(static_cast<float>(x), static_cast<float>(y)), 3.0f, -1.0f,
                                        response);
             }
