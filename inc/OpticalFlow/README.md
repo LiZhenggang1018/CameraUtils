@@ -82,6 +82,27 @@ FfmpegVideoWriter  ── BGR cv::Mat 序列 → H.264 MP4
 
 ---
 
+## 学习笔记索引（第 9 章 Motion Estimation）
+
+本章为第 9 章 Motion Estimation，把生产代码「学习化」并新增 EIS 防抖。学习笔记（原理/背景/局限/改良/
+工程使用/硬件诉求）与断言测试：
+
+| 主题 | 学习笔记 | 断言测试命令 | GUI demo 命令 |
+| :--- | :--- | :--- | :--- |
+| 稀疏光流（LK） | `LkTrackerNotes.md` | `lk-tracker` | — |
+| 稠密光流 | `DenseFlowNotes.md` | `dense-flow` | — |
+| 视频插帧 | `FrameInterpolatorNotes.md` | `frame-interp` | — |
+| EIS 电子防抖 | `EisNotes.md` | `eis` | `eis-demo` |
+
+**EIS 防抖**（`Eis.h`，`namespace OpticalFlow`）：
+- `EstimateGlobalMotionOptical(prev, curr)` — 光流法（`findTransformECC` MOTION_TRANSLATION）
+- `EstimateGlobalMotionFeature(prev, curr)` — 特征法（复用 `Alignment::ComputeHomography`）
+- `Stabilize(frames, motions)` — 轨迹平滑 + 稳定化裁剪（占位，完整流程见 `EisDemo`）
+
+两条全局运动路线在平移场景下结果接近（见 `EisTest`）。
+
+---
+
 ## 每个文件的详细说明
 
 ### `FrameInterpolator.h` —— 插帧核心
