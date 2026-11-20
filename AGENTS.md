@@ -175,6 +175,18 @@ camera_utils_tests.exe magic-enum
 - 换行符保持文件原有风格（仓库 `core.autocrlf=true`）。
 - 修复乱码时，先定位真实字节再改，禁止凭显示结果猜测。
 
+## 目录结构约定（按章节归档）
+
+- **可复用算法库**：`inc/<章节目录>/`（接口）+ `src/<章节目录>/`（实现），章节目录名对齐书中章节
+  （如第 3 章 → `ImageProcessing`）。
+- **测试用例**：`tests/<章节目录>/`，每章的测试用例（`*Test.h` / `*Demo.h`）统一放在
+  该章对应子目录下，**不散落在 `tests/` 根目录**。已在用的章节目录：
+  `tests/ImageProcessing/`、`tests/HdrMerge/`、`tests/LivePhotoSmoothPlay/`。
+- 跨章节的通用测试（`cli/`、`EventTest.h` 等）仍保留在 `tests/` 根目录。
+- 测试文件 include guard 用 `TESTS_<章节目录>_<文件名>_H` 形式
+  （如 `TESTS_IMAGEPROCESSING_SOBELTEST_H`），`CommandTable.h` 里用
+  `#include "<章节目录>/<文件名>.h"` 引用。
+
 ### Windows 编码陷阱（重要）
 
 PowerShell 5.1 控制台与管道按 GBK 解码，直接查看或管道传递中文会显示为乱码，
