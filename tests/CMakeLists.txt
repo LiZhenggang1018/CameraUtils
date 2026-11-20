@@ -5,6 +5,7 @@ add_executable(camera_utils_tests TestMain.cpp)
 
 target_include_directories(camera_utils_tests PRIVATE
     ${CMAKE_SOURCE_DIR}/tests
+    ${CMAKE_SOURCE_DIR}/tests/CommonUtils
 )
 
 target_link_libraries(camera_utils_tests PRIVATE
