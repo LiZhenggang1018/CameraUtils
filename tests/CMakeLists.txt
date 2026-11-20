@@ -51,6 +51,7 @@ set(_unit_tests
     nonlinear-filter
     pyramid
     keypoint-detect
+    local-feature
     exif
 )
 
