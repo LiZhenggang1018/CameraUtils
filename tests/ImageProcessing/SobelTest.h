@@ -1,4 +1,4 @@
-﻿#ifndef TESTS_IMAGEPROCESSING_SOBELTEST_H
+#ifndef TESTS_IMAGEPROCESSING_SOBELTEST_H
 #define TESTS_IMAGEPROCESSING_SOBELTEST_H
 
 #include <cstdint>
@@ -10,19 +10,19 @@
 
 #include "cli/TestAssert.h"
 
-// 闃舵0锛堝鍖栫悊瑙ｏ級鈥斺€擲obel 绠楀瓙鐨勬暟瀛﹀畾涔夛細
-//   涓€闃剁鏁ｅ井鍒嗭紝鐢ㄤ袱涓?3x3 鏍稿垎鍒繎浼?x/y 鏂瑰悜姊害锛?
+// 阶段0（外化理解）——Sobel 算子的数学定义：
+//   一阶离散微分，用两个 3x3 核分别近似 x/y 方向梯度：
 //     Gx = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]
 //     Gy = [[-1,-2,-1], [ 0, 0, 0], [ 1, 2, 1]]
-//   瀵?CV_8U 杈撳叆杈撳嚭 CV_16S锛岃竟鐣岀敤 BORDER_REFLECT_101锛堜笌 cv::Sobel 榛樿涓€鑷达級銆?
+//   对 CV_8U 输入输出 CV_16S，边界用 BORDER_REFLECT_101（与 cv::Sobel 默认一致）。
 //
-//   鎵嬬畻鐪熷€硷紙3x3 鍨傜洿闃惰穬鍥撅紝涓績鍍忕礌 (1,1) 閭诲煙鍗虫暣鍥撅級锛?
+//   手算真值（3x3 垂直阶跃图，中心像素 (1,1) 邻域即整图）：
 //     src = [[0,0,255],[0,0,255],[0,0,255]]
 //     Gx(1,1) = 1*255 + 2*255 + 1*255 = 1020
 //     Gy(1,1) = -1*255 + 1*255 = 0
 
 namespace {
-// 鏋勯€?3x3 鍨傜洿闃惰穬鍥撅紙宸﹂粦鍙崇櫧锛夛紝鐢ㄤ簬鎵嬬畻鐪熷€兼柇瑷€
+// 构造 3x3 垂直阶跃图（左黑右白），用于手算真值断言
 cv::Mat MakeStepImage()
 {
     cv::Mat img(3, 3, CV_8UC1, cv::Scalar(0));
@@ -32,7 +32,7 @@ cv::Mat MakeStepImage()
     return img;
 }
 
-// 鏋勯€犱竴寮犵‘瀹氭€х殑灏忓浘锛堥潪闅忔満锛夛紝鐢ㄤ簬涓?cv::Sobel 浜ゅ弶楠岃瘉
+// 构造一张确定性的小图（非随机），用于与 cv::Sobel 交叉验证
 cv::Mat MakePatternImage()
 {
     cv::Mat img(9, 13, CV_8UC1);
@@ -49,7 +49,7 @@ inline void SobelEdgeTest()
 {
     std::cout << "===== Sobel test begin =====" << std::endl;
 
-    // 1) 鎵嬬畻鐪熷€硷細鍨傜洿闃惰穬鍥句腑蹇冨儚绱犵殑 Gx=1020, Gy=0
+    // 1) 手算真值：垂直阶跃图中心像素的 Gx=1020, Gy=0
     {
         const cv::Mat step = MakeStepImage();
         const cv::Mat gx = Sobel::GradientX(step);
@@ -65,7 +65,7 @@ inline void SobelEdgeTest()
         std::cout << "  hand-computed truth: Gx(1,1)=1020, Gy(1,1)=0 OK" << std::endl;
     }
 
-    // 2) 浜ゅ弶楠岃瘉锛氭墜鍐欏疄鐜颁笌 cv::Sobel 鍦ㄦ暣寮犲浘涓婇€愬儚绱犱竴鑷?
+    // 2) 交叉验证：手写实现与 cv::Sobel 在整张图上逐像素一致
     {
         const cv::Mat src = MakePatternImage();
 
