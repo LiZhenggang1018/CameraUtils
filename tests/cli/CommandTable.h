@@ -10,6 +10,8 @@
 
 #include "Alignment/BlendingDemo.h"
 #include "Alignment/BlendingTest.h"
+#include "Alignment/ExposureCompensationDemo.h"
+#include "Alignment/ExposureCompensationTest.h"
 #include "Alignment/HomographyDemo.h"
 #include "Alignment/HomographyTest.h"
 #include "Exiv2Test.h"
@@ -276,6 +278,14 @@ inline const std::vector<Command>& AllCommands()
                  BlendingTest();
                  return 0;
              }},
+        {.name = "exposure-comp",
+         .description = "曝光补偿（增益估计 + 亮度对齐）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 ExposureCompensationTest();
+                 return 0;
+             }},
 
 #if VAS_HAS_STDEXEC
         {.name = "vas-concurrency",
@@ -409,6 +419,10 @@ inline const std::vector<Command>& AllCommands()
          .description = "图像融合（多波段 blending）演示",
          .label = Label::GUI,
          .run = [] { return BlendingDemo(); }},
+        {.name = "exposure-comp-demo",
+         .description = "曝光补偿演示",
+         .label = Label::GUI,
+         .run = [] { return ExposureCompensationDemo(); }},
     };
     return commands;
 }
