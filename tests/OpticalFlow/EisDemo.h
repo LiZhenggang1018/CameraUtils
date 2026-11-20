@@ -57,11 +57,22 @@ inline int EisDemo()
     }
 
     // 全局运动估计（帧间）
+    // 累计全局运动（帧间运动累加为相对首帧的运动轨迹）
     std::vector<cv::Mat> motions;
+    std::vector<cv::Mat> cumulative;
     motions.push_back(cv::Mat::eye(2, 3, CV_64F));
+    cumulative.push_back(cv::Mat::eye(2, 3, CV_64F));
     for (std::size_t i = 1; i < frames.size(); ++i) {
         motions.push_back(OpticalFlow::EstimateGlobalMotionOptical(frames[i - 1], frames[i]));
+        // 累计：cum[i] = cum[i-1] + motion[i]（仿射平移累加）
+        cv::Mat cum = cumulative[i - 1].clone();
+        cum.at<double>(0, 2) += motions[i].at<double>(0, 2);
+        cum.at<double>(1, 2) += motions[i].at<double>(1, 2);
+        cumulative.push_back(cum);
     }
+
+    // 稳定化（轨迹平滑 + 裁剪）
+    const auto stabilized = OpticalFlow::Stabilize(frames, cumulative);
 
     const std::string windowName = "EIS Demo";
     cv::namedWindow(windowName, cv::WINDOW_NORMAL);
@@ -69,15 +80,22 @@ inline int EisDemo()
     bool running = true;
     std::size_t idx = 0;
     while (running) {
+        // 上排：原始抖动帧；下排：稳定化帧（resize 到相同高度便于对比）
+        cv::Mat orig;
+        cv::cvtColor(frames[idx], orig, cv::COLOR_GRAY2BGR);
+        cv::Mat stab;
+        cv::cvtColor(stabilized[idx], stab, cv::COLOR_GRAY2BGR);
+        cv::resize(stab, stab, orig.size());
+
         cv::Mat display;
-        cv::cvtColor(frames[idx], display, cv::COLOR_GRAY2BGR);
+        cv::vconcat(std::vector<cv::Mat>{orig, stab}, display);
 
         char status[256];
-        std::snprintf(status, sizeof(status), "frame %zu/%zu", idx + 1, frames.size());
+        std::snprintf(status, sizeof(status), "frame %zu/%zu  top=original bottom=stabilized", idx + 1, frames.size());
         cv::putText(display, status, cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.6, cv::Scalar(0, 255, 0), 1,
                     cv::LINE_AA);
-        cv::putText(display, "q=quit (此 demo 展示抖动帧，稳定化见 EisTest)", cv::Point(10, display.rows - 10),
-                    cv::FONT_HERSHEY_SIMPLEX, 0.45, cv::Scalar(200), 1, cv::LINE_AA);
+        cv::putText(display, "q=quit", cv::Point(10, display.rows - 10), cv::FONT_HERSHEY_SIMPLEX, 0.45,
+                    cv::Scalar(200), 1, cv::LINE_AA);
 
         cv::imshow(windowName, display);
 
