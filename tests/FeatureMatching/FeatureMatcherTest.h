@@ -129,6 +129,43 @@ inline void FeatureMatcherTest()
         std::cout << "  empty-input safety OK" << std::endl;
     }
 
+    // 6) MatchFLANN 对 float 描述子（SIFT）可用，对 CV_8U 安全返回空
+    {
+        const cv::Mat img = MakeMatchInput(256);
+        std::vector<cv::KeyPoint> kp1;
+        std::vector<cv::KeyPoint> kp2;
+        cv::Mat desc1;
+        cv::Mat desc2;
+        FeatureMatching::DetectAndCompute(FeatureMatching::CreateSift(200), img, kp1, desc1);
+        FeatureMatching::DetectAndCompute(FeatureMatching::CreateSift(200), img, kp2, desc2);
+
+        const auto flannMatches = FeatureMatching::MatchFLANN(desc1, desc2);
+        CU_CHECK(!flannMatches.empty());
+
+        const auto invalid = FeatureMatching::MatchFLANN(cv::Mat(4, 4, CV_8U), cv::Mat(4, 4, CV_8U));
+        CU_CHECK(invalid.empty());
+        std::cout << "  MatchFLANN float OK / CV_8U guarded (" << flannMatches.size() << " matches)" << std::endl;
+    }
+
+    // 7) CrossCheckFilter 双向一致才保留
+    {
+        const cv::Mat img = MakeMatchInput(256);
+        std::vector<cv::KeyPoint> kp1;
+        std::vector<cv::KeyPoint> kp2;
+        cv::Mat desc1;
+        cv::Mat desc2;
+        FeatureMatching::DetectAndCompute(FeatureMatching::CreateOrb(300), img, kp1, desc1);
+        FeatureMatching::DetectAndCompute(FeatureMatching::CreateOrb(300), img, kp2, desc2);
+
+        const auto m1 = FeatureMatching::MatchBF(desc1, desc2, cv::NORM_HAMMING);
+        const auto m2 = FeatureMatching::MatchBF(desc2, desc1, cv::NORM_HAMMING);
+        const auto cross = FeatureMatching::CrossCheckFilter(m1, m2);
+
+        CU_CHECK(!cross.empty());
+        CU_CHECK(cross.size() <= m1.size());
+        std::cout << "  CrossCheckFilter OK (cross=" << cross.size() << " of " << m1.size() << ")" << std::endl;
+    }
+
     std::cout << "===== FeatureMatcher test passed =====" << std::endl;
 }
 
