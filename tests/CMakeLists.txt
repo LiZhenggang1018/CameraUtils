@@ -60,6 +60,7 @@ set(_unit_tests
     vignetting
     panorama
     lk-tracker
+    dense-flow
     exif
 )
 
