@@ -201,6 +201,27 @@ data/<Chapter>/<Algo>/
 
 **目录**：第 8 章 → `inc/Alignment/` + `src/Alignment/` + `tests/Alignment/`。
 
+## 第四个里程碑：第 9 章 Motion Estimation
+
+落点「视频 EIS 防抖」大 demo（串联 3+7+8+9）。目录沿用 `inc/OpticalFlow/` + `src/OpticalFlow/`。
+
+**光流学习化**（3 块，补笔记 + 断言测试；已有生产代码 `LkTracker`/`DenseFlow*`/`FrameInterpolator`）：
+
+| 块 | 内容 |
+|---|---|
+| 稀疏光流（LK） | LkTracker / BiDirectionalLkFilter |
+| 稠密光流 | DenseFlowFarneback / DenseFlowDis / DenseFlowDeepFlow |
+| 视频插帧 | FrameInterpolator（光流应用） |
+
+**EIS 电子防抖大 demo**：
+- 全局运动估计：**两种路线都实现并对比**——光流法（`findTransformECC` 或光流场拟合仿射）
+  + 特征匹配法（复用第 8 章 `ComputeHomography`）。
+- 运动轨迹平滑 + 稳定化裁剪。
+- 串联 3（滤波/金字塔）+ 7（特征）+ 8（单应）+ 9（光流）。
+
+**测试位置调整**：`tests/CommonUtils/OpticalFlowTest.h` 移到 `tests/OpticalFlow/`（第 9 章测试
+按章节归档，与 `tests/ImageProcessing/`、`tests/FeatureMatching/`、`tests/Alignment/` 一致）。
+
 ## 留给 builder 的部分
 
 - 每个算法的具体 OpenCV 调用与参数选择（在"读懂原理 + 调 OpenCV"目标下，由 builder 从书 +
@@ -224,6 +245,9 @@ data/<Chapter>/<Algo>/
 - 第 7 章目录 = `FeatureMatching`，删除 `inc/ImageReg/`。
 - 第 8 章范围 = 单应+warping、图像融合（多波段 blending）、曝光补偿、渐晕校正；大 demo 多图全景拼接。
 - 第 8 章目录 = `Alignment`。
+- 第 9 章范围 = 光流学习化（稀疏 LK / 稠密 / 插帧补笔记+测试）+ EIS 防抖大 demo（全局运动估计双路线 +
+  轨迹平滑 + 稳定化裁剪）。
+- 第 9 章目录 = 沿用 `OpticalFlow`；`tests/CommonUtils/OpticalFlowTest.h` 移入 `tests/OpticalFlow/`。
 - 调参 demo = 交互式 `imshow` GUI 窗口（`Label::GUI`，不进 CI）。
 - json 配置 = 仅参数有意义的算法才配，近无参用代码内常量。
 - 数据目录 = `data/<Chapter>/<Algo>/` 放输入输出与中间结果（本地，不入库）。
