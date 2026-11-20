@@ -1,5 +1,5 @@
-#ifndef TESTS_LINEARFILTERTEST_H
-#define TESTS_LINEARFILTERTEST_H
+﻿#ifndef TESTS_IMAGEPROCESSING_LINEARFILTERTEST_H
+#define TESTS_IMAGEPROCESSING_LINEARFILTERTEST_H
 
 #include <cstdint>
 #include <iostream>
@@ -10,8 +10,8 @@
 
 #include "cli/TestAssert.h"
 
-// 线性滤波模块断言测试。
-// 真值来源：常数图不变性（滤波对常数区输出仍为常数）+ 与 OpenCV 参考实现交叉验证。
+// 绾挎€ф护娉㈡ā鍧楁柇瑷€娴嬭瘯銆?
+// 鐪熷€兼潵婧愶細甯告暟鍥句笉鍙樻€э紙婊ゆ尝瀵瑰父鏁板尯杈撳嚭浠嶄负甯告暟锛? 涓?OpenCV 鍙傝€冨疄鐜颁氦鍙夐獙璇併€?
 
 namespace {
 
@@ -20,7 +20,7 @@ cv::Mat MakeConstantImage(int rows, int cols, std::uint8_t value)
     return cv::Mat(rows, cols, CV_8UC1, cv::Scalar(value));
 }
 
-// 3x3 垂直阶跃图：左两列 0，右一列 255
+// 3x3 鍨傜洿闃惰穬鍥撅細宸︿袱鍒?0锛屽彸涓€鍒?255
 cv::Mat MakeVerticalStep()
 {
     cv::Mat img(5, 5, CV_8UC1, cv::Scalar(0));
@@ -37,7 +37,7 @@ inline void LinearFilterTest()
 {
     std::cout << "===== LinearFilter test begin =====" << std::endl;
 
-    // 1) 常数图不变性：高斯/均值/锐化对常数图输出仍为常数
+    // 1) 甯告暟鍥句笉鍙樻€э細楂樻柉/鍧囧€?閿愬寲瀵瑰父鏁板浘杈撳嚭浠嶄负甯告暟
     {
         const cv::Mat zeros = MakeConstantImage(9, 9, 0);
         const cv::Mat full = MakeConstantImage(9, 9, 255);
@@ -54,7 +54,7 @@ inline void LinearFilterTest()
         std::cout << "  constant-image invariance OK" << std::endl;
     }
 
-    // 2) SobelX 对垂直阶跃图中心响应为正（方向真值）
+    // 2) SobelX 瀵瑰瀭鐩撮樁璺冨浘涓績鍝嶅簲涓烘锛堟柟鍚戠湡鍊硷級
     {
         const cv::Mat step = MakeVerticalStep();
         const cv::Mat gx = ImageProcessing::SobelX(step);
@@ -63,7 +63,7 @@ inline void LinearFilterTest()
         std::cout << "  SobelX direction truth OK" << std::endl;
     }
 
-    // 3) 交叉验证：GaussianBlur / MeanBlur 与 cv::GaussianBlur / cv::blur 逐像素一致
+    // 3) 浜ゅ弶楠岃瘉锛欸aussianBlur / MeanBlur 涓?cv::GaussianBlur / cv::blur 閫愬儚绱犱竴鑷?
     {
         cv::Mat src(21, 21, CV_8UC1);
         cv::randu(src, 0, 256);
@@ -80,7 +80,7 @@ inline void LinearFilterTest()
         std::cout << "  cross-validation vs OpenCV OK" << std::endl;
     }
 
-    // 4) 空输入安全返回空 Mat
+    // 4) 绌鸿緭鍏ュ畨鍏ㄨ繑鍥炵┖ Mat
     {
         const cv::Mat empty;
         CU_CHECK(ImageProcessing::GaussianBlur(empty, 3, 1.0).empty());
@@ -94,4 +94,4 @@ inline void LinearFilterTest()
     std::cout << "===== LinearFilter test passed =====" << std::endl;
 }
 
-#endif // TESTS_LINEARFILTERTEST_H
+#endif // TESTS_IMAGEPROCESSING_LINEARFILTERTEST_H
