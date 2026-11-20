@@ -12,6 +12,8 @@
 #include "FFMpegTest.h"
 #include "FeatureMatching/KeypointDetectorDemo.h"
 #include "FeatureMatching/KeypointDetectorTest.h"
+#include "FeatureMatching/LocalFeatureDemo.h"
+#include "FeatureMatching/LocalFeatureTest.h"
 #include "HdrMerge/HdrMergeTest.h"
 #include "ImageProcessing/FourierDemo.h"
 #include "ImageProcessing/LinearFilterDemo.h"
@@ -236,6 +238,14 @@ inline const std::vector<Command>& AllCommands()
                  KeypointDetectorTest();
                  return 0;
              }},
+        {.name = "local-feature",
+         .description = "局部特征（SIFT/ORB/AKAZE）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 LocalFeatureTest();
+                 return 0;
+             }},
 
 #if VAS_HAS_STDEXEC
         {.name = "vas-concurrency",
@@ -353,6 +363,10 @@ inline const std::vector<Command>& AllCommands()
          .description = "关键点检测演示（Harris/Shi-Tomasi/FAST）",
          .label = Label::GUI,
          .run = [] { return KeypointDetectorDemo(); }},
+        {.name = "local-feature-demo",
+         .description = "局部特征演示（SIFT/ORB/AKAZE）",
+         .label = Label::GUI,
+         .run = [] { return LocalFeatureDemo(); }},
     };
     return commands;
 }
