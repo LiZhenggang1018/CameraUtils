@@ -46,6 +46,10 @@ set(_unit_tests
     instance-counter
     type2instmap
     magic-enum
+    sobel
+    linear-filter
+    nonlinear-filter
+    pyramid
     exif
 )
 
