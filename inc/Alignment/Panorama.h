@@ -101,33 +101,11 @@ inline cv::Mat StitchPanorama(const std::vector<cv::Mat>& images)
         masks[i] = WarpImage(mask, hFinal, cv::Size(canvasW, canvasH));
     }
 
-    // 5. 顺序融合（两两多波段融合）
+    // 5. 顺序融合（两两多波段融合，MultiBandBlend 内部归一化掩码）
     cv::Mat result = warped[0].clone();
     cv::Mat resultMask = masks[0].clone();
     for (std::size_t i = 1; i < warped.size(); ++i) {
-        // mask 转 float 供融合
-        cv::Mat maskA;
-        cv::Mat maskB;
-        resultMask.convertTo(maskA, CV_8U);
-        masks[i].convertTo(maskB, CV_8U);
-
-        // 归一化 mask（重叠区权重和=1）
-        cv::Mat maskAf;
-        cv::Mat maskBf;
-        maskA.convertTo(maskAf, CV_32F);
-        maskB.convertTo(maskBf, CV_32F);
-        cv::Mat sum;
-        cv::add(maskAf, maskBf, sum);
-        sum.setTo(1.0, sum == 0);
-        cv::divide(maskAf, sum, maskAf);
-        cv::divide(maskBf, sum, maskBf);
-
-        cv::Mat m1;
-        cv::Mat m2;
-        maskAf.convertTo(m1, CV_8U, 255.0);
-        maskBf.convertTo(m2, CV_8U, 255.0);
-
-        result = MultiBandBlend(result, warped[i], m1, m2, 4);
+        result = MultiBandBlend(result, warped[i], resultMask, masks[i], 4);
         cv::bitwise_or(resultMask, masks[i], resultMask);
     }
 
