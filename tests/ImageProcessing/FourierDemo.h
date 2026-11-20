@@ -1,5 +1,5 @@
-#ifndef TESTS_FOURIERDEMO_H
-#define TESTS_FOURIERDEMO_H
+﻿#ifndef TESTS_IMAGEPROCESSING_FOURIERDEMO_H
+#define TESTS_IMAGEPROCESSING_FOURIERDEMO_H
 
 #include <algorithm>
 #include <cstdio>
@@ -10,14 +10,14 @@
 
 #include "CommonEnv.h"
 
-// 傅里叶变换简单展示（GUI，不进 ctest）。
-// 展示幅度谱 + 高低频掩码滤波效果（低通保留轮廓、高通保留边缘）。
-// 按键：
-//   s        显示幅度谱（对数归一化）
-//   l        低通滤波结果
-//   h        高通滤波结果
-//   o        原始图
-//   q / ESC  退出
+// 鍌呴噷鍙跺彉鎹㈢畝鍗曞睍绀猴紙GUI锛屼笉杩?ctest锛夈€?
+// 灞曠ず骞呭害璋?+ 楂樹綆棰戞帺鐮佹护娉㈡晥鏋滐紙浣庨€氫繚鐣欒疆寤撱€侀珮閫氫繚鐣欒竟缂橈級銆?
+// 鎸夐敭锛?
+//   s        鏄剧ず骞呭害璋憋紙瀵规暟褰掍竴鍖栵級
+//   l        浣庨€氭护娉㈢粨鏋?
+//   h        楂橀€氭护娉㈢粨鏋?
+//   o        鍘熷鍥?
+//   q / ESC  閫€鍑?
 inline int FourierDemo()
 {
     const std::string inputPath = EnvRootPath() + "/data/ImageProcessing/Fourier/input.jpg";
@@ -29,7 +29,7 @@ inline int FourierDemo()
         cv::randu(src, 0, 256);
     }
 
-    // 扩到最优尺寸 + 转浮点，做 DFT
+    // 鎵╁埌鏈€浼樺昂瀵?+ 杞诞鐐癸紝鍋?DFT
     const int optimalRows = cv::getOptimalDFTSize(src.rows);
     const int optimalCols = cv::getOptimalDFTSize(src.cols);
     cv::Mat padded;
@@ -41,7 +41,7 @@ inline int FourierDemo()
     cv::merge(planes, 2, complexImg);
     cv::dft(complexImg, complexImg);
 
-    // 幅度谱（对数 + 归一化），并做 fftshift 让低频居中便于观察
+    // 骞呭害璋憋紙瀵规暟 + 褰掍竴鍖栵級锛屽苟鍋?fftshift 璁╀綆棰戝眳涓究浜庤瀵?
     cv::split(complexImg, planes);
     cv::magnitude(planes[0], planes[1], planes[0]);
     cv::Mat magnitude = planes[0];
@@ -50,11 +50,11 @@ inline int FourierDemo()
     magnitude = magnitude(cv::Rect(0, 0, magnitude.cols & -2, magnitude.rows & -2));
     cv::normalize(magnitude, magnitude, 0, 1, cv::NORM_MINMAX);
 
-    // 直接在原始（未 shift）频谱上构造"低频在四角"的掩码，避免额外的频谱搬移
+    // 鐩存帴鍦ㄥ師濮嬶紙鏈?shift锛夐璋变笂鏋勯€?浣庨鍦ㄥ洓瑙?鐨勬帺鐮侊紝閬垮厤棰濆鐨勯璋辨惉绉?
     const int radius = std::min(complexImg.cols, complexImg.rows) / 8;
 
-    // 低通掩码：dft 输出低频在四角，构造四角保留的掩码。
-    // 用周期性距离（到 0 或尺寸边界的较小者）度量到 DC 的距离，偶数/奇数尺寸都对称。
+    // 浣庨€氭帺鐮侊細dft 杈撳嚭浣庨鍦ㄥ洓瑙掞紝鏋勯€犲洓瑙掍繚鐣欑殑鎺╃爜銆?
+    // 鐢ㄥ懆鏈熸€ц窛绂伙紙鍒?0 鎴栧昂瀵歌竟鐣岀殑杈冨皬鑰咃級搴﹂噺鍒?DC 鐨勮窛绂伙紝鍋舵暟/濂囨暟灏哄閮藉绉般€?
     cv::Mat lowPassMask = cv::Mat::zeros(complexImg.size(), CV_8U);
     for (int y = 0; y < complexImg.rows; ++y) {
         for (int x = 0; x < complexImg.cols; ++x) {
@@ -66,11 +66,11 @@ inline int FourierDemo()
             }
         }
     }
-    // 高通掩码 = 1 - 低通，且显式剔除 DC 分量（原点）
+    // 楂橀€氭帺鐮?= 1 - 浣庨€氾紝涓旀樉寮忓墧闄?DC 鍒嗛噺锛堝師鐐癸級
     cv::Mat highPassMask = cv::Scalar::all(1) - lowPassMask;
     highPassMask.at<std::uint8_t>(0, 0) = 0;
 
-    // 用掩码滤波（逐像素置零）
+    // 鐢ㄦ帺鐮佹护娉紙閫愬儚绱犵疆闆讹級
     cv::Mat complexLow = complexImg.clone();
     cv::Mat complexHigh = complexImg.clone();
     for (int y = 0; y < complexImg.rows; ++y) {
@@ -146,4 +146,4 @@ inline int FourierDemo()
     return 0;
 }
 
-#endif // TESTS_FOURIERDEMO_H
+#endif // TESTS_IMAGEPROCESSING_FOURIERDEMO_H
