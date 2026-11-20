@@ -61,6 +61,7 @@ set(_unit_tests
     panorama
     lk-tracker
     dense-flow
+    frame-interp
     exif
 )
 
