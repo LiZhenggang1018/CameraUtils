@@ -1,4 +1,4 @@
-﻿#ifndef TESTS_IMAGEPROCESSING_LINEARFILTERDEMO_H
+#ifndef TESTS_IMAGEPROCESSING_LINEARFILTERDEMO_H
 #define TESTS_IMAGEPROCESSING_LINEARFILTERDEMO_H
 
 #include <cstdint>
@@ -13,14 +13,14 @@
 
 #include "CommonEnv.h"
 
-// 绾挎€ф护娉氦浜掑紡璋冨弬 demo锛圙UI锛屼笉杩?ctest锛夈€?
-// 鎸夐敭锛?
-//   m        鍒囨崲婊ゆ尝绫诲瀷锛坓aussian / mean / sharpen / sobel锛?
-//   +/-      璋冩暣鏍稿昂瀵革紙妯＄硦绫伙級
-//   s/S      璋冩暣 sigma锛堥珮鏂級
-//   a/A      璋冩暣閿愬寲寮哄害锛堥攼鍖栵級
-//   r        閲嶇疆鍙傛暟
-//   q / ESC  閫€鍑?
+// 线性滤波交互式调参 demo（GUI，不进 ctest）。
+// 按键：
+//   m        切换滤波类型（gaussian / mean / sharpen / sobel）
+//   +/-      调整核尺寸（模糊类）
+//   s/S      调整 sigma（高斯）
+//   a/A      调整锐化强度（锐化）
+//   r        重置参数
+//   q / ESC  退出
 inline int LinearFilterDemo()
 {
     const std::string inputPath = EnvRootPath() + "/data/ImageProcessing/LinearFilter/input.jpg";
