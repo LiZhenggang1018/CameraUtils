@@ -1,5 +1,5 @@
-#ifndef TESTS_NONLINEARFILTERTEST_H
-#define TESTS_NONLINEARFILTERTEST_H
+﻿#ifndef TESTS_IMAGEPROCESSING_NONLINEARFILTERTEST_H
+#define TESTS_IMAGEPROCESSING_NONLINEARFILTERTEST_H
 
 #include <cstdint>
 #include <iostream>
@@ -10,12 +10,12 @@
 
 #include "cli/TestAssert.h"
 
-// 非线性滤波模块断言测试。
-// 真值来源：中值滤波去椒盐噪声、双边滤波保边 + 与 OpenCV 参考实现交叉验证。
+// 闈炵嚎鎬ф护娉㈡ā鍧楁柇瑷€娴嬭瘯銆?
+// 鐪熷€兼潵婧愶細涓€兼护娉㈠幓妞掔洂鍣０銆佸弻杈规护娉繚杈?+ 涓?OpenCV 鍙傝€冨疄鐜颁氦鍙夐獙璇併€?
 
 namespace {
 
-// 3x3 中心为 255、周围为 0 的椒盐噪声点
+// 3x3 涓績涓?255銆佸懆鍥翠负 0 鐨勬鐩愬櫔澹扮偣
 cv::Mat MakeSaltNoise()
 {
     cv::Mat img = cv::Mat::zeros(5, 5, CV_8UC1);
@@ -23,7 +23,7 @@ cv::Mat MakeSaltNoise()
     return img;
 }
 
-// 水平阶跃图：上半 0、下半 255（强边缘）
+// 姘村钩闃惰穬鍥撅細涓婂崐 0銆佷笅鍗?255锛堝己杈圭紭锛?
 cv::Mat MakeHorizontalStep()
 {
     cv::Mat img = cv::Mat::zeros(9, 9, CV_8UC1);
@@ -41,7 +41,7 @@ inline void NonLinearFilterTest()
 {
     std::cout << "===== NonLinearFilter test begin =====" << std::endl;
 
-    // 1) 中值滤波去除椒盐噪声：中心噪声点被周围 0 取代
+    // 1) 涓€兼护娉㈠幓闄ゆ鐩愬櫔澹帮細涓績鍣０鐐硅鍛ㄥ洿 0 鍙栦唬
     {
         const cv::Mat noise = MakeSaltNoise();
         const cv::Mat out = ImageProcessing::MedianBlur(noise, 3);
@@ -49,7 +49,7 @@ inline void NonLinearFilterTest()
         std::cout << "  median removes salt noise OK" << std::endl;
     }
 
-    // 2) 双边滤波保边：阶跃边缘两侧各自保持接近原值
+    // 2) 鍙岃竟婊ゆ尝淇濊竟锛氶樁璺冭竟缂樹袱渚у悇鑷繚鎸佹帴杩戝師鍊?
     {
         const cv::Mat step = MakeHorizontalStep();
         const cv::Mat out = ImageProcessing::BilateralFilter(step, 9, 50.0, 50.0);
@@ -60,7 +60,7 @@ inline void NonLinearFilterTest()
         std::cout << "  bilateral preserves edge OK" << std::endl;
     }
 
-    // 3) 交叉验证：与 cv::medianBlur / cv::bilateralFilter 逐像素一致
+    // 3) 浜ゅ弶楠岃瘉锛氫笌 cv::medianBlur / cv::bilateralFilter 閫愬儚绱犱竴鑷?
     {
         cv::Mat src(21, 21, CV_8UC1);
         cv::randu(src, 0, 256);
@@ -77,7 +77,7 @@ inline void NonLinearFilterTest()
         std::cout << "  cross-validation vs OpenCV OK" << std::endl;
     }
 
-    // 4) 空输入安全返回空 Mat
+    // 4) 绌鸿緭鍏ュ畨鍏ㄨ繑鍥炵┖ Mat
     {
         const cv::Mat empty;
         CU_CHECK(ImageProcessing::MedianBlur(empty, 3).empty());
@@ -85,7 +85,7 @@ inline void NonLinearFilterTest()
         std::cout << "  empty-input safety OK" << std::endl;
     }
 
-    // 5) 偶数/非法 diameter 规整为奇数，不崩溃
+    // 5) 鍋舵暟/闈炴硶 diameter 瑙勬暣涓哄鏁帮紝涓嶅穿婧?
     {
         cv::Mat src(21, 21, CV_8UC1);
         cv::randu(src, 0, 256);
@@ -98,4 +98,4 @@ inline void NonLinearFilterTest()
     std::cout << "===== NonLinearFilter test passed =====" << std::endl;
 }
 
-#endif // TESTS_NONLINEARFILTERTEST_H
+#endif // TESTS_IMAGEPROCESSING_NONLINEARFILTERTEST_H
