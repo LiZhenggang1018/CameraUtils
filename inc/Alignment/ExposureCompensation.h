@@ -11,7 +11,7 @@
 namespace Alignment {
 
 // 估计每张图的增益（第一张为基准 gain=1），使各图亮度对齐。
-// 用均值比：gain[i] = mean(images[0]) / mean(images[i])，全黑图防护返回 1.0。
+// 用整图全通道均值比：gain[i] = mean(images[0]) / mean(images[i])，全黑图防护返回 1.0。
 inline std::vector<double> EstimateGains(const std::vector<cv::Mat>& images)
 {
     if (images.empty()) {
@@ -21,15 +21,27 @@ inline std::vector<double> EstimateGains(const std::vector<cv::Mat>& images)
     std::vector<double> gains;
     gains.reserve(images.size());
 
-    const cv::Scalar refMean = cv::mean(images[0]);
-    const double ref = refMean[0];
+    // 全通道均值（灰度=单通道，彩色=BGR 三通道平均）
+    auto WholeMean = [](const cv::Mat& img) {
+        if (img.empty()) {
+            return 0.0;
+        }
+        const cv::Scalar m = cv::mean(img);
+        double sum = 0.0;
+        for (int c = 0; c < img.channels(); ++c) {
+            sum += m[c];
+        }
+        return sum / img.channels();
+    };
+
+    const double ref = WholeMean(images[0]);
 
     for (const auto& img : images) {
         if (img.empty()) {
             gains.push_back(1.0);
             continue;
         }
-        const double m = cv::mean(img)[0];
+        const double m = WholeMean(img);
         if (m < 1e-6 || ref < 1e-6) {
             gains.push_back(1.0);
             continue;
