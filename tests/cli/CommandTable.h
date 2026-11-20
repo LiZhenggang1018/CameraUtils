@@ -38,6 +38,7 @@
 #include "LivePhotoSmoothPlay/LivePhotoSmoothPlayTest.h"
 #include "MagicEnumTest.h"
 #include "OpenCVTest.h"
+#include "OpticalFlow/LkTrackerTest.h"
 #include "OpticalFlow/OpticalFlowTest.h"
 #include "TestCase.h"
 #include "Type2InstMapTest.h"
@@ -304,6 +305,14 @@ inline const std::vector<Command>& AllCommands()
          .run =
              [] {
                  PanoramaTest();
+                 return 0;
+             }},
+        {.name = "lk-tracker",
+         .description = "稀疏光流（LK 跟踪器）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 LkTrackerTest();
                  return 0;
              }},
 
