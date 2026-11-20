@@ -127,6 +127,29 @@ camera_utils_tests.exe magic-enum
 - 多文件场景下按上面的策略逐次提交、逐次推送。
 - 推送后确认同步状态：`git rev-list --left-right --count origin/main...main` 应输出 `0 0`。
 
+### 推送的根因规则（必须遵守）
+
+**`git push` 推送任意提交时，会连带远端没有的所有祖先提交一起打包发送。**
+
+- 本地相对远端领先 N 个提交时，即使只推第 1 个提交（`git push origin <最早sha>:main`），
+  git 实际仍会把 N 个提交的内容全部打包上传 → 单次 POST 过大 → 被网关 403 拒绝。
+- **因此「领先 N 个时逐个 push」是无效的**，必须先消除领先，再逐个提交+推送。
+
+**正确做法（每个提交必须保证 push 前本地仅领先 1 个）：**
+
+1. 若已有多个未推提交堆积，先 `git reset --soft origin/main` 把改动退回暂存区
+   （工作区文件不丢），再 `git reset` 清空暂存区，让改动回到工作区。
+2. 按「先小文件、后大文件」的顺序，对**每个文件**依次执行：
+   `git add <单个文件>` → `git commit -m "..."` → `git push origin main`。
+3. 每一步 push 时本地都只领先 1 个提交，pack 最小，可稳定通过网关。
+
+**约束：**
+
+- 一次 `git add` 只能 add 单个文件，禁止一次 add 多个文件后再 commit/push。
+- 一次 `git commit` 只提交单个文件（多文件改动必须拆成多个单文件提交）。
+- 每个单文件提交后立即 `git push origin main`，不要攒多个提交再推。
+- **每次更新完 `AGENTS.md` 后，也要按单文件规则及时提交并推送**（`git add AGENTS.md` → `git commit` → `git push origin main`），不要攒着。
+
 ## 编码规范（必须遵守）
 
 编写或修改 C++ 代码前必须先阅读以下规范文档（存放于本地 `references/` 目录，该目录不入库）：
