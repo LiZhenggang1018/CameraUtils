@@ -179,4 +179,6 @@ struct HdrConfig {
 
     void SaveToFile(const std::string& path) const { Srlz(*this, path); }
 };
+
+
 #endif // INC_HDRMERGE_HDRCONFIG_H
