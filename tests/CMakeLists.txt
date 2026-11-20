@@ -50,6 +50,7 @@ set(_unit_tests
     linear-filter
     nonlinear-filter
     pyramid
+    keypoint-detect
     exif
 )
 
