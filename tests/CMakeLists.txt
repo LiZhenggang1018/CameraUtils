@@ -55,6 +55,7 @@ set(_unit_tests
     local-feature
     feature-match
     homography
+    blending
     exif
 )
 
