@@ -38,7 +38,7 @@
 #include "LivePhotoSmoothPlay/LivePhotoSmoothPlayTest.h"
 #include "MagicEnumTest.h"
 #include "OpenCVTest.h"
-#include "OpticalFlowTest.h"
+#include "OpticalFlow/OpticalFlowTest.h"
 #include "TestCase.h"
 #include "Type2InstMapTest.h"
 
