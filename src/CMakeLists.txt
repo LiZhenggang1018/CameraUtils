@@ -24,6 +24,7 @@ add_library(CameraUtils::core ALIAS camera_utils_core)
 
 target_include_directories(camera_utils_core PUBLIC
     ${CMAKE_SOURCE_DIR}/inc
+    ${CMAKE_SOURCE_DIR}/inc/CommonUtils
     ${CMAKE_SOURCE_DIR}/inc/LivePhotoSmoothPlay
     ${CMAKE_SOURCE_DIR}/inc/OpticalFlow
     ${CMAKE_SOURCE_DIR}/inc/HdrMerge
@@ -71,6 +72,7 @@ add_executable(CameraUtils main.cpp)
 
 target_include_directories(CameraUtils PRIVATE
     ${CMAKE_SOURCE_DIR}/tests
+    ${CMAKE_SOURCE_DIR}/tests/CommonUtils
 )
 
 target_link_libraries(CameraUtils PRIVATE
