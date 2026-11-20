@@ -57,6 +57,7 @@ set(_unit_tests
     homography
     blending
     exposure-comp
+    vignetting
     exif
 )
 
