@@ -14,6 +14,8 @@
 #include "Alignment/ExposureCompensationTest.h"
 #include "Alignment/HomographyDemo.h"
 #include "Alignment/HomographyTest.h"
+#include "Alignment/PanoramaDemo.h"
+#include "Alignment/PanoramaTest.h"
 #include "Alignment/VignettingDemo.h"
 #include "Alignment/VignettingTest.h"
 #include "Exiv2Test.h"
@@ -296,6 +298,14 @@ inline const std::vector<Command>& AllCommands()
                  VignettingTest();
                  return 0;
              }},
+        {.name = "panorama",
+         .description = "多图全景拼接",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 PanoramaTest();
+                 return 0;
+             }},
 
 #if VAS_HAS_STDEXEC
         {.name = "vas-concurrency",
@@ -437,6 +447,10 @@ inline const std::vector<Command>& AllCommands()
          .description = "渐晕校正演示",
          .label = Label::GUI,
          .run = [] { return VignettingDemo(); }},
+        {.name = "panorama-demo",
+         .description = "多图全景拼接演示",
+         .label = Label::GUI,
+         .run = [] { return PanoramaDemo(); }},
     };
     return commands;
 }
