@@ -62,6 +62,7 @@ set(_unit_tests
     lk-tracker
     dense-flow
     frame-interp
+    eis
     exif
 )
 
