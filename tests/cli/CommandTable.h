@@ -39,6 +39,7 @@
 #include "MagicEnumTest.h"
 #include "OpenCVTest.h"
 #include "OpticalFlow/DenseFlowTest.h"
+#include "OpticalFlow/FrameInterpolatorTest.h"
 #include "OpticalFlow/LkTrackerTest.h"
 #include "OpticalFlow/OpticalFlowTest.h"
 #include "TestCase.h"
@@ -322,6 +323,14 @@ inline const std::vector<Command>& AllCommands()
          .run =
              [] {
                  DenseFlowTest();
+                 return 0;
+             }},
+        {.name = "frame-interp",
+         .description = "视频插帧（FrameInterpolator）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 FrameInterpolatorTest();
                  return 0;
              }},
 
