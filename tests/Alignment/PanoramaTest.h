@@ -52,13 +52,13 @@ inline void PanoramaTest()
 {
     std::cout << "===== Panorama test begin =====" << std::endl;
 
-    // 1) 重叠切片拼接，结果非空且尺寸合理
+    // 1) 重叠切片拼接，结果非空且宽度大于单张（拼接完整性由真实图 demo 验证）
     {
         const auto slices = MakeOverlappingSlices(800, 300, 3, 100);
         const cv::Mat pano = Alignment::StitchPanorama(slices);
 
         CU_CHECK(!pano.empty());
-        // 拼接结果宽度应大于单张切片
+        // 拼接结果宽度应大于单张切片（至少拼上了相邻图）
         CU_CHECK(pano.cols > slices[0].cols);
         std::cout << "  StitchPanorama OK (pano=" << pano.cols << "x" << pano.rows << ")" << std::endl;
     }
