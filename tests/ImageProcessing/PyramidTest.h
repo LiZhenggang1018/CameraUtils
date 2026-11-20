@@ -1,5 +1,5 @@
-﻿#ifndef TESTS_PYRAMIDTEST_H
-#define TESTS_PYRAMIDTEST_H
+﻿#ifndef TESTS_IMAGEPROCESSING_PYRAMIDTEST_H
+#define TESTS_IMAGEPROCESSING_PYRAMIDTEST_H
 
 #include <cstdint>
 #include <iostream>
@@ -77,4 +77,4 @@ inline void PyramidTest()
     std::cout << "===== Pyramid test passed =====" << std::endl;
 }
 
-#endif // TESTS_PYRAMIDTEST_H
+#endif // TESTS_IMAGEPROCESSING_PYRAMIDTEST_H
