@@ -22,9 +22,10 @@ inline std::vector<cv::DMatch> MatchBF(const cv::Mat& desc1, const cv::Mat& desc
 }
 
 // FLANN 近似最近邻匹配：仅适用于 float 描述子（如 SIFT）。
+// 二进制描述子（CV_8U）会抛异常，此处前置校验并安全返回空。
 inline std::vector<cv::DMatch> MatchFLANN(const cv::Mat& desc1, const cv::Mat& desc2)
 {
-    if (desc1.empty() || desc2.empty()) {
+    if (desc1.empty() || desc2.empty() || desc1.type() != CV_32F || desc2.type() != CV_32F) {
         return {};
     }
     cv::FlannBasedMatcher matcher;
