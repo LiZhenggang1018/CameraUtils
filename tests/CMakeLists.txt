@@ -58,6 +58,7 @@ set(_unit_tests
     blending
     exposure-comp
     vignetting
+    panorama
     exif
 )
 
