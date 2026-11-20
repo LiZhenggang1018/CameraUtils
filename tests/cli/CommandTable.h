@@ -38,6 +38,7 @@
 #include "LivePhotoSmoothPlay/LivePhotoSmoothPlayTest.h"
 #include "MagicEnumTest.h"
 #include "OpenCVTest.h"
+#include "OpticalFlow/DenseFlowTest.h"
 #include "OpticalFlow/LkTrackerTest.h"
 #include "OpticalFlow/OpticalFlowTest.h"
 #include "TestCase.h"
@@ -313,6 +314,14 @@ inline const std::vector<Command>& AllCommands()
          .run =
              [] {
                  LkTrackerTest();
+                 return 0;
+             }},
+        {.name = "dense-flow",
+         .description = "稠密光流（Farneback/DIS/DeepFlow）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 DenseFlowTest();
                  return 0;
              }},
 
