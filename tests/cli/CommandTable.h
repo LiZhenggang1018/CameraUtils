@@ -10,12 +10,20 @@
 
 #include "Exiv2Test.h"
 #include "FFMpegTest.h"
+#include "FourierDemo.h"
 #include "HarrisDetect.h"
 #include "HdrMerge/HdrMergeTest.h"
+#include "LinearFilterDemo.h"
+#include "LinearFilterTest.h"
 #include "LivePhotoSmoothPlay/LivePhotoSmoothPlayTest.h"
 #include "MagicEnumTest.h"
+#include "NonLinearFilterDemo.h"
+#include "NonLinearFilterTest.h"
 #include "OpenCVTest.h"
 #include "OpticalFlowTest.h"
+#include "PyramidDemo.h"
+#include "PyramidTest.h"
+#include "SobelTest.h"
 #include "TestCase.h"
 #include "Type2InstMapTest.h"
 
@@ -187,6 +195,38 @@ inline const std::vector<Command>& AllCommands()
                  MagicEnumTest::TestMagicEnum();
                  return 0;
              }},
+        {.name = "sobel",
+         .description = "Sobel 边缘检测（手写实现 + 真值断言）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 SobelEdgeTest();
+                 return 0;
+             }},
+        {.name = "linear-filter",
+         .description = "线性滤波（高斯/均值/锐化/Sobel）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 LinearFilterTest();
+                 return 0;
+             }},
+        {.name = "nonlinear-filter",
+         .description = "非线性滤波（中值/双边）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 NonLinearFilterTest();
+                 return 0;
+             }},
+        {.name = "pyramid",
+         .description = "金字塔（高斯/拉普拉斯）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 PyramidTest();
+                 return 0;
+             }},
 
 #if VAS_HAS_STDEXEC
         {.name = "vas-concurrency",
@@ -292,6 +332,22 @@ inline const std::vector<Command>& AllCommands()
                  HarrisTest();
                  return 0;
              }},
+        {.name = "linear-filter-demo",
+         .description = "线性滤波调参演示（交互窗口）",
+         .label = Label::GUI,
+         .run = [] { return LinearFilterDemo(); }},
+        {.name = "nonlinear-filter-demo",
+         .description = "非线性滤波调参演示（交互窗口）",
+         .label = Label::GUI,
+         .run = [] { return NonLinearFilterDemo(); }},
+        {.name = "pyramid-demo",
+         .description = "金字塔演示（高斯/拉普拉斯）",
+         .label = Label::GUI,
+         .run = [] { return PyramidDemo(); }},
+        {.name = "fourier-demo",
+         .description = "傅里叶变换频谱与高低频滤波演示",
+         .label = Label::GUI,
+         .run = [] { return FourierDemo(); }},
     };
     return commands;
 }
