@@ -10,6 +10,8 @@
 
 #include "Exiv2Test.h"
 #include "FFMpegTest.h"
+#include "FeatureMatching/KeypointDetectorDemo.h"
+#include "FeatureMatching/KeypointDetectorTest.h"
 #include "HdrMerge/HdrMergeTest.h"
 #include "ImageProcessing/FourierDemo.h"
 #include "ImageProcessing/LinearFilterDemo.h"
@@ -226,6 +228,14 @@ inline const std::vector<Command>& AllCommands()
                  PyramidTest();
                  return 0;
              }},
+        {.name = "keypoint-detect",
+         .description = "关键点检测（Harris/Shi-Tomasi/FAST）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 KeypointDetectorTest();
+                 return 0;
+             }},
 
 #if VAS_HAS_STDEXEC
         {.name = "vas-concurrency",
@@ -339,6 +349,10 @@ inline const std::vector<Command>& AllCommands()
          .description = "傅里叶变换频谱与高低频滤波演示",
          .label = Label::GUI,
          .run = [] { return FourierDemo(); }},
+        {.name = "keypoint-detect-demo",
+         .description = "关键点检测演示（Harris/Shi-Tomasi/FAST）",
+         .label = Label::GUI,
+         .run = [] { return KeypointDetectorDemo(); }},
     };
     return commands;
 }
