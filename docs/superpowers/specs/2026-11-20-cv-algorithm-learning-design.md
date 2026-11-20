@@ -183,6 +183,24 @@ data/<Chapter>/<Algo>/
 `src/CMakeLists.txt` 里对 `inc/ImageReg` 的 include 引用一并删除。Harris 在「关键点检测」块里
 重新做成可复用库 API + 独立 demo/测试。
 
+## 第三个里程碑：第 8 章 Alignment & Stitching
+
+拆四块（每块一个 self-contained 模块），落点「图像拼接」大 demo（串联 3+7+8）。
+
+| 块 | 内容 | 对应书知识点 |
+|---|---|---|
+| 单应与 warping | 单应 H 的理解 + warpPerspective 应用（前向/后向映射、边界扩展、坐标累计） | Homography / warping |
+| 图像融合 | 多波段 blending（拉普拉斯金字塔） | Compositing |
+| 曝光补偿 | 增益估计 + 图像间亮度对齐 | Exposure compensation |
+| 渐晕校正 | 径向衰减模型 + 校正 | Vignetting |
+
+**配准策略**：两两求单应 H 复用第 7 章 `FeatureMatcher` 三块（不重造），`ImageRegistrator`
+（`inc/LivePhotoSmoothPlay/`）作为对照参考验证自己组装的对不对。
+
+**大 demo**：多图全景拼接（横向一排 N 张），含配准 + 累计单应 + 多波段融合 + 曝光补偿 + 渐晕校正。
+
+**目录**：第 8 章 → `inc/Alignment/` + `src/Alignment/` + `tests/Alignment/`。
+
 ## 留给 builder 的部分
 
 - 每个算法的具体 OpenCV 调用与参数选择（在"读懂原理 + 调 OpenCV"目标下，由 builder 从书 +
@@ -204,6 +222,8 @@ data/<Chapter>/<Algo>/
 - 第 7 章范围 = 关键点检测（Harris/GFTT/FAST）+ 局部特征（SIFT/ORB/AKAZE 可运行，
   SURF 仅笔记）+ 匹配+RANSAC（BruteForce/FLANN/ratio test/cross-check/RANSAC 单应）。
 - 第 7 章目录 = `FeatureMatching`，删除 `inc/ImageReg/`。
+- 第 8 章范围 = 单应+warping、图像融合（多波段 blending）、曝光补偿、渐晕校正；大 demo 多图全景拼接。
+- 第 8 章目录 = `Alignment`。
 - 调参 demo = 交互式 `imshow` GUI 窗口（`Label::GUI`，不进 CI）。
 - json 配置 = 仅参数有意义的算法才配，近无参用代码内常量。
 - 数据目录 = `data/<Chapter>/<Algo>/` 放输入输出与中间结果（本地，不入库）。
