@@ -179,10 +179,13 @@ camera_utils_tests.exe magic-enum
 
 - **可复用算法库**：`inc/<章节目录>/`（接口）+ `src/<章节目录>/`（实现），章节目录名对齐书中章节
   （如第 3 章 → `ImageProcessing`）。
+- **公共工具类**：`inc/CommonUtils/`（不含 OpenCV/FFmpeg/exiv2 的通用工具，如
+  `CheckUtils.h`、`ThreadPool.h`、`GeneralFactory.h` 等）+ `tests/CommonUtils/`（对应测试用例）。
+  `CoreUtils.h` 作为纯标准库聚合头保留在 `inc/` 根目录。
 - **测试用例**：`tests/<章节目录>/`，每章的测试用例（`*Test.h` / `*Demo.h`）统一放在
   该章对应子目录下，**不散落在 `tests/` 根目录**。已在用的章节目录：
-  `tests/ImageProcessing/`、`tests/HdrMerge/`、`tests/LivePhotoSmoothPlay/`。
-- 跨章节的通用测试（`cli/`、`EventTest.h` 等）仍保留在 `tests/` 根目录。
+  `tests/ImageProcessing/`、`tests/FeatureMatching/`、`tests/HdrMerge/`、`tests/LivePhotoSmoothPlay/`。
+- 通用测试框架（`tests/cli/`）保留在 `tests/` 根目录。
 - 测试文件 include guard 用 `TESTS_<章节目录>_<文件名>_H` 形式
   （如 `TESTS_IMAGEPROCESSING_SOBELTEST_H`），`CommandTable.h` 里用
   `#include "<章节目录>/<文件名>.h"` 引用。
