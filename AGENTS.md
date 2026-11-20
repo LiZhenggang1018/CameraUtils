@@ -200,3 +200,8 @@ PowerShell 5.1 控制台与管道按 GBK 解码，直接查看或管道传递中
 
 不要把 `.ps1` 脚本中的中文字面量直接写入无 BOM 的脚本文件（会被按 GBK 解析而报错），
 需要中文内容时改为从独立 UTF-8 文本文件读取。
+
+**禁止用 PowerShell 文本命令修改含中文的 UTF-8 文件（会导致真实损坏，不是显示问题）。**
+具体：`Get-Content` + `-replace`/`Set-Content`、`Out-File`、`Set-Content` 等按 GBK 读入
+UTF-8 文件后写回，会把中文永久破坏（曾因此损坏 `tests/ImageProcessing/` 下 8 个文件的注释）。
+改文本一律用 `read`/`edit` 工具，或用 C# 脚本显式指定 `Encoding.UTF8` 读写。
