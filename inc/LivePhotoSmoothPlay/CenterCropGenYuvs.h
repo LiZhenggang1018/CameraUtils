@@ -188,9 +188,9 @@ inline void CenterCropGenYuvs(const std::string& inputYuv, int w, int h, int num
         }
 
         // 创建全尺寸缓冲区并初始化（先填充默认值）
-        std::vector<unsigned char> fullCropY(w * h, 0);       // Y分量，填充0（黑色）
-        std::vector<unsigned char> fullCropU(w * h / 4, 128); // U分量，填充128（中性灰）
-        std::vector<unsigned char> fullCropV(w * h / 4, 128); // V分量，填充128（中性灰）
+        std::vector<unsigned char> fullCropY(static_cast<size_t>(w) * h, 0);       // Y分量，填充0（黑色）
+        std::vector<unsigned char> fullCropU(static_cast<size_t>(w) * h / 4, 128); // U分量，填充128（中性灰）
+        std::vector<unsigned char> fullCropV(static_cast<size_t>(w) * h / 4, 128); // V分量，填充128（中性灰）
 
         // 将裁剪后的数据复制到中心位置（保留作为回退方案）
         for (int yy = 0; yy < cropH; yy++) {

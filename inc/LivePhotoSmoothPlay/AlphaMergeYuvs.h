@@ -105,7 +105,7 @@ inline void DumpYuv2Jpg(const YuvInfo& in, const std::string& out)
 
         // 复制Y平面（去除padding）
         for (int row = 0; row < h; ++row) {
-            const unsigned char* srcRow = in.pData + (row * stride);
+            const unsigned char* srcRow = in.pData + (static_cast<size_t>(row) * stride);
             unsigned char* dstRow = yuvContinuous.ptr(row);
             std::copy(srcRow, srcRow + w, dstRow);
         }
@@ -116,7 +116,7 @@ inline void DumpYuv2Jpg(const YuvInfo& in, const std::string& out)
         int uvStride = stride / 2;
 
         for (int row = 0; row < h / 2; ++row) {
-            const unsigned char* srcRow = in.pData + uStart + (row * uvStride);
+            const unsigned char* srcRow = in.pData + uStart + (static_cast<size_t>(row) * uvStride);
             unsigned char* dstRow = yuvContinuous.ptr(h + row);
             std::copy(srcRow, srcRow + uvWidth, dstRow);
         }
@@ -125,7 +125,7 @@ inline void DumpYuv2Jpg(const YuvInfo& in, const std::string& out)
         size_t vStart = ySize + uvSize;
 
         for (int row = 0; row < h / 2; ++row) {
-            const unsigned char* srcRow = in.pData + vStart + (row * uvStride);
+            const unsigned char* srcRow = in.pData + vStart + (static_cast<size_t>(row) * uvStride);
             unsigned char* dstRow = yuvContinuous.ptr(h + (h / 2) + row);
             std::copy(srcRow, srcRow + uvWidth, dstRow);
         }
@@ -186,7 +186,7 @@ inline cv::Mat Yuv2BgrMat(const YuvInfo& in)
 
         // 复制Y平面
         for (int row = 0; row < h; ++row) {
-            const unsigned char* srcRow = in.pData + (row * stride);
+            const unsigned char* srcRow = in.pData + (static_cast<size_t>(row) * stride);
             unsigned char* dstRow = yuvContinuous.ptr(row);
             std::copy(srcRow, srcRow + w, dstRow);
         }
@@ -194,7 +194,7 @@ inline cv::Mat Yuv2BgrMat(const YuvInfo& in)
         // 复制U平面
         size_t uStart = ySize;
         for (int row = 0; row < h / 2; ++row) {
-            const unsigned char* srcRow = in.pData + uStart + (row * uvStride);
+            const unsigned char* srcRow = in.pData + uStart + (static_cast<size_t>(row) * uvStride);
             unsigned char* dstRow = yuvContinuous.ptr(h + row);
             std::copy(srcRow, srcRow + uvWidth, dstRow);
         }
@@ -202,7 +202,7 @@ inline cv::Mat Yuv2BgrMat(const YuvInfo& in)
         // 复制V平面
         size_t vStart = ySize + uvSize;
         for (int row = 0; row < h / 2; ++row) {
-            const unsigned char* srcRow = in.pData + vStart + (row * uvStride);
+            const unsigned char* srcRow = in.pData + vStart + (static_cast<size_t>(row) * uvStride);
             unsigned char* dstRow = yuvContinuous.ptr(h + (h / 2) + row);
             std::copy(srcRow, srcRow + uvWidth, dstRow);
         }
@@ -238,7 +238,7 @@ inline void DumpYuv2JpgOptimized(const YuvInfo& in, const std::string& out)
     // 方法：使用OpenCV的步长感知转换
     // 创建Y、U、V平面的Mat视图
     cv::Mat yPlane(h, stride, CV_8UC1, in.pData);
-    cv::Mat uvPlane(h / 2, stride / 2, CV_8UC2, in.pData + (stride * h));
+    cv::Mat uvPlane(h / 2, stride / 2, CV_8UC2, in.pData + (static_cast<size_t>(stride) * h));
 
     // 裁剪出有效区域（去除padding）
     cv::Rect yRoi(0, 0, w, h);

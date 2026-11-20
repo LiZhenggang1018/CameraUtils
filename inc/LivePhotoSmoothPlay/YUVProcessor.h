@@ -83,12 +83,13 @@ public:
         ProcessPlane(outputData.data(), 0, width_, height_, cropX, cropY, cropWidth, cropHeight, 1, 1);
 
         // 处理U分量（YUV420，UV分量尺寸减半）
-        ProcessPlane(outputData.data() + (width_ * height_), width_ * height_, width_ / 2, height_ / 2, cropX / 2,
-                     cropY / 2, cropWidth / 2, cropHeight / 2, 1, 1);
+        ProcessPlane(outputData.data() + (static_cast<size_t>(width_) * height_), static_cast<size_t>(width_) * height_,
+                     width_ / 2, height_ / 2, cropX / 2, cropY / 2, cropWidth / 2, cropHeight / 2, 1, 1);
 
         // 处理V分量
-        ProcessPlane(outputData.data() + (width_ * height_ * 5 / 4), width_ * height_ * 5 / 4, width_ / 2, height_ / 2,
-                     cropX / 2, cropY / 2, cropWidth / 2, cropHeight / 2, 1, 1);
+        ProcessPlane(outputData.data() + (static_cast<size_t>(width_) * height_ * 5 / 4),
+                     static_cast<size_t>(width_) * height_ * 5 / 4, width_ / 2, height_ / 2, cropX / 2, cropY / 2,
+                     cropWidth / 2, cropHeight / 2, 1, 1);
 
         // 写入文件
         return WriteYuvFile(outputPath, outputData);

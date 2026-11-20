@@ -95,7 +95,7 @@ public:
         std::lock_guard<std::mutex> lk(creatorTblMutex_);
         std::vector<ProductPtr> typeVec{};
         for (const auto& pair : creatorTbl_) {
-            auto obj = pair.second(std::forward<TArgs>(args)...);
+            auto obj = pair.second(args...);
             if (obj != nullptr) {
                 std::stringstream kname;
                 kname << pair.first;
