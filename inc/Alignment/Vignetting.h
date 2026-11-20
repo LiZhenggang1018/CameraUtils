@@ -23,6 +23,9 @@ inline cv::Mat CorrectVignetting(const cv::Mat& image, double strength)
     const double cx = (cols - 1) / 2.0;
     const double cy = (rows - 1) / 2.0;
     const double maxR2 = cx * cx + cy * cy;
+    if (maxR2 <= 0.0) {
+        return image.clone(); // 退化 1×1 图，无暗角可校
+    }
 
     // 预计算校正系数图（乘性增益）
     cv::Mat gainMap(rows, cols, CV_64F);
