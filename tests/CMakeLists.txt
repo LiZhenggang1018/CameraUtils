@@ -54,6 +54,7 @@ set(_unit_tests
     keypoint-detect
     local-feature
     feature-match
+    homography
     exif
 )
 
