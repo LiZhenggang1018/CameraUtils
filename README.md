@@ -97,6 +97,7 @@ camera_utils_tests.exe magic-enum
 ```
 inc/
   CoreUtils.h             纯标准库工具层聚合头
+  CommonUtils/*.h         公共工具类（CheckUtils/ThreadPool/GeneralFactory 等）
   ImageProcessing/*.h     第 3 章 图像处理（滤波/金字塔/Sobel）
   FeatureMatching/*.h     第 7 章 特征检测与匹配（关键点/局部特征/匹配+RANSAC）
   OpticalFlow/*.h         光流/配准
@@ -110,9 +111,9 @@ tests/
   cli/CommandTable.h      命令表（CLI 与测试共用）
   cli/TestAssert.h        断言宏（Release 下同样生效）
   TestMain.cpp            测试驱动入口
+  CommonUtils/*.h         公共工具类测试用例
   ImageProcessing/*.h     第 3 章测试与 demo
   FeatureMatching/*.h     第 7 章测试与 demo
-  *.h                     各模块用例
 configs/                  运行时 JSON 配置
 data/                     媒体素材（不入库）
 references/               编码规范文档（不入库）
