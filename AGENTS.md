@@ -205,3 +205,12 @@ PowerShell 5.1 控制台与管道按 GBK 解码，直接查看或管道传递中
 具体：`Get-Content` + `-replace`/`Set-Content`、`Out-File`、`Set-Content` 等按 GBK 读入
 UTF-8 文件后写回，会把中文永久破坏（曾因此损坏 `tests/ImageProcessing/` 下 8 个文件的注释）。
 改文本一律用 `read`/`edit` 工具，或用 C# 脚本显式指定 `Encoding.UTF8` 读写。
+
+### 编码统一约定（防乱码）
+
+- **新文件一律 UTF-8 无 BOM + LF 换行**（`.editorconfig` 已声明 `charset = utf-8` + `end_of_line = lf`）。
+- **换行符**：源码/文档/配置统一 LF（`.gitattributes` 已声明 `eol=lf`）；`.github/` 下与 `*.ps1` 保持 CRLF。
+- **存量文件**：保持原有风格，不强制迁移（避免大规模无关 diff）。
+- **提交前校验**：运行 `powershell -ExecutionPolicy Bypass -File scripts/check-encoding.ps1`，
+  脚本通过检测 `U+FFFD` 替换字符与私用区字符 `U+E000-U+F8FF`（GBK 错转 UTF-8 的典型特征）来发现乱码；
+  退出码非 0 表示有乱码，须用 `read`/`edit` 修复后再提交。
