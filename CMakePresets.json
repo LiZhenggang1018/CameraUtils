@@ -42,6 +42,15 @@
             }
         },
         {
+            "name": "x64-asan",
+            "displayName": "x64 Debug ASan",
+            "inherits": "x64-debug",
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "/fsanitize:address /Zi /Od",
+                "CMAKE_EXE_LINKER_FLAGS": "/fsanitize:address"
+            }
+        },
+        {
             "name": "x86-debug",
             "displayName": "x86 Debug",
             "inherits": "windows-base",
@@ -112,6 +121,11 @@
             "name": "x64-release",
             "displayName": "x64 Release Build",
             "configurePreset": "x64-release"
+        },
+        {
+            "name": "x64-asan",
+            "displayName": "x64 Debug ASan Build",
+            "configurePreset": "x64-asan"
         },
         {
             "name": "x86-debug",
