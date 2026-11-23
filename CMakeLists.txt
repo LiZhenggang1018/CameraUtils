@@ -79,6 +79,20 @@ function(camera_utils_copy_runtime_dlls TARGET_NAME)
     else()
         message(WARNING "No OpenCV DLL found to copy under ${opencv_prebuilt_SOURCE_DIR}")
     endif()
+
+    # ASan 运行时库：clang_rt.asan*.dll 在 MSVC 工具集 bin 目录下，运行时需能被找到。
+    # 构建期复制到 exe 同目录，避免运行时手动设 PATH（否则启动报 0xC0000135）。
+    if(CMAKE_CXX_FLAGS MATCHES "fsanitize")
+        get_filename_component(_clang_bin_dir "${CMAKE_CXX_COMPILER}" DIRECTORY)
+        file(GLOB _asan_dlls CONFIGURE_DEPENDS "${_clang_bin_dir}/clang_rt.asan*.dll")
+        foreach(_dll IN LISTS _asan_dlls)
+            add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${_dll}"
+                    "$<TARGET_FILE_DIR:${TARGET_NAME}>"
+                COMMENT "Copying ASan runtime DLL: ${_dll}")
+        endforeach()
+    endif()
 endfunction()
 
 # ============================================================
