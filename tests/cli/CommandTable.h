@@ -22,6 +22,7 @@
 #include "ComputationalPhotography/HdrMergeTest.h"
 #include "ComputationalPhotography/HdrMergeUnitTest.h"
 #include "ComputationalPhotography/MfnrTest.h"
+#include "Depth/RectificationTest.h"
 #include "Exiv2Test.h"
 #include "FFMpegTest.h"
 #include "FeatureMatching/FeatureMatcherDemo.h"
@@ -403,6 +404,14 @@ inline const std::vector<Command>& AllCommands()
          .description = "SfM 数值输出 demo（标定/对极/三角化/PnP）",
          .label = Label::UNIT,
          .run = [] { return SfmDemo(); }},
+        {.name = "rectification",
+         .description = "极线校正（未标定校正）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 RectificationTest();
+                 return 0;
+             }},
 
 #if VAS_HAS_STDEXEC
         {.name = "vas-concurrency",
