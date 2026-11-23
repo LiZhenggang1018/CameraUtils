@@ -16,6 +16,9 @@ file(GLOB FEATURE_MATCHING_SOURCES CONFIGURE_DEPENDS
 file(GLOB ALIGNMENT_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/Alignment/*.cpp"
 )
+file(GLOB SFM_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/SfM/*.cpp"
+)
 
 add_library(camera_utils_core STATIC
     ${LIVE_PHOTO_SOURCES}
@@ -23,6 +26,7 @@ add_library(camera_utils_core STATIC
     ${IMAGE_PROCESSING_SOURCES}
     ${FEATURE_MATCHING_SOURCES}
     ${ALIGNMENT_SOURCES}
+    ${SFM_SOURCES}
 )
 add_library(CameraUtils::core ALIAS camera_utils_core)
 
@@ -35,6 +39,7 @@ target_include_directories(camera_utils_core PUBLIC
     ${CMAKE_SOURCE_DIR}/inc/ImageProcessing
     ${CMAKE_SOURCE_DIR}/inc/FeatureMatching
     ${CMAKE_SOURCE_DIR}/inc/Alignment
+    ${CMAKE_SOURCE_DIR}/inc/SfM
 )
 target_include_directories(camera_utils_core SYSTEM PUBLIC
     ${OpenCV_INCLUDE_DIRS}
