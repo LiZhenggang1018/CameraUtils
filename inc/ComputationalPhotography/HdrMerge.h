@@ -1,12 +1,12 @@
 /*
  * @Description: HDR 融合（Mertens / 物理 HDR 双管线 + 鬼影抑制）
  */
-#ifndef INC_HDRMERGE_HDRMERGE_H
-#define INC_HDRMERGE_HDRMERGE_H
+#ifndef INC_COMPUTATIONALPHOTOGRAPHY_HDRMERGE_H
+#define INC_COMPUTATIONALPHOTOGRAPHY_HDRMERGE_H
 
 #include "CommonEnv.h"
+#include "ComputationalPhotography/HdrConfig.h"
 #include "Exiv2Common.h"
-#include "HdrMerge/HdrConfig.h"
 #include "LivePhotoSmoothPlay/ImageRegistrator.h"
 #include "OpenCVCommon.h"
 #include "OpticalFlow/BiDirectionalLkFilter.h"
@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-namespace HdrMerge {
+namespace ComputationalPhotography {
 
 // ============================================================
 // 配准（新增可选 outResult 输出配准质量指标）
@@ -824,6 +824,6 @@ inline int HdrMergeFromFiles(const std::string& lowPath, const std::string& norm
     return HdrMergeFromFiles(lowPath, normalPath, highPath, outDir, cfg);
 }
 
-} // namespace HdrMerge
+} // namespace ComputationalPhotography
 
-#endif // INC_HDRMERGE_HDRMERGE_H
+#endif // INC_COMPUTATIONALPHOTOGRAPHY_HDRMERGE_H
