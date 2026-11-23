@@ -9,7 +9,7 @@
 // 定位：读懂原理 + 调用 OpenCV。本质矩阵 E、基础矩阵 F。
 namespace SfM {
 
-// 基础矩阵 F（x'ᵀ F x = 0），用 RANSAC + 8 点法。点不足 8 或退化返回空。
+// 基础矩阵 F（x'ᵀ F x = 0），用 8 点法。点不足 8 或退化返回空。
 inline cv::Mat ComputeFundamental(const std::vector<cv::Point2f>& pts1, const std::vector<cv::Point2f>& pts2)
 {
     if (pts1.size() < 8 || pts1.size() != pts2.size()) {
@@ -18,7 +18,7 @@ inline cv::Mat ComputeFundamental(const std::vector<cv::Point2f>& pts1, const st
     cv::Mat mask;
     cv::Mat F;
     try {
-        F = cv::findFundamentalMat(pts1, pts2, cv::FM_RANSAC, 1.0, 0.99, mask);
+        F = cv::findFundamentalMat(pts1, pts2, cv::FM_8POINT, 1.0, 0.99, mask);
     } catch (const cv::Exception&) {
         return {};
     }
@@ -33,6 +33,9 @@ inline cv::Mat ComputeEssential(const std::vector<cv::Point2f>& pts1, const std:
                                 const cv::Mat& K)
 {
     if (pts1.size() < 5 || pts1.size() != pts2.size() || K.empty()) {
+        return {};
+    }
+    if (K.rows != 3 || K.cols != 3) {
         return {};
     }
     cv::Mat mask;
