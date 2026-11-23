@@ -23,6 +23,7 @@
 #include "ComputationalPhotography/HdrMergeUnitTest.h"
 #include "ComputationalPhotography/MfnrTest.h"
 #include "Depth/RectificationTest.h"
+#include "Depth/StereoMatchingTest.h"
 #include "Exiv2Test.h"
 #include "FFMpegTest.h"
 #include "FeatureMatching/FeatureMatcherDemo.h"
@@ -410,6 +411,14 @@ inline const std::vector<Command>& AllCommands()
          .run =
              [] {
                  RectificationTest();
+                 return 0;
+             }},
+        {.name = "stereo-matching",
+         .description = "双目立体匹配（视差图 + 深度）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 StereoMatchingTest();
                  return 0;
              }},
 
