@@ -18,6 +18,9 @@ inline bool CalibrateCamera(const std::vector<std::vector<cv::Point3f>>& objectP
     if (objectPoints.empty() || imagePoints.empty() || objectPoints.size() != imagePoints.size()) {
         return false;
     }
+    if (objectPoints.size() < 2 || imageSize.width <= 0 || imageSize.height <= 0) {
+        return false;
+    }
 
     std::vector<cv::Mat> rvecs;
     std::vector<cv::Mat> tvecs;
