@@ -68,6 +68,7 @@ set(_unit_tests
     calibration
     epipolar
     triangulation
+    pnp
     exif
 )
 
