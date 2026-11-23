@@ -56,6 +56,8 @@ cmake --build --preset x64-asan --target camera_utils_tests
 | `asan-stack-overflow` | `x64-asan` | 栈越界写 |
 | `crtdbg-leak` | `x64-Debug` | 内存泄漏 |
 | `ubsan-undefined` | 需 clang-cl | 有符号整数溢出 |
+| `gs-cookie-overflow` | 任意（`/GS` 默认开） | 栈越界覆盖 cookie，函数返回时报错 |
+| `cfi-indirect-call` | `x64-hardened` | 演示 CFG 保护的间接调用（防御性，不报错） |
 
 ## 2. _CRTDBG（MSVC CRT 调试堆，内存泄漏检测）
 
@@ -95,7 +97,39 @@ _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 - Application Verifier 会大幅降低程序运行速度，只在排查时启用。
 - 排查完记得 Remove 该 exe，否则后续运行一直受检。
 
-## 4. 推荐排查流程
+## 4. 安全加固（CFG / SafeStack 的 MSVC 对应物）
+
+Clang 的 CFI / SafeStack 本机不可用（需 clang-cl），但 MSVC 有对应物，已集成：
+
+### 4.1 CFG（`/guard:cf`，CFI 对应物）
+
+**防什么**：间接调用劫持（篡改函数指针/虚表 → ROP）。
+
+**已集成**：`x64-hardened` preset（Release + `/guard:cf` + `/sdl`）。
+
+```bat
+cmake --preset x64-hardened
+cmake --build --preset x64-hardened
+```
+
+**注意**：CFG 是**防御性**机制，正常代码路径下不报错，只在函数指针被篡改时拦截。
+验证 demo `cfi-indirect-call` 仅演示合法的间接调用（不会报错）。
+
+### 4.2 /GS 栈 cookie（SafeStack 对应物）
+
+**防什么**：栈缓冲区溢出覆盖返回地址 → ROP。
+
+**已集成**：MSVC Debug/Release **默认开启**，无需额外配置。
+
+**验证**：`gs-cookie-overflow` demo 栈越界覆盖 cookie，函数返回时 /GS 报错并终止。
+
+### 4.3 /sdl（SDL 安全检查）
+
+**已集成**：`x64-hardened` preset。额外启用更严格的安全检查（配合 /GS）。
+
+---
+
+## 5. 推荐排查流程
 
 1. **日常 Debug**：跑一遍 `ctest -L unit`，靠 `_CRTDBG` 抓泄漏（零成本）。
 2. **怀疑内存越界**：用 `x64-asan` 跑相关测试，ASan 报具体错误。
@@ -108,6 +142,9 @@ _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 | ASan（`x64-asan` preset） | ✅ 已集成 | 越界、use-after-free、泄漏 |
 | _CRTDBG（`TestMain.cpp`） | ✅ 已集成 | 内存泄漏 |
 | /RTC1 | ✅ Debug 默认 | 未初始化变量、栈帧 |
+| CFG（`x64-hardened`，`/guard:cf`） | ✅ 已集成 | 间接调用劫持（防御） |
+| /GS 栈 cookie | ✅ 默认开启 | 栈溢出覆盖返回地址（防御） |
+| /sdl（`x64-hardened`） | ✅ 已集成 | SDL 安全检查 |
 | Application Verifier | 📖 本文档说明 | 句柄/堆/临界区 |
 
 > UBSan（未定义行为）与 TSan（线程竞争）需 clang-cl 编译器，本机 MSVC 不支持，且 Windows 上
