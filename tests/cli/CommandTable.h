@@ -50,6 +50,7 @@
 #include "SfM/CalibrationTest.h"
 #include "SfM/EpipolarTest.h"
 #include "SfM/PnpTest.h"
+#include "SfM/SfmDemo.h"
 #include "SfM/TriangulationTest.h"
 #include "TestCase.h"
 #include "Type2InstMapTest.h"
@@ -398,6 +399,10 @@ inline const std::vector<Command>& AllCommands()
                  PnpTest();
                  return 0;
              }},
+        {.name = "sfm-demo",
+         .description = "SfM 数值输出 demo（标定/对极/三角化/PnP）",
+         .label = Label::UNIT,
+         .run = [] { return SfmDemo(); }},
 
 #if VAS_HAS_STDEXEC
         {.name = "vas-concurrency",
