@@ -18,6 +18,8 @@
 #include "Alignment/PanoramaTest.h"
 #include "Alignment/VignettingDemo.h"
 #include "Alignment/VignettingTest.h"
+#include "ComputationalPhotography/HdrMergeTest.h"
+#include "ComputationalPhotography/HdrMergeUnitTest.h"
 #include "Exiv2Test.h"
 #include "FFMpegTest.h"
 #include "FeatureMatching/FeatureMatcherDemo.h"
@@ -26,7 +28,6 @@
 #include "FeatureMatching/KeypointDetectorTest.h"
 #include "FeatureMatching/LocalFeatureDemo.h"
 #include "FeatureMatching/LocalFeatureTest.h"
-#include "ComputationalPhotography/HdrMergeTest.h"
 #include "ImageProcessing/FourierDemo.h"
 #include "ImageProcessing/LinearFilterDemo.h"
 #include "ImageProcessing/LinearFilterTest.h"
@@ -341,6 +342,14 @@ inline const std::vector<Command>& AllCommands()
          .run =
              [] {
                  EisTest();
+                 return 0;
+             }},
+        {.name = "hdr-merge-unit",
+         .description = "HDR 融合纯内存断言（Mertens/色调映射/锐化）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 HdrMergeUnitTest();
                  return 0;
              }},
 
