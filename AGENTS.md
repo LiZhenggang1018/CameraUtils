@@ -108,6 +108,27 @@ camera_utils_tests.exe magic-enum
   否则缓存命中的树无法满足链接。
 - `.github/` 下的文件统一使用 **CRLF** 行尾。
 
+### CI 测试归类（重要，防「假通过」）
+
+CI 的 `ci-windows.yml` 只跑 `ctest -L unit`。因此 **unit 组只应放真正的、纯内存、带断言的测试**：
+
+- **demo（`*Demo.h`，`Label::GUI`）不进 ctest**：GUI demo 本就不注册，无需处理。
+- **数值输出 demo（如 `sfm-demo`）不算单元测试**：它们无断言、纯打印，必须留在
+  `CommandTable.h` 供手动运行，但**不能列入 `tests/CMakeLists.txt` 的 `_unit_tests`**（否则「假通过」）。
+- **依赖 `data/` 素材的用例必须归 `Label::MEDIA`**（如 `exif` 读 `data/HdrMerge/normal.jpg`）：
+  归 UNIT 会因 CI 无 `data/` 而「假通过」（无断言时 `FailureCount()==0` 返回 0）；归 MEDIA 后
+  CI 会走 `RunOne` 的 `[SKIP] return 77` 正确跳过，并列入 `_media_tests`。
+- **media 组只在本地 `data/` 存在时注册**（`tests/CMakeLists.txt` 的 `if(EXISTS data)`），CI 无
+  素材时整组不注册，不会失败。
+
+### CI 环境风险（非阻塞，但需留意）
+
+- **MSVC 版本不一致**：CI 用 `windows-2022` runner 自带的 MSVC，与本机两套工具集（开发者 14.44 /
+  助手 14.52）都可能不同。本地编译通过 ≠ CI 通过，这是固有风险。
+- **Debug 无优化下的性能**：`dense-flow`（DeepFlow 后端）与 `mfnr`（内含 ImageRegistrator 配准）
+  在 Debug（`/Ob0 /Od`）下偏慢，`unit` 组超时 120s，若 CI 机器较慢可能超时；本地实测 43 个 unit
+  总耗时约 44s。若单独用例超时，需调大该用例 TIMEOUT 或减小合成图尺寸。
+
 ## Git 提交与推送策略
 
 ### 提交
