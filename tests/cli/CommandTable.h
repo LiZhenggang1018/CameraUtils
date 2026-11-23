@@ -600,6 +600,22 @@ inline const std::vector<Command>& AllCommands()
                  CppRuntimeCheck::UbsanUndefinedBehavior();
                  return 0;
              }},
+        {.name = "gs-cookie-overflow",
+         .description = "[检查验证] /GS 栈 cookie 溢出",
+         .label = Label::GUI,
+         .run =
+             [] {
+                 CppRuntimeCheck::GsStackCookieOverflow();
+                 return 0;
+             }},
+        {.name = "cfi-indirect-call",
+         .description = "[检查验证] CFG 间接调用演示",
+         .label = Label::GUI,
+         .run =
+             [] {
+                 CppRuntimeCheck::CfiIndirectCall();
+                 return 0;
+             }},
         {.name = "linear-filter-demo",
          .description = "线性滤波调参演示（交互窗口）",
          .label = Label::GUI,
