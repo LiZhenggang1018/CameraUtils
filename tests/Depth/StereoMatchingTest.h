@@ -70,28 +70,30 @@ inline void StereoMatchingTest()
         CU_CHECK(!disp.empty());
         CU_CHECK(disp.size() == left.size());
 
-        // 前景（中心）视差应大于背景（角落）
+        // 前景（中心亮块）视差应为有效正值（真值 fgDisparity=24，SGBM 近似到 ~11×16）
+        // 背景（随机纹理）SGBM 匹配不佳，通常为无效值（负）或更小视差。
         const double fgDisp = disp.at<short>(128, 128);
         const double bgDisp = disp.at<short>(30, 30);
         std::cout << "  fg disparity=" << fgDisp << " bg disparity=" << bgDisp << std::endl;
-        CU_CHECK(fgDisp > bgDisp);
+        CU_CHECK(fgDisp > 0);      // 前景视差有效且为正（近处）
+        CU_CHECK(fgDisp > bgDisp); // 前景视差 > 背景（背景无效或更小）
     }
 
     // 2) DisparityToDepth 深度与视差成反比，视差 0 处防护
     {
         cv::Mat disp(16, 16, CV_16S, cv::Scalar(0));
-        disp.at<short>(8, 8) = 16; // 视差 16
-        disp.at<short>(4, 4) = 32; // 视差 32（更近）
+        disp.at<short>(8, 8) = 16; // 视差 16 → 深度 80（更远）
+        disp.at<short>(4, 4) = 32; // 视差 32 → 深度 40（更近）
 
         const double focal = 800.0;
         const double baseline = 0.1;
         const cv::Mat depth = Depth::DisparityToDepth(disp, focal, baseline);
 
         CU_CHECK(!depth.empty());
-        const double dNear = depth.at<double>(8, 8); // 视差 16
-        const double dFar = depth.at<double>(4, 4);  // 视差 32
-        std::cout << "  depth(disp16)=" << dNear << " depth(disp32)=" << dFar << std::endl;
-        CU_CHECK(dNear > dFar); // 视差大 = 更近 = 深度小，所以 dNear(disp16) > dFar(disp32)
+        const double dFarther = depth.at<double>(8, 8); // 视差 16 → 更远
+        const double dNearer = depth.at<double>(4, 4);  // 视差 32 → 更近
+        std::cout << "  depth(disp16)=" << dFarther << " depth(disp32)=" << dNearer << std::endl;
+        CU_CHECK(dFarther > dNearer); // 视差小 = 更远 = 深度大
 
         // 视差 0 处防护（深度应很大或有限值，非 NaN/inf）
         const double dZero = depth.at<double>(0, 0);
