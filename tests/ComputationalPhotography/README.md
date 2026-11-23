@@ -1,4 +1,4 @@
-# tests/HdrMerge · HDR 融合测试
+# tests/ComputationalPhotography · HDR 融合测试
 
 本目录存放 HDR 融合模块的测试入口，全部为 header-only 的 `inline` 函数，由 `tests/cli/CommandTable.h` 注册为 CLI 子命令，CLI 与 `camera_utils_tests` 共用同一张命令表。`RunHdrMergeTest()` 是 HDR 融合功能 demo 的起始点；`RunHdrMergePhysicalTest()` 是新增的物理 HDR 双 tonemap 对比测试。
 
@@ -9,13 +9,17 @@
 | 文件 | 职责 |
 | :--- | :--- |
 | `HdrMergeTest.h` | `RunHdrMergeTest`、`RunHdrMergeMultiLevelTest`、`RunHdrMergePhysicalTest` |
+| `HdrMergeUnitTest.h` | HDR 纯内存断言（不依赖 data/ 素材） |
+| `MfnrTest.h` | MFNR 多帧降噪断言 |
+| `FusionDemo.h` | 多帧融合（HDR+降噪）demo |
 
 相关外部文件：
 
 | 文件 | 作用 |
 | :--- | :--- |
-| `inc/HdrMerge/HdrMerge.h` | 主流程与算法 |
-| `inc/HdrMerge/HdrConfig.h` | 配置结构与 JSON 读写 |
+| `inc/ComputationalPhotography/HdrMerge.h` | 主流程与算法 |
+| `inc/ComputationalPhotography/HdrConfig.h` | 配置结构与 JSON 读写 |
+| `inc/ComputationalPhotography/Mfnr.h` | MFNR 多帧降噪 |
 | `configs/HdrConfig.json` | 运行时配置，缺失时首次运行自动生成 |
 | `data/HdrMerge/{low,normal,high}.jpg` | 输入数据 |
 | `tests/cli/CommandTable.h` | 命令注册表，HDR 用例在此登记为 `hdr-merge*` 子命令 |
