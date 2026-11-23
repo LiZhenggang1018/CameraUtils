@@ -23,6 +23,7 @@
 #include "ComputationalPhotography/HdrMergeTest.h"
 #include "ComputationalPhotography/HdrMergeUnitTest.h"
 #include "ComputationalPhotography/MfnrTest.h"
+#include "CppRuntimeCheck/CppRuntimeCheckDemo.h"
 #include "Depth/BokehDemo.h"
 #include "Depth/BokehTest.h"
 #include "Depth/PortraitDemo.h"
@@ -460,10 +461,10 @@ inline const std::vector<Command>& AllCommands()
          .description = "Exiv2 读取 EXIF",
          .label = Label::MEDIA,
          .run =
-              [] {
-                  CameraUtils::Exif2Test();
-                  return 0;
-              }},
+             [] {
+                 CameraUtils::Exif2Test();
+                 return 0;
+             }},
 
         // ---------- 依赖媒体素材 ----------
         {.name = "ffmpeg",
@@ -557,6 +558,56 @@ inline const std::vector<Command>& AllCommands()
          .description = "双摄虚化完整链路演示（校正→视差→深度→虚化）",
          .label = Label::GUI,
          .run = [] { return PortraitDemo(); }},
+
+        // ---------- 运行时检查验证（故意触发错误，仅手动运行，绝不进 ctest） ----------
+        {.name = "asan-heap-overflow",
+         .description = "[检查验证] ASan 堆越界",
+         .label = Label::GUI,
+         .run =
+             [] {
+                 CppRuntimeCheck::AsanHeapOverflow();
+                 return 0;
+             }},
+        {.name = "asan-use-after-free",
+         .description = "[检查验证] ASan use-after-free",
+         .label = Label::GUI,
+         .run =
+             [] {
+                 CppRuntimeCheck::AsanUseAfterFree();
+                 return 0;
+             }},
+        {.name = "asan-stack-overflow",
+         .description = "[检查验证] ASan 栈越界",
+         .label = Label::GUI,
+         .run =
+             [] {
+                 CppRuntimeCheck::AsanStackOverflow();
+                 return 0;
+             }},
+        {.name = "crtdbg-leak",
+         .description = "[检查验证] _CRTDBG 内存泄漏",
+         .label = Label::GUI,
+         .run =
+             [] {
+                 CppRuntimeCheck::CrtDbgLeak();
+                 return 0;
+             }},
+        {.name = "pageheap-overflow",
+         .description = "[检查验证] PageHeap 堆越界",
+         .label = Label::GUI,
+         .run =
+             [] {
+                 CppRuntimeCheck::PageHeapOverflow();
+                 return 0;
+             }},
+        {.name = "ubsan-undefined",
+         .description = "[检查验证] UBSan 未定义行为",
+         .label = Label::GUI,
+         .run =
+             [] {
+                 CppRuntimeCheck::UbsanUndefinedBehavior();
+                 return 0;
+             }},
         {.name = "linear-filter-demo",
          .description = "线性滤波调参演示（交互窗口）",
          .label = Label::GUI,
