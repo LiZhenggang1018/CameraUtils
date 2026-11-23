@@ -48,6 +48,14 @@ ninja -C out\build\x64-debug
 exiv2 等第三方库的缓存。修复：删除 `out/build/x64-debug` 缓存目录，用 vcvars64（19.52）重新 `cmake --preset
 x64-debug` + 构建，工具链一致后 STL1001 消失。
 
+**根因（编译器相对名 vs 绝对路径）**：STL1001 反复出现的根本原因是 `CMAKE_CXX_COMPILER` 在 CMakeCache 里
+存的是 `cl.exe` **相对名**还是**绝对路径**：
+- 用「bash 工具 + vcvars64」配置 → CMake 把 `cl.exe` 解析成**绝对路径**（如 `.../14.52.37025/bin/Hostx64/x64/cl.exe`）→ 稳定
+- 用「VS 终端」配置 → 可能残留**相对名 `cl.exe`**（UNINITIALIZED）→ 构建时靠 PATH 解析，PATH 漂移就 STL1001
+
+判断方法：`Select-String out/build/<preset>/CMakeCache.txt -Pattern "CMAKE_CXX_COMPILER:"`，
+若值为 `cl.exe`（相对名）就是隐患，需删缓存用 vcvars64 重配。修复后应为绝对路径。
+
 ### 排查构建参数时的坑
 
 `out/build/<preset>/build.ninja` 里所有目标共用同一套 `FLAGS` 语法，第三方依赖（`_deps/`，如 exiv2）
