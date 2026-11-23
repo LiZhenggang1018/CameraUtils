@@ -70,11 +70,9 @@ set(_unit_tests
     epipolar
     triangulation
     pnp
-    sfm-demo
     rectification
     stereo-matching
     bokeh
-    exif
 )
 
 # The vas-concurrency case only exists when the option is enabled
@@ -102,6 +100,7 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/data")
         hdr-merge-ghost
         livephoto
         livephoto-reg
+        exif
     )
     foreach(_t IN LISTS _media_tests)
         add_test(NAME "media.${_t}" COMMAND camera_utils_tests ${_t})
