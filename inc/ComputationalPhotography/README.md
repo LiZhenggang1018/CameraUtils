@@ -1,6 +1,23 @@
-# inc/HdrMerge · HDR 融合模块头文件
+# inc/ComputationalPhotography —— 第 10 章 Computational Photography（计算摄影）
 
-本目录存放 HDR 融合模块（命名空间 `hdr_merge`）的全部头文件。模块为 header-only，无对应 `.cpp`。配置与算法分离：`HdrConfig.h` 负责配置定义与 JSON 读写，`HdrMerge.h` 负责配准、裁剪、融合、色调映射的完整流程。
+本目录对应 Szeliski《计算机视觉：算法与应用》第 10 章，聚焦计算摄影（HDR 融合 + 多帧降噪）。
+
+## 模块总览
+
+| 模块 | 头文件 | 学习笔记 | 单元测试命令 | GUI demo 命令 |
+| :--- | :--- | :--- | :--- | :--- |
+| HDR 融合 | `HdrMerge.h` | `HdrMergeNotes.md` | `hdr-merge-unit` | — |
+| MFNR 多帧降噪 | `Mfnr.h` | `MfnrNotes.md` | `mfnr` | — |
+| 多帧融合（大 demo） | — | — | — | `fusion-demo` |
+
+命名空间为 `namespace ComputationalPhotography`。配置与算法分离：`HdrConfig.h` 负责配置定义与
+JSON 读写，`HdrMerge.h` 负责配准、裁剪、融合、色调映射；`Mfnr.h` 负责同曝光多帧时域平均降噪。
+
+---
+
+## HdrMerge 说明
+
+本目录的 HDR 融合模块（`HdrMerge.h`）为 header-only，无对应 `.cpp`。
 
 当前支持**双管线**：
 
@@ -17,6 +34,8 @@
 | :--- | :--- |
 | `HdrConfig.h` | `QualityPreset`、`HdrConfig`、档位应用、JSON 序列化 |
 | `HdrMerge.h` | 配准、黑边裁剪、Mertens、物理 HDR、Unsharp Mask、主入口 |
+| `Mfnr.h` | MFNR 多帧降噪（同曝光时域平均） |
+| `HdrMergeNotes.md` / `MfnrNotes.md` | 学习笔记 |
 
 ---
 
