@@ -49,6 +49,7 @@
 #include "OpticalFlow/OpticalFlowTest.h"
 #include "SfM/CalibrationTest.h"
 #include "SfM/EpipolarTest.h"
+#include "SfM/PnpTest.h"
 #include "SfM/TriangulationTest.h"
 #include "TestCase.h"
 #include "Type2InstMapTest.h"
@@ -387,6 +388,14 @@ inline const std::vector<Command>& AllCommands()
          .run =
              [] {
                  TriangulationTest();
+                 return 0;
+             }},
+        {.name = "pnp",
+         .description = "PnP（3D→2D 位姿估计）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 PnpTest();
                  return 0;
              }},
 
