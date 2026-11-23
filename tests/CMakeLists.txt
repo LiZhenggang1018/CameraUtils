@@ -67,6 +67,7 @@ set(_unit_tests
     mfnr
     calibration
     epipolar
+    triangulation
     exif
 )
 
