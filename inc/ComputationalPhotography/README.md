@@ -141,7 +141,7 @@ JSON 读写，`HdrMerge.h` 负责配准、裁剪、融合、色调映射；`Mfnr
 
 ## 3. `HdrMerge.h`
 
-命名空间 `hdr_merge`，全部为 `inline` 函数。按职责分为 7 组。
+命名空间 `ComputationalPhotography`，全部为 `inline` 函数。按职责分为 7 组。
 
 ### 3.1 配准
 
