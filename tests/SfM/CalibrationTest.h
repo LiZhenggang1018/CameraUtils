@@ -1,6 +1,7 @@
 #ifndef TESTS_SFM_CALIBRATIONTEST_H
 #define TESTS_SFM_CALIBRATIONTEST_H
 
+#include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <vector>
