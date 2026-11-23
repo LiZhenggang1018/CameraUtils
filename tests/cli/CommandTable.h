@@ -18,6 +18,7 @@
 #include "Alignment/PanoramaTest.h"
 #include "Alignment/VignettingDemo.h"
 #include "Alignment/VignettingTest.h"
+#include "ComputationalPhotography/FusionDemo.h"
 #include "ComputationalPhotography/HdrMergeTest.h"
 #include "ComputationalPhotography/HdrMergeUnitTest.h"
 #include "ComputationalPhotography/MfnrTest.h"
@@ -459,6 +460,10 @@ inline const std::vector<Command>& AllCommands()
          .label = Label::GUI,
          .run = [] { return OpticalFlowTest(); }},
         {.name = "eis-demo", .description = "EIS 电子防抖演示", .label = Label::GUI, .run = [] { return EisDemo(); }},
+        {.name = "fusion-demo",
+         .description = "多帧融合（HDR + 降噪）演示",
+         .label = Label::GUI,
+         .run = [] { return FusionDemo(); }},
         {.name = "linear-filter-demo",
          .description = "线性滤波调参演示（交互窗口）",
          .label = Label::GUI,
