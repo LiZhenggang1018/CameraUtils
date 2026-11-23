@@ -246,6 +246,25 @@ data/<Chapter>/<Algo>/
 - 笔记文档的具体措辞与结构（遵循用户列的 8 个要点）。
 - 各章节目录的最终英文命名（保持与现有 `OpticalFlow`/`HdrMerge` 命名风格一致）。
 
+## 第六个里程碑：第 11 章 SfM & SLAM
+
+工程完全空白，全新。拆 4 块（每块一个 self-contained 模块）+ BA 仅笔记。
+
+| 块 | 内容 | OpenCV 接口 |
+|---|---|---|
+| 相机标定 | 内参 K、畸变系数、张正友标定 | `calibrateCamera` |
+| 对极几何 | 本质矩阵 E、基础矩阵 F | `findEssentialMat` / `findFundamentalMat` |
+| 三角化 | 两视图重建 3D 点 | `triangulatePoints` |
+| PnP | 3D→2D 位姿估计 | `solvePnP` |
+
+**Bundle Adjustment**：仅笔记讲原理（非线性优化，不写代码）。
+
+**测试与 demo**：
+- 测试用「合成数据 + 已知真值」精确断言（能进 ctest，有数值真值）。
+- demo 以**数值输出为主**（标定矩阵、E/F 矩阵、3D 点、R/t）+ 可选对极线可视化（`drawMatches` + 对极线）。
+
+**目录**：第 11 章 → `inc/SfM/` + `src/SfM/` + `tests/SfM/`。
+
 ## 已由用户拍板、不可再改的部分
 
 - 学习目标 = 读懂原理 + 熟练调用 OpenCV（不手写核心）。
@@ -270,3 +289,6 @@ data/<Chapter>/<Algo>/
 - 第 10 章范围 = HdrMerge 学习化（补笔记+测试）+ 目录/命名空间迁移到 `ComputationalPhotography` +
   新增 MFNR 多帧降噪模块；大 demo 多帧融合（HDR+降噪）。
 - 第 10 章目录 = `ComputationalPhotography`，`namespace HdrMerge` → `namespace ComputationalPhotography`。
+- 第 11 章范围 = 相机标定、对极几何（E/F）、三角化、PnP 四块（BA 仅笔记）；测试用合成真值精确断言，
+  demo 数值输出为主。
+- 第 11 章目录 = `SfM`。
