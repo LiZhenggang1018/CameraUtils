@@ -16,6 +16,9 @@ inline cv::Mat ApplyBokeh(const cv::Mat& image, const cv::Mat& depth, double foc
     if (image.empty() || depth.empty() || image.size() != depth.size()) {
         return {};
     }
+    if (image.channels() != 3 || depth.type() != CV_64F) {
+        return {};
+    }
 
     // 深度差异 → 模糊权重 w ∈ [0,1]：差异 0 → w=0（清晰），差异大 → w→1（全模糊）
     // 用指数衰减：w = 1 - exp(-|depth - focus| / blurStrength)
