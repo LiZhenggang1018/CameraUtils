@@ -63,6 +63,7 @@ set(_unit_tests
     dense-flow
     frame-interp
     eis
+    hdr-merge-unit
     exif
 )
 
