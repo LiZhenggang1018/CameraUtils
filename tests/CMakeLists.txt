@@ -69,6 +69,7 @@ set(_unit_tests
     epipolar
     triangulation
     pnp
+    sfm-demo
     exif
 )
 
