@@ -1,4 +1,4 @@
-# 运行时检查工具使用指南（ASan / _CRTDBG / Application Verifier / PageHeap）
+# 运行时检查工具使用指南（ASan / _CRTDBG / Application Verifier）
 
 本项目是 C++20 + OpenCV 的图像处理工程，内存密集 + 多线程，运行时错误排查尤其重要。
 本文档汇总已集成的运行时检查工具及使用方法。
@@ -55,7 +55,6 @@ cmake --build --preset x64-asan --target camera_utils_tests
 | `asan-use-after-free` | `x64-asan` | free 后访问 |
 | `asan-stack-overflow` | `x64-asan` | 栈越界写 |
 | `crtdbg-leak` | `x64-Debug` | 内存泄漏 |
-| `pageheap-overflow` | `x64-Debug` + gflags 开 PageHeap | 堆越界即时崩溃 |
 | `ubsan-undefined` | 需 clang-cl | 有符号整数溢出 |
 
 ## 2. _CRTDBG（MSVC CRT 调试堆，内存泄漏检测）
@@ -96,33 +95,11 @@ _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 - Application Verifier 会大幅降低程序运行速度，只在排查时启用。
 - 排查完记得 Remove 该 exe，否则后续运行一直受检。
 
-## 4. PageHeap（页堆，堆越界即时检测）
-
-**查什么**：堆缓冲区溢出（在越界写入发生的**那一刻**崩溃，而不是事后）。
-
-**使用**（命令行，`gflags.exe` 来自 Windows Debugging Tools）：
-
-```bat
-:: 为 camera_utils_tests.exe 开启 PageHeap（full 模式）
-gflags /p /enable camera_utils_tests.exe /full
-
-:: 运行测试，越界时立即崩溃
-out\build\x64-debug\tests\camera_utils_tests.exe <test-name>
-
-:: 排查完关闭
-gflags /p /disable camera_utils_tests.exe
-```
-
-**注意**：
-- PageHeap 会把每次分配对齐到页边界，越界读写会触发访问违例，定位极准，但内存开销巨大。
-- 与 Application Verifier 的 Heaps 检查有重叠，二选一即可；PageHeap 更激进，适合「怀疑某个越界但 ASan 没抓到」。
-
-## 推荐排查流程
+## 4. 推荐排查流程
 
 1. **日常 Debug**：跑一遍 `ctest -L unit`，靠 `_CRTDBG` 抓泄漏（零成本）。
 2. **怀疑内存越界**：用 `x64-asan` 跑相关测试，ASan 报具体错误。
 3. **怀疑 Windows 资源/句柄/临界区**：Application Verifier 的 Basics 检查。
-4. **怀疑堆越界但 ASan 未命中**：gflags 开 PageHeap 复现。
 
 ## 已集成的运行检查总结
 
@@ -132,7 +109,6 @@ gflags /p /disable camera_utils_tests.exe
 | _CRTDBG（`TestMain.cpp`） | ✅ 已集成 | 内存泄漏 |
 | /RTC1 | ✅ Debug 默认 | 未初始化变量、栈帧 |
 | Application Verifier | 📖 本文档说明 | 句柄/堆/临界区 |
-| PageHeap（gflags） | 📖 本文档说明 | 堆越界即时检测 |
 
 > UBSan（未定义行为）与 TSan（线程竞争）需 clang-cl 编译器，本机 MSVC 不支持，且 Windows 上
 > TSan 不稳定，暂不集成（见 `AGENTS.md` 或向维护者咨询）。
