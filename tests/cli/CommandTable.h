@@ -36,6 +36,8 @@
 #include "FeatureMatching/LocalFeatureDemo.h"
 #include "FeatureMatching/LocalFeatureTest.h"
 #include "ImageProcessing/FourierDemo.h"
+#include "ImageProcessing/GuidedFilterDemo.h"
+#include "ImageProcessing/GuidedFilterTest.h"
 #include "ImageProcessing/LinearFilterDemo.h"
 #include "ImageProcessing/LinearFilterTest.h"
 #include "ImageProcessing/NonLinearFilterDemo.h"
@@ -258,6 +260,14 @@ inline const std::vector<Command>& AllCommands()
          .run =
              [] {
                  PyramidTest();
+                 return 0;
+             }},
+        {.name = "guided-filter",
+         .description = "导向滤波（保边平滑）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 GuidedFilterTest();
                  return 0;
              }},
         {.name = "keypoint-detect",
@@ -554,6 +564,10 @@ inline const std::vector<Command>& AllCommands()
          .description = "金字塔演示（高斯/拉普拉斯）",
          .label = Label::GUI,
          .run = [] { return PyramidDemo(); }},
+        {.name = "guided-filter-demo",
+         .description = "导向滤波演示（保边去噪）",
+         .label = Label::GUI,
+         .run = [] { return GuidedFilterDemo(); }},
         {.name = "fourier-demo",
          .description = "傅里叶变换频谱与高低频滤波演示",
          .label = Label::GUI,
