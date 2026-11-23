@@ -31,7 +31,7 @@ target_include_directories(camera_utils_core PUBLIC
     ${CMAKE_SOURCE_DIR}/inc/CommonUtils
     ${CMAKE_SOURCE_DIR}/inc/LivePhotoSmoothPlay
     ${CMAKE_SOURCE_DIR}/inc/OpticalFlow
-    ${CMAKE_SOURCE_DIR}/inc/HdrMerge
+    ${CMAKE_SOURCE_DIR}/inc/ComputationalPhotography
     ${CMAKE_SOURCE_DIR}/inc/ImageProcessing
     ${CMAKE_SOURCE_DIR}/inc/FeatureMatching
     ${CMAKE_SOURCE_DIR}/inc/Alignment
