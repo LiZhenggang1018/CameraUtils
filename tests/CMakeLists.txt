@@ -64,6 +64,7 @@ set(_unit_tests
     frame-interp
     eis
     hdr-merge-unit
+    mfnr
     exif
 )
 
