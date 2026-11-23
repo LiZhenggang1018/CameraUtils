@@ -129,6 +129,25 @@ CI 的 `ci-windows.yml` 只跑 `ctest -L unit`。因此 **unit 组只应放真�
   在 Debug（`/Ob0 /Od`）下偏慢，`unit` 组超时 120s，若 CI 机器较慢可能超时；本地实测 43 个 unit
   总耗时约 44s。若单独用例超时，需调大该用例 TIMEOUT 或减小合成图尺寸。
 
+### CI 环境保真度规避（「本地通过但 CI 失败」的根因与预防）
+
+本地与 CI 的主要环境差异是「本地预编译 OpenCV（完整模块 + world 打包 DLL）vs CI 源码构建
+（BUILD_LIST 选模块 + 分模块 DLL）」。已踩过的坑及规避规则：
+
+- **OpenCV 模块清单必须双处同步**：`CMakeLists.txt` 的 `CAMERA_UTILS_OPENCV_MODULES` +
+  `CAMERA_UTILS_OPENCV_CONTRIB_MODULES`，与 `.github/actions/setup-opencv/action.yml` 的
+  `modules` 默认值**必须完全一致**。改任何一处都要同时改另一处，否则 CI 源码构建缺模块 → 编译失败
+  （曾缺 `photo` 导致 `detailEnhance`/`MergeDebevec` 找不到）。
+- **运行时 DLL 复制用 `opencv_*.dll` 通配，不要写死具体名字**：本地是 `opencv_world4100d.dll`
+  （world 打包），CI 是分模块 `opencv_core/imgproc/photo/...4100d.dll`。`camera_utils_copy_runtime_dlls`
+  必须递归 glob 全部 `opencv_*.dll`，否则 CI 只复制 core、漏掉其它模块 → 启动即
+  `0xC0000135`（DLL not found）。
+- **缓存 key 需在配置内容变化时自动失效**：`setup-opencv` 的缓存 key 含
+  `hashFiles('.github/actions/setup-opencv/action.yml')`，改 action.yml（如加模块）会自动失效重构建；
+  不要用含逗号的字符串做 key（GitHub cache key 禁止逗号），也不要用表达式里不存在的函数（如 `replace`）。
+- **依赖 `data/` 的用例一律归 `Label::MEDIA`**（CI 无素材时 `[SKIP] return 77`，避免假通过/假失败）。
+- **工具链版本差异无法从代码侧消除**：本地 14.44/14.52 vs CI windows-2022 自带，只能靠 CI 结果兜底。
+
 ## Git 提交与推送策略
 
 ### 提交
