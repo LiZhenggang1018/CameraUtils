@@ -98,6 +98,35 @@ inline void MfnrTest()
         std::cout << "  single-frame degrade OK" << std::endl;
     }
 
+    // 3b) 3 通道彩色图，输出通道数正确
+    {
+        cv::Mat clean3(128, 128, CV_8UC3);
+        cv::RNG rng(31);
+        for (int y = 0; y < 128; ++y) {
+            for (int x = 0; x < 128; ++x) {
+                clean3.at<cv::Vec3b>(y, x) = cv::Vec3b(rng.uniform(0, 256), rng.uniform(0, 256), rng.uniform(0, 256));
+            }
+        }
+        std::vector<cv::Mat> frames3;
+        for (int i = 0; i < 4; ++i) {
+            cv::RNG nrng(4000 + i);
+            cv::Mat noise(clean3.size(), CV_32FC3);
+            nrng.fill(noise, cv::RNG::NORMAL, 0.0, 15.0);
+            cv::Mat f32;
+            cv::Mat tmp;
+            clean3.convertTo(f32, CV_32FC3);
+            cv::add(f32, noise, tmp);
+            cv::Mat noisy;
+            tmp.convertTo(noisy, CV_8UC3);
+            frames3.push_back(noisy);
+        }
+        const cv::Mat out3 = ComputationalPhotography::MfnrDenoise(frames3, 1);
+        CU_CHECK(!out3.empty());
+        CU_CHECK(out3.channels() == 3);
+        CU_CHECK(out3.size() == clean3.size());
+        std::cout << "  color (3-channel) OK" << std::endl;
+    }
+
     // 4) 空输入安全
     {
         CU_CHECK(ComputationalPhotography::MfnrDenoise({}, 1).empty());
