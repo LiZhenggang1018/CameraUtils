@@ -1,7 +1,7 @@
-#ifndef TESTS_HDRMERGE_HDRMERGETEST_H
-#define TESTS_HDRMERGE_HDRMERGETEST_H
+#ifndef TESTS_COMPUTATIONALPHOTOGRAPHY_HDRMERGETEST_H
+#define TESTS_COMPUTATIONALPHOTOGRAPHY_HDRMERGETEST_H
 
-#include "HdrMerge/HdrMerge.h"
+#include "ComputationalPhotography/HdrMerge.h"
 
 #include <iostream>
 #include <string>
@@ -26,7 +26,7 @@ inline void RunHdrMergeTest()
 
     const HdrConfig cfg = HdrConfig::LoadFromFile(HdrConfig::DefaultPath());
 
-    int rc = HdrMerge::HdrMergeFromFiles(lowPath, normalPath, highPath, outDir, cfg);
+    int rc = ComputationalPhotography::HdrMergeFromFiles(lowPath, normalPath, highPath, outDir, cfg);
     std::cout << "HdrMerge return code = " << rc << std::endl;
     std::cout << "========== HdrMerge end ============" << std::endl;
 }
@@ -66,7 +66,7 @@ inline void RunHdrMergeMultiLevelTest()
         cfg.ApplyQualityLevel();
 
         const std::string outDir = dataDir + "result_level_" + key + "/";
-        int rc = HdrMerge::HdrMergeFromFiles(lowPath, normalPath, highPath, outDir, cfg);
+        int rc = ComputationalPhotography::HdrMergeFromFiles(lowPath, normalPath, highPath, outDir, cfg);
         std::cout << "[" << key << "] rc = " << rc << std::endl;
     }
 
@@ -97,7 +97,7 @@ inline void RunHdrMergePhysicalTest()
         const std::string outDir = dataDir + "result_physical_" + type + "/";
         std::cout << "\n--- [pipeline=physical, tonemap=" << type << "] ---" << std::endl;
 
-        int rc = HdrMerge::HdrMergeFromFiles(lowPath, normalPath, highPath, outDir, cfg);
+        int rc = ComputationalPhotography::HdrMergeFromFiles(lowPath, normalPath, highPath, outDir, cfg);
         std::cout << "[" << type << "] rc = " << rc << std::endl;
     }
 
@@ -146,11 +146,11 @@ inline void RunHdrMergeGhostSuppressionTest()
         std::cout << "\n--- [" << c.label << " | pipeline=" << c.pipeline << " | mode=" << c.ghostMode << "] ---"
                   << std::endl;
 
-        int rc = HdrMerge::HdrMergeFromFiles(lowPath, normalPath, highPath, outDir, cfg);
+        int rc = ComputationalPhotography::HdrMergeFromFiles(lowPath, normalPath, highPath, outDir, cfg);
         std::cout << "[" << c.label << "] rc = " << rc << std::endl;
     }
 
     std::cout << "========== HdrMerge Ghost-Suppression end ============" << std::endl;
 }
 
-#endif // TESTS_HDRMERGE_HDRMERGETEST_H
+#endif // TESTS_COMPUTATIONALPHOTOGRAPHY_HDRMERGETEST_H
