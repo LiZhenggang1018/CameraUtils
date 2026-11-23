@@ -127,6 +127,31 @@ cmake --build --preset x64-hardened
 
 **已集成**：`x64-hardened` preset。额外启用更严格的安全检查（配合 /GS）。
 
+### 4.4 三者的验证方式差异（重要）
+
+CFG、/GS、/sdl 的**性质不同，验证方式也不同**：
+
+| 工具 | 性质 | 能否「看到报错」 | 验证方式 |
+|---|---|---|---|
+| `/GS` | 运行时**检测** | ✅ 能 | 跑 `gs-cookie-overflow`，函数返回时报错/挂起 |
+| CFG（`/guard:cf`） | 运行时**防御** | ❌ 不能（正常代码不报错） | 跑 `cfi-indirect-call` 看「间接调用正常执行、没被误伤」 |
+| `/sdl` | **编译期**检查 | ❌ 无运行时效果 | `x64-hardened` 构建通过 = 代码合规 |
+
+**关键理解**：
+- ASan、_CRTDBG、/GS 是「**检测型**」——能主动报出 bug，demo 能看到报错。
+- CFG、/sdl 是「**防御型/编译期**」——正常代码下「静默」，正确性体现在「不误伤 + 编译通过」，
+  **无法用 demo 造出「报错」**（触发 CFG 报错需要构造「篡改函数指针指向非法地址」的攻击场景）。
+
+**VS 里验证（视图 → 终端，用绝对路径 + 调用运算符 `&`）**：
+
+```powershell
+# /GS：x64-debug 跑，会挂起/报错
+& "C:\Users\11186484\CameraUtils\out\build\x64-debug\tests\camera_utils_tests.exe" gs-cookie-overflow
+
+# CFG：x64-hardened 跑，正常输出「间接调用执行」
+& "C:\Users\11186484\CameraUtils\out\build\x64-hardened\tests\camera_utils_tests.exe" cfi-indirect-call
+```
+
 ---
 
 ## 5. 推荐排查流程
