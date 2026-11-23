@@ -72,6 +72,7 @@ set(_unit_tests
     sfm-demo
     rectification
     stereo-matching
+    bokeh
     exif
 )
 
