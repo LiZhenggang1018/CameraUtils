@@ -47,6 +47,7 @@
 #include "OpticalFlow/FrameInterpolatorTest.h"
 #include "OpticalFlow/LkTrackerTest.h"
 #include "OpticalFlow/OpticalFlowTest.h"
+#include "SfM/CalibrationTest.h"
 #include "TestCase.h"
 #include "Type2InstMapTest.h"
 
@@ -360,6 +361,14 @@ inline const std::vector<Command>& AllCommands()
          .run =
              [] {
                  MfnrTest();
+                 return 0;
+             }},
+        {.name = "calibration",
+         .description = "相机标定（内参/畸变）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 CalibrationTest();
                  return 0;
              }},
 
