@@ -50,7 +50,7 @@ inline void HdrMergeUnitTest()
         std::cout << "  MergeMertens OK" << std::endl;
     }
 
-    // 2) TonemapHdr 对合成 HDR 32F 返回 LDR 8U
+    // 2) TonemapHdr 对合成 HDR 32F 返回 LDR 8U（CV_8UC3）
     {
         const HdrConfig cfg = HdrConfig::LoadFromFile(HdrConfig::DefaultPath());
         cv::Mat hdr(128, 128, CV_32FC3, cv::Scalar(0.2, 0.5, 0.8));
@@ -58,7 +58,8 @@ inline void HdrMergeUnitTest()
         const cv::Mat ldr = ComputationalPhotography::TonemapHdr(hdr, cfg);
 
         CU_CHECK(!ldr.empty());
-        std::cout << "  TonemapHdr OK" << std::endl;
+        CU_CHECK(ldr.type() == CV_8UC3);
+        std::cout << "  TonemapHdr OK (type=" << ldr.type() << ")" << std::endl;
     }
 
     // 3) UnsharpMask 对常数图不改变（平坦区无高频）
