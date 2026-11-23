@@ -22,6 +22,8 @@
 #include "ComputationalPhotography/HdrMergeTest.h"
 #include "ComputationalPhotography/HdrMergeUnitTest.h"
 #include "ComputationalPhotography/MfnrTest.h"
+#include "Depth/BokehDemo.h"
+#include "Depth/BokehTest.h"
 #include "Depth/RectificationTest.h"
 #include "Depth/StereoMatchingTest.h"
 #include "Exiv2Test.h"
@@ -421,6 +423,14 @@ inline const std::vector<Command>& AllCommands()
                  StereoMatchingTest();
                  return 0;
              }},
+        {.name = "bokeh",
+         .description = "深度图 + 虚化（人像模式）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 BokehTest();
+                 return 0;
+             }},
 
 #if VAS_HAS_STDEXEC
         {.name = "vas-concurrency",
@@ -523,6 +533,10 @@ inline const std::vector<Command>& AllCommands()
          .description = "多帧融合（HDR + 降噪）演示",
          .label = Label::GUI,
          .run = [] { return FusionDemo(); }},
+        {.name = "bokeh-demo",
+         .description = "深度图 + 虚化演示（人像模式）",
+         .label = Label::GUI,
+         .run = [] { return BokehDemo(); }},
         {.name = "linear-filter-demo",
          .description = "线性滤波调参演示（交互窗口）",
          .label = Label::GUI,
