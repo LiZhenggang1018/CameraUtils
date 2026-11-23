@@ -15,6 +15,8 @@
 //   - ASan 栈越界       → AsanStackOverflow()
 //   - _CRTDBG 内存泄漏  → CrtDbgLeak()
 //   - UBSan 未定义行为  → UbsanUndefinedBehavior()
+//   - /GS 栈 cookie 溢出 → GsStackCookieOverflow()
+//   - CFG 间接调用演示  → CfiIndirectCall()（防御性，不报错）
 //
 // ⚠️ 这些函数会故意崩溃/触发检查，绝不能注册进 ctest（CI 会挂），仅供手动运行验证。
 
@@ -65,6 +67,33 @@ inline void UbsanUndefinedBehavior()
     int x = 2147483647; // INT_MAX
     int y = x + 1;      // 有符号溢出 = UB
     std::cout << "INT_MAX + 1 = " << y << std::endl;
+}
+
+// /GS 栈 cookie 溢出：栈上数组越界写，覆盖返回地址前的「金丝雀」值，
+// 函数返回时 /GS 检测到 cookie 被破坏，触发安全检查失败（异常终止）。
+// 需要 /GS 开启（MSVC Debug/Release 默认开启）。
+inline void GsStackCookieOverflow()
+{
+    std::cout << "[GsStackCookieOverflow] overflowing stack buffer to corrupt cookie..." << std::endl;
+    char buf[16];
+    // 故意越界写，覆盖到 /GS 插入的栈 cookie 区域
+    for (int i = 0; i < 64; ++i) {
+        buf[i] = 'A';
+    }
+    std::cout << "buf = " << buf << std::endl; // 函数返回时 /GS 报错
+}
+
+// CFG 间接调用演示：通过函数指针做间接调用，展示「CFG 保护的调用点」。
+// 注意：CFG（/guard:cf）是防御性机制，正常代码路径下不会报错——它只在
+// 函数指针被攻击者篡改（指向非法地址）时才拦截。此 demo 仅演示合法的间接调用。
+inline void CfiIndirectCall()
+{
+    using FnPtr = void (*)();
+    FnPtr fp = []() {
+        std::cout << "[CfiIndirectCall] indirect call executed (CFG 保护中，正常调用不报错)" << std::endl;
+    };
+    std::cout << "[CfiIndirectCall] invoking function pointer..." << std::endl;
+    fp();
 }
 
 } // namespace CppRuntimeCheck
