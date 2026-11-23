@@ -44,10 +44,13 @@ inline cv::Mat ComputeDisparity(const cv::Mat& left, const cv::Mat& right, int n
 }
 
 // 视差 → 深度：depth = focalLength * baseline / disparity。
-// 视差 ≤ 0 处深度设为 0（无效），避免除零。空输入返回空。
+// 视差 ≤ 0 处深度设为 0（无效），避免除零。空输入或非 CV_16S 返回空。
 inline cv::Mat DisparityToDepth(const cv::Mat& disparity, double focalLength, double baseline)
 {
     if (disparity.empty() || focalLength <= 0 || baseline <= 0) {
+        return {};
+    }
+    if (disparity.type() != CV_16S) {
         return {};
     }
 
