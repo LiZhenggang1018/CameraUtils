@@ -49,6 +49,7 @@
 #include "OpticalFlow/OpticalFlowTest.h"
 #include "SfM/CalibrationTest.h"
 #include "SfM/EpipolarTest.h"
+#include "SfM/TriangulationTest.h"
 #include "TestCase.h"
 #include "Type2InstMapTest.h"
 
@@ -378,6 +379,14 @@ inline const std::vector<Command>& AllCommands()
          .run =
              [] {
                  EpipolarTest();
+                 return 0;
+             }},
+        {.name = "triangulation",
+         .description = "三角化（两视图重建 3D 点）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 TriangulationTest();
                  return 0;
              }},
 
