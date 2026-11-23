@@ -20,6 +20,7 @@
 #include "Alignment/VignettingTest.h"
 #include "ComputationalPhotography/HdrMergeTest.h"
 #include "ComputationalPhotography/HdrMergeUnitTest.h"
+#include "ComputationalPhotography/MfnrTest.h"
 #include "Exiv2Test.h"
 #include "FFMpegTest.h"
 #include "FeatureMatching/FeatureMatcherDemo.h"
@@ -350,6 +351,14 @@ inline const std::vector<Command>& AllCommands()
          .run =
              [] {
                  HdrMergeUnitTest();
+                 return 0;
+             }},
+        {.name = "mfnr",
+         .description = "MFNR 多帧降噪（同曝光时域平均）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 MfnrTest();
                  return 0;
              }},
 
