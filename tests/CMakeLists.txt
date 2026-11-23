@@ -70,6 +70,7 @@ set(_unit_tests
     triangulation
     pnp
     sfm-demo
+    rectification
     exif
 )
 
