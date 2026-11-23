@@ -50,16 +50,14 @@ function(camera_utils_copy_runtime_dlls TARGET_NAME)
     camera_utils_copy_dlls(${TARGET_NAME} "${FFMPEG_ROOT}/bin")
 
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        # Debug：只要以 d.dll 结尾的（opencv_world4100d.dll ...）
+        # Debug：只要以 d.dll 结尾的（含分模块 opencv_core4100d.dll、opencv_imgproc4100d.dll 等）
         file(GLOB_RECURSE _opencv_dlls CONFIGURE_DEPENDS
-            "${opencv_prebuilt_SOURCE_DIR}/opencv_world*d.dll"
-            "${opencv_prebuilt_SOURCE_DIR}/opencv_core*d.dll"
+            "${opencv_prebuilt_SOURCE_DIR}/opencv_*d.dll"
         )
     else()
-        # Release：glob 全部后排除以 d.dll 结尾的 Debug 版
+        # Release：glob 全部 opencv_*.dll 后排除以 d.dll 结尾的 Debug 版
         file(GLOB_RECURSE _opencv_dlls CONFIGURE_DEPENDS
-            "${opencv_prebuilt_SOURCE_DIR}/opencv_world*.dll"
-            "${opencv_prebuilt_SOURCE_DIR}/opencv_core*.dll"
+            "${opencv_prebuilt_SOURCE_DIR}/opencv_*.dll"
         )
         list(FILTER _opencv_dlls EXCLUDE REGEX "d\\.dll$")
     endif()
