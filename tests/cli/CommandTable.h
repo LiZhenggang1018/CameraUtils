@@ -24,6 +24,7 @@
 #include "ComputationalPhotography/MfnrTest.h"
 #include "Depth/BokehDemo.h"
 #include "Depth/BokehTest.h"
+#include "Depth/PortraitDemo.h"
 #include "Depth/RectificationTest.h"
 #include "Depth/StereoMatchingTest.h"
 #include "Exiv2Test.h"
@@ -537,6 +538,10 @@ inline const std::vector<Command>& AllCommands()
          .description = "深度图 + 虚化演示（人像模式）",
          .label = Label::GUI,
          .run = [] { return BokehDemo(); }},
+        {.name = "portrait-demo",
+         .description = "双摄虚化完整链路演示（校正→视差→深度→虚化）",
+         .label = Label::GUI,
+         .run = [] { return PortraitDemo(); }},
         {.name = "linear-filter-demo",
          .description = "线性滤波调参演示（交互窗口）",
          .label = Label::GUI,
