@@ -8,6 +8,10 @@
 #include <windows.h>
 #endif
 
+#ifdef _DEBUG
+#include <crtdbg.h>
+#endif
+
 #include <cstring>
 #include <iostream>
 #include <string>
@@ -58,6 +62,11 @@ int RunOne(const std::string& name)
 
 int main(int argc, char** argv)
 {
+#ifdef _DEBUG
+    // Debug 构建下启用 CRT 内存泄漏检测：程序退出时自动 dump 未释放的内存块。
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+
     SetConsoleOutputCP(65001);
 
     if (argc < 2) {
