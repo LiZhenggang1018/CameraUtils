@@ -65,6 +65,7 @@ set(_unit_tests
     eis
     hdr-merge-unit
     mfnr
+    calibration
     exif
 )
 
