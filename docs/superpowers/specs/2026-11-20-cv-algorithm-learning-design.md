@@ -222,6 +222,21 @@ data/<Chapter>/<Algo>/
 **测试位置调整**：`tests/CommonUtils/OpticalFlowTest.h` 移到 `tests/OpticalFlow/`（第 9 章测试
 按章节归档，与 `tests/ImageProcessing/`、`tests/FeatureMatching/`、`tests/Alignment/` 一致）。
 
+## 第五个里程碑：第 10 章 Computational Photography
+
+落点「多帧融合（HDR + 降噪）」大 demo（串联 3+7+8+10）。
+
+**1. HdrMerge 学习化 + 目录/命名空间迁移**
+- 已有 `HdrMerge` 代码（多曝光 HDR：Mertens + 物理管线、配准、鬼影抑制、色调映射）补笔记 + 断言测试。
+- **目录迁移**：`inc/HdrMerge/` → `inc/ComputationalPhotography/`（`tests/HdrMerge/` → `tests/ComputationalPhotography/`）。
+- **命名空间**：`namespace HdrMerge` → `namespace ComputationalPhotography`（方案 B）。
+- `data/HdrMerge/` 路径字符串保持不变（本地素材不入库，不迁移）。
+
+**2. 新增 MFNR 多帧降噪模块**（同曝光多帧融合降噪，工程空白）：
+- `inc/ComputationalPhotography/Mfnr.h` + 笔记 + 断言测试。
+
+**3. 大 demo**：多帧融合（HDR + 降噪）串起来。
+
 ## 留给 builder 的部分
 
 - 每个算法的具体 OpenCV 调用与参数选择（在"读懂原理 + 调 OpenCV"目标下，由 builder 从书 +
@@ -252,3 +267,6 @@ data/<Chapter>/<Algo>/
 - json 配置 = 仅参数有意义的算法才配，近无参用代码内常量。
 - 数据目录 = `data/<Chapter>/<Algo>/` 放输入输出与中间结果（本地，不入库）。
 - 第 10 章目录命名对齐计算摄影语义（`HdrMerge` 届时重命名归入）。
+- 第 10 章范围 = HdrMerge 学习化（补笔记+测试）+ 目录/命名空间迁移到 `ComputationalPhotography` +
+  新增 MFNR 多帧降噪模块；大 demo 多帧融合（HDR+降噪）。
+- 第 10 章目录 = `ComputationalPhotography`，`namespace HdrMerge` → `namespace ComputationalPhotography`。
