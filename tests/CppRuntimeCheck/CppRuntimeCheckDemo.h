@@ -75,10 +75,12 @@ inline void UbsanUndefinedBehavior()
 inline void GsStackCookieOverflow()
 {
     std::cout << "[GsStackCookieOverflow] overflowing stack buffer to corrupt cookie..." << std::endl;
-    char buf[16];
-    // 故意越界写，覆盖到 /GS 插入的栈 cookie 区域
+    // 用 volatile 指针间接写，绕开 /sdl 的编译期静态边界分析（否则 hardened 构建报 C4789），
+    // 但运行时仍会越界覆盖 /GS 插入的栈 cookie，函数返回时 /GS 报错。
+    volatile char buf[16];
+    volatile char* p = buf;
     for (int i = 0; i < 64; ++i) {
-        buf[i] = 'A';
+        p[i] = 'A';
     }
     std::cout << "buf = " << buf << std::endl; // 函数返回时 /GS 报错
 }
