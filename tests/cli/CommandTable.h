@@ -592,14 +592,6 @@ inline const std::vector<Command>& AllCommands()
                  CppRuntimeCheck::CrtDbgLeak();
                  return 0;
              }},
-        {.name = "pageheap-overflow",
-         .description = "[检查验证] PageHeap 堆越界",
-         .label = Label::GUI,
-         .run =
-             [] {
-                 CppRuntimeCheck::PageHeapOverflow();
-                 return 0;
-             }},
         {.name = "ubsan-undefined",
          .description = "[检查验证] UBSan 未定义行为",
          .label = Label::GUI,
