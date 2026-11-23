@@ -66,6 +66,7 @@ set(_unit_tests
     hdr-merge-unit
     mfnr
     calibration
+    epipolar
     exif
 )
 
