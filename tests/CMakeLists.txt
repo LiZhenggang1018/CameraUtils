@@ -51,6 +51,7 @@ set(_unit_tests
     linear-filter
     nonlinear-filter
     pyramid
+    guided-filter
     keypoint-detect
     local-feature
     feature-match
