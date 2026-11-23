@@ -101,22 +101,15 @@ inline int PortraitDemo()
     const cv::Mat disp = Depth::ComputeDisparity(leftRect, rightRect, 64, 11);
 
     // 4. 视差 → 深度（假设焦距 800，基线 0.1，仅相对深度）
-    cv::Mat disp8u;
-    if (!disp.empty()) {
-        cv::Mat disp16 = disp.clone();
-        disp16.convertTo(disp8u, CV_8U, 255.0 / (64.0 * 16.0));
-    }
-
-    // 5. 虚化（聚焦前景，用视差作为深度的代理）
-    // 简化：直接把视差当深度（视差大 = 近）
     cv::Mat depth;
     if (!disp.empty()) {
         depth = Depth::DisparityToDepth(disp, 800.0, 0.1);
     }
 
-    cv::Mat leftColor;
-    cv::cvtColor(left, leftColor, cv::COLOR_GRAY2BGR);
-    cv::Mat bokeh = leftColor;
+    // 5. 虚化（聚焦前景）。深度图在 rectified 空间，所以 bokeh 也必须作用在 rectified 图上。
+    cv::Mat leftRectColor;
+    cv::cvtColor(leftRect, leftRectColor, cv::COLOR_GRAY2BGR);
+    cv::Mat bokeh = leftRectColor;
     if (!depth.empty()) {
         // 聚焦在最小深度（前景）附近
         double minDepth = 1e9;
@@ -130,24 +123,28 @@ inline int PortraitDemo()
                 }
             }
         }
-        bokeh = Depth::ApplyBokeh(leftColor, depth, minDepth, std::max(1.0, (maxDepth - minDepth) * 0.5));
+        bokeh = Depth::ApplyBokeh(leftRectColor, depth, minDepth, std::max(1.0, (maxDepth - minDepth) * 0.5));
     }
 
     const std::string windowName = "Portrait Bokeh Demo";
     cv::namedWindow(windowName, cv::WINDOW_NORMAL);
 
     // 显示：原图 + 视差图 + 虚化结果
-    cv::Mat display;
+    // 视差可视化（CV_16S → 8U，scale 用最大可能视差）
     cv::Mat dispColor;
-    if (!disp8u.empty()) {
+    if (!disp.empty()) {
+        cv::Mat disp8u;
+        disp.convertTo(disp8u, CV_8U, 255.0 / (64.0 * 16.0));
         cv::applyColorMap(disp8u, dispColor, cv::COLORMAP_JET);
     } else {
-        dispColor = cv::Mat::zeros(left.size(), CV_8UC3);
+        dispColor = cv::Mat::zeros(leftRect.size(), CV_8UC3);
     }
-    cv::hconcat(std::vector<cv::Mat>{leftColor, dispColor, bokeh}, display);
 
-    cv::putText(display, "left=original middle=disparity right=bokeh", cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX, 0.6,
-                cv::Scalar(0, 255, 0), 1, cv::LINE_AA);
+    cv::Mat display;
+    cv::hconcat(std::vector<cv::Mat>{leftRectColor, dispColor, bokeh}, display);
+
+    cv::putText(display, "left=rectified middle=disparity right=bokeh", cv::Point(10, 30), cv::FONT_HERSHEY_SIMPLEX,
+                0.6, cv::Scalar(0, 255, 0), 1, cv::LINE_AA);
     cv::putText(display, "q=quit", cv::Point(10, display.rows - 10), cv::FONT_HERSHEY_SIMPLEX, 0.45, cv::Scalar(200), 1,
                 cv::LINE_AA);
 
