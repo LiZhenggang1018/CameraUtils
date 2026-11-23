@@ -71,6 +71,7 @@ set(_unit_tests
     pnp
     sfm-demo
     rectification
+    stereo-matching
     exif
 )
 
