@@ -48,6 +48,7 @@
 #include "OpticalFlow/LkTrackerTest.h"
 #include "OpticalFlow/OpticalFlowTest.h"
 #include "SfM/CalibrationTest.h"
+#include "SfM/EpipolarTest.h"
 #include "TestCase.h"
 #include "Type2InstMapTest.h"
 
@@ -369,6 +370,14 @@ inline const std::vector<Command>& AllCommands()
          .run =
              [] {
                  CalibrationTest();
+                 return 0;
+             }},
+        {.name = "epipolar",
+         .description = "对极几何（本质矩阵 E/基础矩阵 F）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 EpipolarTest();
                  return 0;
              }},
 
