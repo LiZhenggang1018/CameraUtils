@@ -14,7 +14,6 @@
 //   - ASan use-after-free → AsanUseAfterFree()
 //   - ASan 栈越界       → AsanStackOverflow()
 //   - _CRTDBG 内存泄漏  → CrtDbgLeak()
-//   - PageHeap 堆越界   → PageHeapOverflow()
 //   - UBSan 未定义行为  → UbsanUndefinedBehavior()
 //
 // ⚠️ 这些函数会故意崩溃/触发检查，绝不能注册进 ctest（CI 会挂），仅供手动运行验证。
@@ -56,22 +55,6 @@ inline void CrtDbgLeak()
     char* leak = new char[100];
     (void)leak; // 故意不释放
     std::cout << "[CrtDbgLeak] 函数返回，泄漏的 100 字节将在进程退出时被 _CRTDBG 报告" << std::endl;
-}
-
-// PageHeap 堆越界：用 HeapAlloc 分配，越界写 1 字节（PageHeap 下立即崩溃）。
-inline void PageHeapOverflow()
-{
-    std::cout << "[PageHeapOverflow] HeapAlloc + out-of-bounds write..." << std::endl;
-    const std::size_t size = 64;
-    void* p = std::malloc(size);
-    if (p == nullptr) {
-        std::cerr << "malloc failed" << std::endl;
-        return;
-    }
-    auto* bytes = static_cast<unsigned char*>(p);
-    bytes[size] = 0xFF; // 越界写（PageHeap 下即时触发访问违例）
-    std::cout << "wrote byte at index " << size << std::endl;
-    std::free(p);
 }
 
 // UBSan 未定义行为：有符号整数溢出。
