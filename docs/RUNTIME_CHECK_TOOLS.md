@@ -7,26 +7,56 @@
 
 **查什么**：内存越界（读/写）、use-after-free、栈溢出、部分泄漏。
 
-**已集成**：`CMakePresets.json` 提供了 `x64-asan` preset（基于 x64-debug + `/fsanitize:address`）。
+**已集成**：`CMakePresets.json` 提供了 `x64-asan` preset（基于 x64-debug + `/fsanitize=address`）。
 
-**使用**：
+**使用**（命令行）：
 
 ```bat
-:: 配置 + 构建 ASan 版本
+:: 必须在 x64 环境（vcvars64）下配置，否则 VS 默认 x86 环境会找不到 x64 OpenCV
 call "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 cmake --preset x64-asan
 cmake --build --preset x64-asan --target camera_utils_tests
 
 :: 运行（ASan 会在检测到内存错误时立即报告并崩溃）
-out\build\x64-asan\tests\camera_utils_tests.exe <test-name>
+.\out\build\x64-asan\tests\camera_utils_tests.exe <test-name>
 ```
 
 **注意**：
 - ASan 会显著变慢（约 2x）并增大内存占用，只用于排查，不作为日常构建。
-- `/fsanitize:address` 已同时传给编译和链接（preset 里 `CMAKE_CXX_FLAGS` + `CMAKE_EXE_LINKER_FLAGS`）。
-- 与 `/RTC1` 冲突：ASan 构建时不要同时开 `/RTC1`（Debug 默认的 RTC 会干扰 ASan），
-  本 preset 显式加了 `/Od` 且不显式加 RTC，但继承的 x64-debug 若有 RTC 需留意（CMake 默认 Debug 不加 RTC，
-  本项目 `.clang-tidy`/构建脚本未显式开 RTC，故无冲突）。
+- 语法是 `/fsanitize=address`（等号），**不是冒号** `/fsanitize:address`（冒号会被 cl 报 D9002 忽略）。
+- `/fsanitize=address` 与 Debug 的 EditAndContinue（`/ZI`）冲突（报 D8016），`CMakeLists.txt` 已
+  在检测到 `fsanitize` 时自动改用 `ProgramDatabase`（`/Zi`）。
+- ASan 运行库 `clang_rt.asan*.dll` 已在构建期自动复制到 exe 同目录（`camera_utils_copy_runtime_dlls`），
+  运行时**无需手动设 PATH**。
+
+### VS 本地验证经验（重要）
+
+- **launch.vs.json 启动配置在本机 VS 17.14 不被「调试目标」下拉框识别**（可能因 `.slnx` 新格式）。
+  最可靠的验证方式是「VS 内置终端 + 完整路径命令」：
+
+  ```powershell
+  # VS 菜单「视图 → 终端」，粘贴执行（用绝对路径 + 调用运算符 &）
+  & "C:\Users\11186484\CameraUtils\out\build\x64-asan\tests\camera_utils_tests.exe" asan-heap-overflow
+  ```
+
+  直接运行已构建好的 exe 不涉及编译，所以不受 VS 终端 x86 架构影响，一条命令出结果。
+- 命令行里用相对路径运行 exe 时，PowerShell 必须加 `.\` 前缀，否则会被当成模块名解析报错。
+- 已实测生效，报错形如：
+  ```
+  ERROR: AddressSanitizer: heap-buffer-overflow
+  SUMMARY: ... CppRuntimeCheckDemo.h:29 in CppRuntimeCheck::AsanHeapOverflow
+  ```
+
+### 验证 demo（tests/CppRuntimeCheck/CppRuntimeCheckDemo.h）
+
+| 命令 | 需配置 | 触发错误 |
+|---|---|---|
+| `asan-heap-overflow` | `x64-asan` | 堆越界写 |
+| `asan-use-after-free` | `x64-asan` | free 后访问 |
+| `asan-stack-overflow` | `x64-asan` | 栈越界写 |
+| `crtdbg-leak` | `x64-Debug` | 内存泄漏 |
+| `pageheap-overflow` | `x64-Debug` + gflags 开 PageHeap | 堆越界即时崩溃 |
+| `ubsan-undefined` | 需 clang-cl | 有符号整数溢出 |
 
 ## 2. _CRTDBG（MSVC CRT 调试堆，内存泄漏检测）
 
