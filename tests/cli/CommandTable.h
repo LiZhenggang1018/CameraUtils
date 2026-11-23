@@ -26,7 +26,7 @@
 #include "FeatureMatching/KeypointDetectorTest.h"
 #include "FeatureMatching/LocalFeatureDemo.h"
 #include "FeatureMatching/LocalFeatureTest.h"
-#include "HdrMerge/HdrMergeTest.h"
+#include "ComputationalPhotography/HdrMergeTest.h"
 #include "ImageProcessing/FourierDemo.h"
 #include "ImageProcessing/LinearFilterDemo.h"
 #include "ImageProcessing/LinearFilterTest.h"
