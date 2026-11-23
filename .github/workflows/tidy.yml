@@ -46,12 +46,18 @@ jobs:
           # A mismatch fails with STL1000 deep inside the STL, which is hard to diagnose.
           $raw = & $env:CLANG_TIDY --version
           $clangMajor = [int](([regex]::Match($raw, 'version (\d+)\.')).Groups[1].Value)
-          $msvcVersion = [version]$env:VCToolsVersion.Trim().Split('-')[0]
-          $required = if ($msvcVersion -ge [version]'14.50') { 22 } else { 19 }
-          Write-Host "clang-tidy $clangMajor / MSVC $msvcVersion (requires Clang >= $required)"
-          if ($clangMajor -lt $required) {
-            Write-Error "clang-tidy $clangMajor cannot parse the MSVC $msvcVersion STL (needs Clang $required+). Pin VCToolsVersion or upgrade LLVM."
-            exit 1
+          # setup-msvc-dev 会设置 VCToolsVersion；若未设置（action 行为变化）则跳过版本校验，
+          # 避免因环境变量缺失而误判失败。
+          if ($env:VCToolsVersion) {
+            $msvcVersion = [version]$env:VCToolsVersion.Trim().Split('-')[0]
+            $required = if ($msvcVersion -ge [version]'14.50') { 22 } else { 19 }
+            Write-Host "clang-tidy $clangMajor / MSVC $msvcVersion (requires Clang >= $required)"
+            if ($clangMajor -lt $required) {
+              Write-Error "clang-tidy $clangMajor cannot parse the MSVC $msvcVersion STL (needs Clang $required+). Pin VCToolsVersion or upgrade LLVM."
+              exit 1
+            }
+          } else {
+            Write-Host "clang-tidy $clangMajor / MSVC version unknown (VCToolsVersion not set); skipping version check"
           }
 
       - name: Run clang-tidy
@@ -69,6 +75,7 @@ jobs:
           $root = (Resolve-Path $PWD).Path -replace '\\', '/'
           $db = Get-Content out/build/x64-release/compile_commands.json -Raw | ConvertFrom-Json
           $files = $db |
+            ForEach-Object { $_.file = $_.file -replace '\\', '/'; $_ } |
             Where-Object { $_.file -like "$root/src/*" -or $_.file -like "$root/tests/*" } |
             ForEach-Object { $_.file } |
             Sort-Object -Unique
