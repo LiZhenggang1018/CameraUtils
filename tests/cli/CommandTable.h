@@ -18,6 +18,7 @@
 #include "Alignment/PanoramaTest.h"
 #include "Alignment/VignettingDemo.h"
 #include "Alignment/VignettingTest.h"
+#include "ComputationalPhotography/BeautyDemo.h"
 #include "ComputationalPhotography/FusionDemo.h"
 #include "ComputationalPhotography/HdrMergeTest.h"
 #include "ComputationalPhotography/HdrMergeUnitTest.h"
@@ -544,6 +545,10 @@ inline const std::vector<Command>& AllCommands()
          .description = "多帧融合（HDR + 降噪）演示",
          .label = Label::GUI,
          .run = [] { return FusionDemo(); }},
+        {.name = "beauty-demo",
+         .description = "人像美颜/磨皮演示（高低频分离）",
+         .label = Label::GUI,
+         .run = [] { return BeautyDemo(); }},
         {.name = "bokeh-demo",
          .description = "深度图 + 虚化演示（人像模式）",
          .label = Label::GUI,
