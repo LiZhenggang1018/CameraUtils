@@ -42,6 +42,12 @@ ninja -C out\build\x64-debug
 因此：**助手编译通过不等于开发者 VS 2022 编译通过**，反之亦然。报告构建/测试结果时须说明用的是哪套配置，
 不要声称已验证开发者那侧的构建。
 
+**STL1001 = 工具链错配信号**：`yvals_core.h` 报 `STL1001: Unexpected compiler version, expected MSVC Compiler
+19.52 or newer`，表示「头文件路径指向 14.52，但实际执行的编译器 < 19.52」（如 VS 的 CMake 驱动用了 14.44）。
+触发场景：在 VS 里做「清理 + 重新生成」时，VS 用自己的编译器重新配置了 `out/build/x64-debug`，污染了
+exiv2 等第三方库的缓存。修复：删除 `out/build/x64-debug` 缓存目录，用 vcvars64（19.52）重新 `cmake --preset
+x64-debug` + 构建，工具链一致后 STL1001 消失。
+
 ### 排查构建参数时的坑
 
 `out/build/<preset>/build.ninja` 里所有目标共用同一套 `FLAGS` 语法，第三方依赖（`_deps/`，如 exiv2）
