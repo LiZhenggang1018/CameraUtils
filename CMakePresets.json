@@ -66,6 +66,14 @@
             }
         },
         {
+            "name": "x64-warnings",
+            "displayName": "x64 Debug Warnings（严格告警）",
+            "inherits": "x64-debug",
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "/W4 /w14061 /w14062 /w14100 /w14189 /w15038 /w14715"
+            }
+        },
+        {
             "name": "x86-debug",
             "displayName": "x86 Debug",
             "inherits": "windows-base",
@@ -146,6 +154,11 @@
             "name": "x64-asan",
             "displayName": "x64 Debug ASan Build",
             "configurePreset": "x64-asan"
+        },
+        {
+            "name": "x64-warnings",
+            "displayName": "x64 Debug Warnings Build",
+            "configurePreset": "x64-warnings"
         },
         {
             "name": "x86-debug",
