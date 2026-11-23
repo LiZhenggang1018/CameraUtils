@@ -27,7 +27,9 @@
                 "strategy": "external"
             },
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_COMPILER": "C:/Program Files (x86)/Microsoft Visual Studio/18/BuildTools/VC/Tools/MSVC/14.52.37025/bin/Hostx64/x64/cl.exe",
+                "CMAKE_CXX_COMPILER": "C:/Program Files (x86)/Microsoft Visual Studio/18/BuildTools/VC/Tools/MSVC/14.52.37025/bin/Hostx64/x64/cl.exe"
             },
             "environment": {
                 "CMAKE_TLS_VERIFY": "0"
@@ -38,7 +40,9 @@
             "displayName": "x64 Release",
             "inherits": "x64-debug",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_C_COMPILER": "D:/Program Files/visual_studio/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+                "CMAKE_CXX_COMPILER": "D:/Program Files/visual_studio/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe"
             }
         },
         {
