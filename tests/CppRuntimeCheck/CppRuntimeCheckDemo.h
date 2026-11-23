@@ -1,0 +1,89 @@
+#ifndef TESTS_CPPRUNTIMECHECK_CPPRUNTIMECHECKDEMO_H
+#define TESTS_CPPRUNTIMECHECK_CPPRUNTIMECHECKDEMO_H
+
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+
+// CppRuntimeCheck —— 运行时检查工具验证 demo。
+//
+// 每个函数「故意触发」一类运行时错误，用来验证对应的检查工具是否生效：
+//   - ASan 堆越界       → AsanHeapOverflow()
+//   - ASan use-after-free → AsanUseAfterFree()
+//   - ASan 栈越界       → AsanStackOverflow()
+//   - _CRTDBG 内存泄漏  → CrtDbgLeak()
+//   - PageHeap 堆越界   → PageHeapOverflow()
+//   - UBSan 未定义行为  → UbsanUndefinedBehavior()
+//
+// ⚠️ 这些函数会故意崩溃/触发检查，绝不能注册进 ctest（CI 会挂），仅供手动运行验证。
+
+namespace CppRuntimeCheck {
+
+// ASan 堆缓冲区越界写：new 出 16 字节，写第 17 个元素。
+inline void AsanHeapOverflow()
+{
+    int* buf = new int[4]; // 16 字节
+    std::cout << "[AsanHeapOverflow] writing out of bounds..." << std::endl;
+    buf[4] = 42; // 越界写（应为 buf[3]）
+    std::cout << "buf[4] = " << buf[4] << std::endl;
+    delete[] buf;
+}
+
+// ASan use-after-free：free 后再次读写。
+inline void AsanUseAfterFree()
+{
+    int* p = new int(7);
+    delete p;
+    std::cout << "[AsanUseAfterFree] reading freed memory..." << std::endl;
+    std::cout << "*p = " << *p << std::endl; // use-after-free
+}
+
+// ASan 栈缓冲区越界写：栈上数组越界。
+inline void AsanStackOverflow()
+{
+    int arr[4] = {0, 1, 2, 3};
+    std::cout << "[AsanStackOverflow] writing out of bounds on stack..." << std::endl;
+    arr[4] = 99; // 栈越界写
+    std::cout << "arr[4] = " << arr[4] << std::endl;
+}
+
+// _CRTDBG 内存泄漏：new 了不 delete，程序退出时 _CRTDBG 报告泄漏。
+inline void CrtDbgLeak()
+{
+    std::cout << "[CrtDbgLeak] leaking 100 bytes..." << std::endl;
+    char* leak = new char[100];
+    (void)leak; // 故意不释放
+    std::cout << "[CrtDbgLeak] 函数返回，泄漏的 100 字节将在进程退出时被 _CRTDBG 报告" << std::endl;
+}
+
+// PageHeap 堆越界：用 HeapAlloc 分配，越界写 1 字节（PageHeap 下立即崩溃）。
+inline void PageHeapOverflow()
+{
+    std::cout << "[PageHeapOverflow] HeapAlloc + out-of-bounds write..." << std::endl;
+    const std::size_t size = 64;
+    void* p = std::malloc(size);
+    if (p == nullptr) {
+        std::cerr << "malloc failed" << std::endl;
+        return;
+    }
+    auto* bytes = static_cast<unsigned char*>(p);
+    bytes[size] = 0xFF; // 越界写（PageHeap 下即时触发访问违例）
+    std::cout << "wrote byte at index " << size << std::endl;
+    std::free(p);
+}
+
+// UBSan 未定义行为：有符号整数溢出。
+// 注意：MSVC 不支持 UBSan，需 clang-cl 编译 + -fsanitize=undefined 才会报告。
+inline void UbsanUndefinedBehavior()
+{
+    std::cout << "[UbsanUndefinedBehavior] signed integer overflow..." << std::endl;
+    int x = 2147483647; // INT_MAX
+    int y = x + 1;      // 有符号溢出 = UB
+    std::cout << "INT_MAX + 1 = " << y << std::endl;
+}
+
+} // namespace CppRuntimeCheck
+
+#endif // TESTS_CPPRUNTIMECHECK_CPPRUNTIMECHECKDEMO_H
