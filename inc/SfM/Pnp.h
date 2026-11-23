@@ -17,6 +17,9 @@ inline bool SolvePnp(const std::vector<cv::Point3f>& objectPoints, const std::ve
     if (objectPoints.size() < 4 || objectPoints.size() != imagePoints.size() || K.empty()) {
         return false;
     }
+    if (K.rows != 3 || K.cols != 3) {
+        return false;
+    }
 
     cv::Mat rvec;
     try {
