@@ -176,7 +176,7 @@ endif()
 #   ximgproc  guidedFilter                  （contrib）
 # ============================================================
 set(CAMERA_UTILS_OPENCV_MODULES
-    core imgproc highgui imgcodecs video videoio features2d calib3d flann)
+    core imgproc highgui imgcodecs video videoio features2d calib3d flann photo)
 set(CAMERA_UTILS_OPENCV_CONTRIB_MODULES
     optflow ximgproc)
 set(CAMERA_UTILS_OPENCV_COMPONENTS
