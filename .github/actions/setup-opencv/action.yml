@@ -14,7 +14,7 @@ inputs:
       Comma separated BUILD_LIST. Must match CAMERA_UTILS_OPENCV_COMPONENTS in CMakeLists.txt,
       otherwise the cached tree will not satisfy the build.
     required: false
-    default: "core,imgproc,highgui,imgcodecs,video,videoio,features2d,calib3d,flann,optflow,ximgproc"
+    default: "core,imgproc,highgui,imgcodecs,video,videoio,features2d,calib3d,flann,photo,optflow,ximgproc"
   config:
     description: >-
       CMake configuration to build and cache (Debug or Release). Each configuration gets its
