@@ -458,12 +458,12 @@ inline const std::vector<Command>& AllCommands()
         // ---------- OpenCV / FFmpeg / exiv2 ----------
         {.name = "exif",
          .description = "Exiv2 读取 EXIF",
-         .label = Label::UNIT,
+         .label = Label::MEDIA,
          .run =
-             [] {
-                 CameraUtils::Exif2Test();
-                 return 0;
-             }},
+              [] {
+                  CameraUtils::Exif2Test();
+                  return 0;
+              }},
 
         // ---------- 依赖媒体素材 ----------
         {.name = "ffmpeg",
