@@ -16,7 +16,7 @@
 // 展示手写 SIFT 检测到的关键点（含方向箭头）。按键 q / ESC 退出。
 inline int SiftDetectorDemo()
 {
-    const std::string inputPath = EnvRootPath() + "/data/FeatureMatching/LocalFeature/input.jpg";
+    const std::string inputPath = EnvRootPath() + "/data/FeatureMatching/SiftDetector/input.jpg";
 
     cv::Mat src = cv::imread(inputPath, cv::IMREAD_GRAYSCALE);
     if (src.empty()) {
