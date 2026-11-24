@@ -288,6 +288,15 @@ CI 的 `ci-windows.yml` 只跑 `ctest -L unit`。因此 **unit 组只应放真�
 - 新增 demo 涉及 `data/` 输入时，统一按此约定新建占位符目录与文件，并在对应
   `<模块>Notes.md` / `README.md` 里注明输入路径。
 
+### demo GUI 显示约定（防止窗口过大）
+
+- **GUI demo 显示前必须自适应缩放**：输入图（或合成图、拼接结果）宽高任一超过最大显示
+  尺寸时，按比例缩小到适合屏幕的窗口大小，避免撑满/超出屏幕。
+- 实现范式（沿用 `PanoramaDemo.h`、`SiftDetectorDemo.h`）：`cv::namedWindow(..., WINDOW_NORMAL)`，
+  再用 `std::min(maxW/cols, maxH/rows)` 取较小缩放比 `cv::resize`，保证完整显示不裁切。
+  最大显示尺寸建议不超过 1280×800，具体阈值可按 demo 内容调整。
+- 缩放只作用于「显示用的副本」，不得改动参与计算/输出的原始数据。
+
 ### Windows 编码陷阱（重要）
 
 PowerShell 5.1 控制台与管道按 GBK 解码，直接查看或管道传递中文会显示为乱码，
