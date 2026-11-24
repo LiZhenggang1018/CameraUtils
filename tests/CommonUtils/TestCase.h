@@ -469,7 +469,6 @@ private:
 inline void MsgQueueTest()
 {
     MsgQueueTest::RunAllTests();
-
 }
 
 #endif // !TESTS_TESTCASE_H
