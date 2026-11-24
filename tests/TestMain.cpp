@@ -8,10 +8,6 @@
 #include <windows.h>
 #endif
 
-#ifdef _DEBUG
-#include <crtdbg.h>
-#endif
-
 #include <cstring>
 #include <iostream>
 #include <string>
@@ -62,15 +58,10 @@ int RunOne(const std::string& name)
 
 int main(int argc, char** argv)
 {
-#ifdef _DEBUG
-    // Route the leak report (a _CRT_WARN message) to stderr so it shows up in
-    // the console and under ctest; otherwise it goes to the debugger only.
-    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
-    _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
-
-    // Debug 构建下启用 CRT 内存泄漏检测：程序退出时自动 dump 未释放的内存块。
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-#endif
+    // 注：Debug 下刻意不启用 CRT 内存泄漏检测（_CrtSetDbgFlag(_CRTDBG_LEAK_CHECK_DF)）。
+    // 链接的 OpenCV/FFmpeg 在退出时留有全局单例/静态对象未析构，CRT 会在 main 返回后
+    // 把它们全量误报为泄漏（连纯内存的 magic-enum 测试也报）。真正的内存问题排查
+    // 改用 x64-asan preset（AddressSanitizer，能精确到本工程代码行）。
 
     SetConsoleOutputCP(65001);
 
