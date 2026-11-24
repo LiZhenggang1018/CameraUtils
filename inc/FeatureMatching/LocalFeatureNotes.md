@@ -9,6 +9,8 @@
   - 检测：DoG（高斯差分）尺度空间找极值 → 关键点定位（亚像素、剔除低对比度与边缘响应）。
   - 方向：梯度方向直方图 → 主方向 → 旋转不变。
   - 描述：16 个 4×4 子块、每块 8 方向梯度直方图 → **128 维 float 向量**，归一化实现光照不变。
+  - 手写实现见 `SiftDetector.h` / `src/FeatureMatching/SiftDetector.cpp`，详细原理见
+    [`SiftDetectorNotes.md`](SiftDetectorNotes.md)。
 - **SURF**（Speeded-Up Robust Features，2006，Bay）：
   - SIFT 的加速版：用积分图加速 Hessian 行列式检测，描述子用 Haar 小波响应（64/128 维）。
   - **专利**，OpenCV 中位于 `xfeatures2d` contrib 模块。本机 OpenCV 无该模块，故本工程仅讲述不实现。
