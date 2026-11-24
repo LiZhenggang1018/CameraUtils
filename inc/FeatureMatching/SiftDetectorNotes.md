@@ -97,3 +97,8 @@ SIFT 是 David Lowe 于 1999 年提出、2004 年完善的一个**局部特征**
 | `contrastThreshold` | 0.04 | 低对比度关键点剔除阈值（DoG 响应绝对值） |
 | `edgeThreshold` | 10.0 | 边缘响应剔除曲率比 r |
 | `sigma` | 1.6 | 尺度空间基础高斯 sigma |
+
+## demo 输入素材
+
+- demo（`sift-handwritten-demo`）读取 `data/FeatureMatching/SiftDetector/input.jpg`（本地，不入库）。
+- 该路径当前是空占位符，可用真实纹理图替换；文件缺失或为空时 demo 自动生成合成纹理图。
