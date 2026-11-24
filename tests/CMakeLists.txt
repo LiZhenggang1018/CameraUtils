@@ -54,6 +54,7 @@ set(_unit_tests
     guided-filter
     keypoint-detect
     local-feature
+    sift-handwritten
     feature-match
     homography
     blending
