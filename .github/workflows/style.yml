@@ -16,7 +16,11 @@ jobs:
       - name: Locate clang-format
         shell: pwsh
         run: |
-          $clangFormat = Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -Recurse -Filter clang-format.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          # runner 是 x64，排除 ARM/ARM64 的 LLVM 工具（否则 ARM64 版 clang-format 无法在 x64 上启动）
+          $clangFormat = Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -Recurse -Filter clang-format.exe -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notmatch '\\ARM64\\|\\ARM\\' } |
+            Sort-Object { if ($_.FullName -match '\\x64\\|Hostx64') { 0 } else { 1 } } |
+            Select-Object -First 1
           if (-not $clangFormat) {
             Write-Error "clang-format not found"
             exit 1
