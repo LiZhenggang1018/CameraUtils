@@ -160,6 +160,39 @@ CFG、/GS、/sdl 的**性质不同，验证方式也不同**：
 2. **怀疑内存越界**：用 `x64-asan` 跑相关测试，ASan 报具体错误。
 3. **怀疑 Windows 资源/句柄/临界区**：Application Verifier 的 Basics 检查。
 
+## 6. 一键自动扫描（scripts/scan-bugs.ps1）
+
+将静态分析 + 运行时检查编排成一个脚本，本地和 GitHub CI 通用：
+
+```bat
+:: 全部扫描（static + asan + hardened）
+powershell -ExecutionPolicy Bypass -File scripts/scan-bugs.ps1
+
+:: 单步扫描
+powershell -ExecutionPolicy Bypass -File scripts/scan-bugs.ps1 -Step static
+powershell -ExecutionPolicy Bypass -File scripts/scan-bugs.ps1 -Step asan
+powershell -ExecutionPolicy Bypass -File scripts/scan-bugs.ps1 -Step hardened
+```
+
+| 步骤 | 工具 | 判定 |
+|---|---|---|
+| static | clang-tidy `clang-analyzer-*` | 有分析器告警 = bug（硬门禁） |
+| asan | AddressSanitizer（`x64-asan`） | 跑 `ctest -L unit`，ASan 报错 = bug |
+| hardened | `/guard:cf` + `/sdl` + `/GS`（`x64-hardened`） | 构建通过 + 单测通过 = 合规 |
+
+**设计要点**：
+- **ASan 关闭 `detect_container_overflow`**：MSVC STL 容器容量注解在合法 vector 扩容时会误报
+  （实测在 OpenCV ORB 代码内触发），已通过 `ASAN_OPTIONS=detect_container_overflow=0` 关闭，
+  保留 heap-buffer-overflow / use-after-free 等高价值检查。
+- **_CRTDBG 泄漏不纳入自动门禁**：OpenCV 进程级惰性单例/缓存导致泄漏报告全线误报
+  （几乎每个测试都报），故泄漏检查保持手动 demo（`crtdbg-leak`）验证，不进自动扫描。
+
+### GitHub CI 定时扫描（.github/workflows/scan.yml）
+
+每 2 天（cron `0 18 */2 * *`）+ 手动 `workflow_dispatch` 触发，3 个并行 job 分别跑
+static / asan / hardened。CI 上 preset 硬编码的本地编译器路径不存在，脚本用
+`setup-msvc-dev` 的 `VCToolsInstallDir` 推导 cl.exe 路径覆盖 `CMAKE_CXX_COMPILER`。
+
 ## 已集成的运行检查总结
 
 | 工具 | 状态 | 查什么 |
