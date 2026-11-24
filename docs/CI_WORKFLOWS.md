@@ -69,7 +69,7 @@
 |---|---|---|---|
 | `static-analysis` | clang-tidy `clang-analyzer-*` 全量 | Release | `scan-bugs.ps1 -Step static` |
 | `asan` | 构建 `x64-asan` + 跑 unit 单测 | Debug | `scan-bugs.ps1 -Step asan` |
-| `hardened` | 构建 `x64-hardened`（`/guard:cf`+`/sdl`）+ 单测 | Release | `scan-bugs.ps1 -Step hardened` |
+| `hardened` | 构建 `x64-hardened`（`/guard:cf`+`/sdl`+`/DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA`）+ 单测 | Release | `scan-bugs.ps1 -Step hardened` |
 
 每个 job 步骤：checkout → setup-msvc-dev → cache CPM → setup-opencv → 跑扫描。
 
