@@ -56,6 +56,18 @@ x64-debug` + 构建，工具链一致后 STL1001 消失。
 判断方法：`Select-String out/build/<preset>/CMakeCache.txt -Pattern "CMAKE_CXX_COMPILER:"`，
 若值为 `cl.exe`（相对名）就是隐患，需删缓存用 vcvars64 重配。修复后应为绝对路径。
 
+**VS 侧 `OpenCV_FOUND=FALSE` 的根因（2026-11-24 修复）**：本地 OpenCV 安装目录 `D:/ThirdPartyLib/OpenCvForCameraUtils/install`
+下**存在两个** `OpenCVConfig.cmake`：
+
+1. 顶层 `install/OpenCVConfig.cmake` —— 「Windows pack」分发版，靠 `MSVC_VERSION` 正则
+   （`^19[34][0-9]$` → vc17）**推断** runtime；VS 下推断失败会直接 `set(OpenCV_FOUND FALSE)`。
+2. 具体版 `install/x64/vc17/lib/OpenCVConfig.cmake` —— 无需推断，直接可用。
+
+旧代码 `file(GLOB_RECURSE .../OpenCVConfig.cmake)` 按字典序**误选顶层 pack 版**，导致 VS 内报
+`Found package configuration file ... but it set OpenCV_FOUND to FALSE`。修复方式：优先选路径含
+`/lib/OpenCVConfig.cmake` 的具体版（见 `CMakeLists.txt` 分支 A 的 `_preferred` 过滤逻辑），
+顶层 pack 版仅作回退。`OpenCV_DIR` 正确值应为 `.../install/x64/vc17/lib`。
+
 ### 排查构建参数时的坑
 
 `out/build/<preset>/build.ninja` 里所有目标共用同一套 `FLAGS` 语法，第三方依赖（`_deps/`，如 exiv2）
