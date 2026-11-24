@@ -459,24 +459,24 @@ inline void DecodeAndEncodeAndReplaceMultiYuvs(const char* inputFilename, const 
                 bool readOk = true;
                 for (int y = 0; y < repFrame->height && readOk; ++y) {
                     auto want = static_cast<size_t>(repFrame->width);
-                    size_t got =
-                        fread(repFrame->data[0] + (static_cast<size_t>(y) * repFrame->linesize[0]), 1, want, repFp.get());
+                    size_t got = fread(repFrame->data[0] + (static_cast<size_t>(y) * repFrame->linesize[0]), 1, want,
+                                       repFp.get());
                     if (got != want) {
                         readOk = false;
                     }
                 }
                 for (int y = 0; y < repFrame->height / 2 && readOk; ++y) {
                     auto want = static_cast<size_t>(repFrame->width / 2);
-                    size_t got =
-                        fread(repFrame->data[1] + (static_cast<size_t>(y) * repFrame->linesize[1]), 1, want, repFp.get());
+                    size_t got = fread(repFrame->data[1] + (static_cast<size_t>(y) * repFrame->linesize[1]), 1, want,
+                                       repFp.get());
                     if (got != want) {
                         readOk = false;
                     }
                 }
                 for (int y = 0; y < repFrame->height / 2 && readOk; ++y) {
                     auto want = static_cast<size_t>(repFrame->width / 2);
-                    size_t got =
-                        fread(repFrame->data[2] + (static_cast<size_t>(y) * repFrame->linesize[2]), 1, want, repFp.get());
+                    size_t got = fread(repFrame->data[2] + (static_cast<size_t>(y) * repFrame->linesize[2]), 1, want,
+                                       repFp.get());
                     if (got != want) {
                         readOk = false;
                     }
@@ -1373,7 +1373,8 @@ inline void DecodeCropEncode(const char* inputFilename, const char* outputFilena
                     int planeW = (p == 0) ? orig_w : (orig_w / 2);
                     for (int r = 0; r < planeH; ++r) {
                         memcpy(yuvFullPtr->data[p] + ((size_t)r * yuvFullPtr->linesize[p]),
-                               decodedPtr->data[p] + ((size_t)r * decodedPtr->linesize[p]), static_cast<size_t>(planeW));
+                               decodedPtr->data[p] + ((size_t)r * decodedPtr->linesize[p]),
+                               static_cast<size_t>(planeW));
                     }
                 }
             }
