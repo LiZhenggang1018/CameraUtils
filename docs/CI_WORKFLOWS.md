@@ -93,6 +93,21 @@
 | OpenCV | 预编译（world 打包 DLL） | 源码构建（分模块 DLL） |
 | clang-tidy 版本 | LLVM 19（配 14.44） | VS 自带（需版本校验） |
 
-**编译器路径**：`CMakePresets.json` 硬编码了本地 cl.exe 绝对路径（根治 STL1001），
-CI 上这些路径不存在，`scan.yml` 通过 `setup-msvc-dev` 的 `VCToolsInstallDir` 推导 cl.exe
-覆盖 `CMAKE_CXX_COMPILER`（见 `scripts/scan-bugs.ps1` 的 `Get-CMakeCompilerArgs`）。
+**编译器路径（重要坑）**：`CMakePresets.json` 硬编码了本地 cl.exe 绝对路径（根治 STL1001）：
+- `x64-debug` / `x64-asan` / `x64-hardened` / `x64-warnings` → `C:/Program Files (x86)/.../14.52.37025/.../cl.exe`
+- `x64-release` → `D:/Program Files/visual_studio/.../14.44.35207/.../cl.exe`
+
+CI runner（windows-2022）上这些路径**不存在**（runner 实际是
+`C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\14.44.35207\`），
+直接 `cmake --preset` 会报 `is not a full path to an existing compiler tool`。
+
+**修复方式**：所有 CI workflow 的 configure 步骤都用 `setup-msvc-dev` 提供的
+`VCToolsInstallDir` 推导 runner 上的 cl.exe，再用 `-D` 覆盖 preset 的硬编码值：
+
+```powershell
+$cl = (Join-Path $env:VCToolsInstallDir 'bin\Hostx64\x64\cl.exe') -replace '\\', '/'
+cmake --preset x64-debug "-DCMAKE_CXX_COMPILER=$cl" "-DCMAKE_C_COMPILER=$cl"
+```
+
+`scan.yml` 通过脚本 `scripts/scan-bugs.ps1` 的 `Get-CMakeCompilerArgs` 自动做同样的事，
+`ci-windows.yml` 和 `tidy.yml` 则在 workflow 内联这段逻辑。三处逻辑保持一致。
