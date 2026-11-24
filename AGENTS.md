@@ -120,6 +120,11 @@ camera_utils_tests.exe --list
 camera_utils_tests.exe magic-enum
 ```
 
+**Debug 下已关闭 CRT 内存泄漏检测**（`_CrtSetDbgFlag(_CRTDBG_LEAK_CHECK_DF)`）：
+OpenCV/FFmpeg 在退出时留有全局单例/静态对象未析构，CRT 会把它们全量误报为泄漏
+（连纯内存的 `magic-enum` 测试也报），且 dump 中不含任何本工程源码文件。真正的内存
+问题排查改用 `x64-asan` preset（AddressSanitizer，能精确到本工程代码行），不要靠 CRT 泄漏 dump。
+
 ## CI 约定
 
 - 工作流只有 `ci-windows.yml`（构建 + 单测）、`style.yml`（clang-format）、`tidy.yml`（clang-tidy）。
