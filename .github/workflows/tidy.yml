@@ -36,7 +36,11 @@ jobs:
       - name: Locate clang-tidy
         shell: pwsh
         run: |
-          $clangTidy = Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -Recurse -Filter clang-tidy.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          # runner 是 x64，排除 ARM/ARM64 的 LLVM 工具（否则 ARM64 版 clang-tidy 无法在 x64 上启动）
+          $clangTidy = Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -Recurse -Filter clang-tidy.exe -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notmatch '\\ARM64\\|\\ARM\\' } |
+            Sort-Object { if ($_.FullName -match '\\x64\\|Hostx64') { 0 } else { 1 } } |
+            Select-Object -First 1
           if (-not $clangTidy) {
             Write-Error "clang-tidy not found"
             exit 1
