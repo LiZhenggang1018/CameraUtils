@@ -105,7 +105,7 @@ Clang 的 CFI / SafeStack 本机不可用（需 clang-cl），但 MSVC 有对应
 
 **防什么**：间接调用劫持（篡改函数指针/虚表 → ROP）。
 
-**已集成**：`x64-hardened` preset（Release + `/guard:cf` + `/sdl`）。
+**已集成**：`x64-hardened` preset（Release + `/guard:cf` + `/sdl` + `/DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA` 链接加固）。
 
 ```bat
 cmake --preset x64-hardened
@@ -178,7 +178,7 @@ powershell -ExecutionPolicy Bypass -File scripts/scan-bugs.ps1 -Step hardened
 |---|---|---|
 | static | clang-tidy `clang-analyzer-*` | 有分析器告警 = bug（硬门禁） |
 | asan | AddressSanitizer（`x64-asan`） | 跑 `ctest -L unit`，ASan 报错 = bug |
-| hardened | `/guard:cf` + `/sdl` + `/GS`（`x64-hardened`） | 构建通过 + 单测通过 = 合规 |
+| hardened | `/guard:cf` + `/sdl` + `/GS` + `/DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA`（`x64-hardened`） | 构建通过 + 单测通过 = 合规 |
 
 **设计要点**：
 - **ASan 关闭 `detect_container_overflow`**：MSVC STL 容器容量注解在合法 vector 扩容时会误报
@@ -203,6 +203,7 @@ static / asan / hardened。CI 上 preset 硬编码的本地编译器路径不存
 | CFG（`x64-hardened`，`/guard:cf`） | ✅ 已集成 | 间接调用劫持（防御） |
 | /GS 栈 cookie | ✅ 默认开启 | 栈溢出覆盖返回地址（防御） |
 | /sdl（`x64-hardened`） | ✅ 已集成 | SDL 安全检查 |
+| ASLR/DEP 链接加固（`x64-hardened`，`/DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA`） | ✅ 已集成 | 地址随机化 + 数据执行保护 |
 | Application Verifier | 📖 本文档说明 | 句柄/堆/临界区 |
 
 > UBSan（未定义行为）与 TSan（线程竞争）需 clang-cl 编译器，本机 MSVC 不支持，且 Windows 上
