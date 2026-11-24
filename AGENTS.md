@@ -244,6 +244,18 @@ CI 的 `ci-windows.yml` 只跑 `ctest -L unit`。因此 **unit 组只应放真�
   （如 `TESTS_IMAGEPROCESSING_SOBELTEST_H`），`CommandTable.h` 里用
   `#include "<章节目录>/<文件名>.h"` 引用。
 
+### data 素材占位符约定
+
+- `data/` 整体已 `.gitignore`（不入库），但**目录结构与占位符文件本身保留在本地工作区**，
+  供 demo 定位输入路径与后续替换真实素材。
+- **每个需要输入素材的 demo 模块**，在 `data/<章节目录>/<模块名>/` 下建一个与代码路径
+  一致的**空文件占位符**（如 `data/FeatureMatching/SiftDetector/input.jpg`，0 字节），
+  后续由使用者用真实有效文件替换。
+- **demo 代码必须对占位符友好**：`imread` 返回空或文件缺失时，自动生成合成图兜底
+  （`if (src.empty()) { 生成合成图 }`），保证占位符状态下 demo 仍可运行、不进 ctest 不会假失败。
+- 新增 demo 涉及 `data/` 输入时，统一按此约定新建占位符目录与文件，并在对应
+  `<模块>Notes.md` / `README.md` 里注明输入路径。
+
 ### Windows 编码陷阱（重要）
 
 PowerShell 5.1 控制台与管道按 GBK 解码，直接查看或管道传递中文会显示为乱码，
