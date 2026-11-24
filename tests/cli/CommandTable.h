@@ -38,6 +38,7 @@
 #include "FeatureMatching/LocalFeatureDemo.h"
 #include "FeatureMatching/LocalFeatureTest.h"
 #include "FeatureMatching/SiftDetectorDemo.h"
+#include "FeatureMatching/SiftDetectorReport.h"
 #include "FeatureMatching/SiftDetectorTest.h"
 #include "ImageProcessing/FourierDemo.h"
 #include "ImageProcessing/GuidedFilterDemo.h"
@@ -658,6 +659,10 @@ inline const std::vector<Command>& AllCommands()
          .description = "手写 SIFT 演示（关键点 + 方向）",
          .label = Label::GUI,
          .run = [] { return SiftDetectorDemo(); }},
+        {.name = "sift-handwritten-report",
+         .description = "手写 SIFT 数值报告（关键点数量/尺度/方向分布）",
+         .label = Label::UNIT,
+         .run = [] { return SiftDetectorReport(); }},
         {.name = "feature-match-demo",
          .description = "特征匹配 + RANSAC 演示",
          .label = Label::GUI,
