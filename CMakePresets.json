@@ -52,7 +52,7 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_CXX_FLAGS": "/guard:cf /sdl",
-                "CMAKE_EXE_LINKER_FLAGS": "/guard:cf"
+                "CMAKE_EXE_LINKER_FLAGS": "/guard:cf /DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA"
             }
         },
         {
@@ -70,7 +70,7 @@
             "displayName": "x64 Debug Warnings（严格告警）",
             "inherits": "x64-debug",
             "cacheVariables": {
-                "CMAKE_CXX_FLAGS": "/W4 /w14061 /w14062 /w14100 /w14189 /w15038 /w14715"
+                "CMAKE_CXX_FLAGS": "/W4 /w14061 /w14062 /w14100 /w14189 /w15038 /w14715 /w44265 /w44456 /w34457 /w34458 /w34459 /w44668 /w34774"
             }
         },
         {
