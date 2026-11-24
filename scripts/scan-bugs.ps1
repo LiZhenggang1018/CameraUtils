@@ -121,7 +121,10 @@ function Invoke-Build {
 
 function Resolve-ClangTidy {
     if ($InCI) {
+        # runner is x64; skip ARM/ARM64 LLVM tools, which cannot start on x64.
         $found = Get-ChildItem 'C:\Program Files\Microsoft Visual Studio' -Recurse -Filter 'clang-tidy.exe' -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notmatch '\\ARM64\\|\\ARM\\' } |
+            Sort-Object { if ($_.FullName -match '\\x64\\|Hostx64') { 0 } else { 1 } } |
             Select-Object -First 1
         if (-not $found) { throw 'clang-tidy.exe not found on the CI runner' }
         return $found.FullName
