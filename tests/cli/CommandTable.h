@@ -37,6 +37,8 @@
 #include "FeatureMatching/KeypointDetectorTest.h"
 #include "FeatureMatching/LocalFeatureDemo.h"
 #include "FeatureMatching/LocalFeatureTest.h"
+#include "FeatureMatching/SiftDetectorDemo.h"
+#include "FeatureMatching/SiftDetectorTest.h"
 #include "ImageProcessing/FourierDemo.h"
 #include "ImageProcessing/GuidedFilterDemo.h"
 #include "ImageProcessing/GuidedFilterTest.h"
@@ -286,6 +288,14 @@ inline const std::vector<Command>& AllCommands()
          .run =
              [] {
                  LocalFeatureTest();
+                 return 0;
+             }},
+        {.name = "sift-handwritten",
+         .description = "手写 SIFT（DoG 尺度空间/极值/方向/128 维描述子）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 SiftDetectorTest();
                  return 0;
              }},
         {.name = "feature-match",
@@ -644,6 +654,10 @@ inline const std::vector<Command>& AllCommands()
          .description = "局部特征演示（SIFT/ORB/AKAZE）",
          .label = Label::GUI,
          .run = [] { return LocalFeatureDemo(); }},
+        {.name = "sift-handwritten-demo",
+         .description = "手写 SIFT 演示（关键点 + 方向）",
+         .label = Label::GUI,
+         .run = [] { return SiftDetectorDemo(); }},
         {.name = "feature-match-demo",
          .description = "特征匹配 + RANSAC 演示",
          .label = Label::GUI,
