@@ -52,9 +52,9 @@ cmake --build --preset x64-release
 |---|---|---|
 | `x64-debug` | Debug（BuildTools 14.52） | 日常开发默认 |
 | `x64-release` | Release（VS2022 14.44） | 开发者侧 / clang-tidy 配对环境 |
-| `x64-hardened` | Release + `/guard:cf /sdl` | CFG + SDL 加固 |
+| `x64-hardened` | Release + `/guard:cf /sdl` + `/DYNAMICBASE /NXCOMPAT /HIGHENTROPYVA` | CFG + SDL + ASLR/DEP 加固 |
 | `x64-asan` | Debug + `/fsanitize=address` | AddressSanitizer |
-| `x64-warnings` | Debug + 严格告警 | `/W4` 额外告警项 |
+| `x64-warnings` | Debug + 严格告警 | `/W4` + 遮蔽/转换/虚析构/未定义宏等严格告警项 |
 | `x86-debug` / `x86-release` | x86 Debug / Release | — |
 
 > 本机有两套 MSVC 工具集并存，`x64-debug` 与 `x64-release` 的产物、告警互不相通。构建/测试结果请注明用的是哪套配置，详见 `AGENTS.md`。
