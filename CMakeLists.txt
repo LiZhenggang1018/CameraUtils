@@ -212,7 +212,21 @@ if(_opencv_local_has_contrib)
     set(OpenCV_DIR "" CACHE PATH "Path to OpenCVConfig.cmake" FORCE)
     file(GLOB_RECURSE _config_files "${_opencv_candidate}/OpenCVConfig.cmake")
     if(_config_files)
-        list(GET _config_files 0 _first)
+        # 顶层 <install>/OpenCVConfig.cmake 是「Windows pack」分发版，靠 MSVC_VERSION 正则推断
+        # runtime（如 ^19[34][0-9]$ → vc17），VS 下推断失败会置 OpenCV_FOUND=FALSE。
+        # 真正稳定的是具体 runtime 目录 <install>/<arch>/<runtime>/lib/OpenCVConfig.cmake（无需推断）。
+        # 这里优先选 lib 下的具体版；找不到再回退顶层 pack 版。
+        set(_preferred "")
+        foreach(_cfg IN LISTS _config_files)
+            if(_cfg MATCHES "/lib/OpenCVConfig\\.cmake$")
+                list(APPEND _preferred "${_cfg}")
+            endif()
+        endforeach()
+        if(_preferred)
+            list(GET _preferred 0 _first)
+        else()
+            list(GET _config_files 0 _first)
+        endif()
         get_filename_component(OpenCV_DIR "${_first}" DIRECTORY)
     endif()
     if(NOT OpenCV_DIR OR NOT EXISTS "${OpenCV_DIR}/OpenCVConfig.cmake")
