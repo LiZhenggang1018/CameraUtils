@@ -56,6 +56,21 @@ x64-debug` + 构建，工具链一致后 STL1001 消失。
 判断方法：`Select-String out/build/<preset>/CMakeCache.txt -Pattern "CMAKE_CXX_COMPILER:"`，
 若值为 `cl.exe`（相对名）就是隐患，需删缓存用 vcvars64 重配。修复后应为绝对路径。
 
+**LNK2019 无法解析 `__std_max_element_*` / `__std_find_first_not_of_trivial_pos_*`（2026-11-24 确认）**：
+这些是 MSVC **14.52 STL 新增的向量化算法符号**，只存在于 14.52 的 `msvcprtd.lib`，14.44 不含。
+出现该链接错误 = 「编译用 14.52 头文件、链接却用 14.44 库」的错配，与 STL1001 同源。
+
+**VS 内规避工具链错配的操作守则（实测有效）**：
+
+1. 出现 STL1001 / LNK2019 时：VS 菜单「项目 → 删除缓存并重新配置」→「生成 → 重新生成」。
+   这一步会清掉被 14.44 污染的缓存，让 CMake 用 CMakePresets 里写死的 14.52 绝对路径重配。
+2. 重配后**务必校验**缓存是干净态：
+   `Select-String out/build/x64-debug/CMakeCache.txt -Pattern "CMAKE_CXX_COMPILER:"`
+   值应为 `.../14.52.37025/.../cl.exe`（绝对路径），且 `CMAKE_LINKER` 也是 14.52 的 `link.exe`。
+3. **缓存干净后不要再反复「删除缓存并重新配置」**：该动作会用 VS 自带工具链（14.44）重跑 CMake，
+   反而可能重新引入错配。日常只用「生成 / 重新生成」即可。
+4. 改了 `CMakeLists.txt` / `CMakePresets.json` 时 CMake 会自动触发重配，通常无需手动删缓存。
+
 **VS 侧 `OpenCV_FOUND=FALSE` 的根因（2026-11-24 修复）**：本地 OpenCV 安装目录 `D:/ThirdPartyLib/OpenCvForCameraUtils/install`
 下**存在两个** `OpenCVConfig.cmake`：
 
