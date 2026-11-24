@@ -180,5 +180,4 @@ struct HdrConfig {
     void SaveToFile(const std::string& path) const { Srlz(*this, path); }
 };
 
-
 #endif // INC_COMPUTATIONALPHOTOGRAPHY_HDRCONFIG_H
