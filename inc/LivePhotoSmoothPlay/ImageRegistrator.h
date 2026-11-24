@@ -113,8 +113,8 @@ struct RegistrationResult {
     std::vector<cv::KeyPoint> keypoints2;
     std::vector<cv::DMatch> goodMatches;   // Lowe's ratio 过滤后（含误匹配）
     std::vector<cv::DMatch> inlierMatches; // RANSAC 验证后的内点（更可信）
-    int numInliers{};                        // = inlier_matches.size()
-    double rmsError{};                       // 内点重投影均方根误差（像素）
+    int numInliers{};                      // = inlier_matches.size()
+    double rmsError{};                     // 内点重投影均方根误差（像素）
 };
 
 // ============================================================
