@@ -1,6 +1,7 @@
 #ifndef TESTS_FEATUREMATCHING_SIFTDETECTORDEMO_H
 #define TESTS_FEATUREMATCHING_SIFTDETECTORDEMO_H
 
+#include <algorithm>
 #include <cstdio>
 #include <iostream>
 #include <string>
@@ -37,6 +38,15 @@ inline int SiftDetectorDemo()
     cv::Mat display;
     cv::cvtColor(src, display, cv::COLOR_GRAY2BGR);
     cv::drawKeypoints(display, keypoints, display, cv::Scalar(0, 0, 255), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+
+    // 窗口过大时按比例缩小到适合显示的最大尺寸（宽高任一超过阈值即缩放）。
+    constexpr int maxDisplayWidth = 1280;
+    constexpr int maxDisplayHeight = 800;
+    if (display.cols > maxDisplayWidth || display.rows > maxDisplayHeight) {
+        const double scale = std::min(static_cast<double>(maxDisplayWidth) / display.cols,
+                                      static_cast<double>(maxDisplayHeight) / display.rows);
+        cv::resize(display, display, cv::Size(), scale, scale, cv::INTER_LINEAR);
+    }
 
     char status[256];
     std::snprintf(status, sizeof(status), "SIFT (handwritten): %zu keypoints  desc=%dx%d type=%d", keypoints.size(),
