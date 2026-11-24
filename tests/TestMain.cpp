@@ -63,6 +63,11 @@ int RunOne(const std::string& name)
 int main(int argc, char** argv)
 {
 #ifdef _DEBUG
+    // Route the leak report (a _CRT_WARN message) to stderr so it shows up in
+    // the console and under ctest; otherwise it goes to the debugger only.
+    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+
     // Debug 构建下启用 CRT 内存泄漏检测：程序退出时自动 dump 未释放的内存块。
     _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
