@@ -324,3 +324,23 @@ UTF-8 文件后写回，会把中文永久破坏（曾因此损坏 `tests/ImageP
 - **提交前校验**：运行 `powershell -ExecutionPolicy Bypass -File scripts/check-encoding.ps1`，
   脚本通过检测 `U+FFFD` 替换字符与私用区字符 `U+E000-U+F8FF`（GBK 错转 UTF-8 的典型特征）来发现乱码；
   退出码非 0 表示有乱码，须用 `read`/`edit` 修复后再提交。
+
+## Subagent 使用习惯（固定工作约定）
+
+本工程是「按章节归档、十几个算法模块」的大工程（`inc/<章>/` + `src/<章>/` + `tests/<章>/`，
+外加 CommonUtils / LivePhotoSmoothPlay 等）。为省上下文、提效率，遵循以下习惯：
+
+- **代码检索优先派 `explore` 代理**：问「某函数/模块在哪」「某章怎么实现的」时，不要自己
+  逐文件 `grep`/`read`，派 `explore` 代理一次查清并返回结论（标注返回文件路径+行号）。
+- **独立模块改动并行派发**：改两个互不依赖的章节（如 `SfM` 与 `ComputationalPhotography`、
+  `Depth` 与 `Alignment`）时，用并行 subagent 同时进行，避免串行等待。
+- **有依赖关系的改动保持串行**：涉及共享头（`inc/CommonUtils/`、`CoreUtils.h`）、
+  `CommandTable.h`、`CMakeLists.txt`、`CMakePresets.json` 的改动，不可并行，避免冲突。
+- **第三方/工具链排查可派 `general` 代理**：CMake/CPM/OpenCV/FFmpeg 下载与构建、MSVC 工具链
+  错配等环境类问题，可派 `general` 代理独立排查，返回结论而非只给日志。
+- **收尾用 `requesting-code-review` / `verification-before-completion`**：多文件功能完成后，
+  派代理复核需求是否满足、断言是否真实（防「假通过」），再按单文件规则提交推送。
+- **并行代理不改同一文件**：多代理并行时，各自只碰自己负责的章节目录，禁止交叉写同一文件。
+
+> 这些是「习惯」而非硬性流程：单点小改（改一个函数、加一行日志）直接 `read`/`edit` 即可，
+> 不必机械套用。
