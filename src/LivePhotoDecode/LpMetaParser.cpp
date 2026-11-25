@@ -1,15 +1,11 @@
 #include "LivePhotoDecode/LpMetaParser.h"
 
-#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <limits>
-#include <utility>
 
-#include "Exiv2Common.h"
 #include "FFmpegDefine.h"
 #include "LivePhotoDecode/LpDecodeDefine.h"
 
@@ -18,6 +14,17 @@ namespace fs = std::filesystem;
 namespace {
 
 constexpr uint32_t kMettCodecTag = 0x7474656d; // "mett"
+
+// Confirmed field offsets (big-endian, relative to the sample start).
+constexpr size_t kIsoOffset = 42;  // uint16
+constexpr size_t kExpAOffset = 60; // float
+constexpr size_t kExpBOffset = 64; // float
+constexpr size_t kExpCOffset = 68; // float
+
+uint16_t ReadBigEndianU16(const uint8_t* p)
+{
+    return static_cast<uint16_t>((static_cast<uint16_t>(p[0]) << 8) | static_cast<uint16_t>(p[1]));
+}
 
 float ReadBigEndianFloat(const uint8_t* p)
 {
@@ -32,24 +39,6 @@ float ReadBigEndianFloat(const uint8_t* p)
 }
 
 } // namespace
-
-std::vector<float> ParseBigEndianFloats(const std::vector<uint8_t>& data)
-{
-    std::vector<float> result;
-    result.reserve(data.size() / 4);
-    for (size_t i = 0; i + 3 < data.size(); ++i) {
-        const float f = ReadBigEndianFloat(data.data() + i);
-        if (std::isnan(f) || std::isinf(f)) {
-            continue;
-        }
-        const float a = std::fabs(f);
-        if (a < 1e-4F || a > 1e6F) {
-            continue;
-        }
-        result.push_back(f);
-    }
-    return result;
-}
 
 std::vector<MettPacket> ReadMettPackets(const std::string& mp4Path, int64_t& timeBaseDen)
 {
@@ -106,8 +95,7 @@ std::vector<MettPacket> ReadMettPackets(const std::string& mp4Path, int64_t& tim
     return packets;
 }
 
-std::vector<FrameMeta> BuildFrameMeta(const std::vector<MettPacket>& packets, int64_t timeBaseDen, double coverExposure,
-                                      double coverIso)
+std::vector<FrameMeta> BuildFrameMeta(const std::vector<MettPacket>& packets, int64_t timeBaseDen)
 {
     std::vector<FrameMeta> metas;
     metas.reserve(packets.size());
@@ -117,29 +105,18 @@ std::vector<FrameMeta> BuildFrameMeta(const std::vector<MettPacket>& packets, in
         FrameMeta m;
         m.frameIndex = index;
         m.ptsSeconds = (timeBaseDen > 0) ? (static_cast<double>(p.pts) / static_cast<double>(timeBaseDen)) : 0.0;
-        m.rawFloats = ParseBigEndianFloats(p.data);
 
-        // Anchor: find the value in the sample floats closest to the cover truth (±2% relative tolerance).
-        const double expTol = (coverExposure > 0.0) ? coverExposure * 0.02 : 0.0;
-        const double isoTol = (coverIso > 0.0) ? coverIso * 0.02 : 0.0;
-        double bestExpDiff = std::numeric_limits<double>::max();
-        double bestIsoDiff = std::numeric_limits<double>::max();
-
-        for (const float f : m.rawFloats) {
-            const double d = static_cast<double>(f);
-            if (coverExposure > 0.0) {
-                const double diff = std::fabs(d - coverExposure);
-                if (diff <= expTol && diff < bestExpDiff) {
-                    bestExpDiff = diff;
-                    m.exposureTime = d;
-                }
-            }
-            if (coverIso > 0.0) {
-                const double diff = std::fabs(d - coverIso);
-                if (diff <= isoTol && diff < bestIsoDiff) {
-                    bestIsoDiff = diff;
-                    m.iso = d;
-                }
+        // The first sample is a "SAT" structure header (data[40..42] == "SAT");
+        // it carries stream metadata, not per-frame exposure fields.
+        if (p.data.size() > kExpCOffset + 3) {
+            const bool isSatHeader =
+                (p.data.size() > 42) && p.data[40] == 'S' && p.data[41] == 'A' && p.data[42] == 'T';
+            m.isHeader = isSatHeader;
+            if (!isSatHeader) {
+                m.iso = ReadBigEndianU16(p.data.data() + kIsoOffset);
+                m.shutterApexA = ReadBigEndianFloat(p.data.data() + kExpAOffset);
+                m.shutterApexB = ReadBigEndianFloat(p.data.data() + kExpBOffset);
+                m.shutterApexC = ReadBigEndianFloat(p.data.data() + kExpCOffset);
             }
         }
 
@@ -153,7 +130,6 @@ std::vector<FrameMeta> BuildFrameMeta(const std::vector<MettPacket>& packets, in
 void ExtractFrameMeta()
 {
     const std::string& mp4Path = LpInputMp4Path();
-    const std::string& jpgPath = LpInputJpgPath();
     const std::string& outDir = LpOutputDir();
     const std::string outTxt = outDir + "/frame_meta.txt";
 
@@ -163,8 +139,6 @@ void ExtractFrameMeta()
         return;
     }
 
-    const CameraUtils::ExposureInfo expInfo = CameraUtils::ReadExposureInfo(jpgPath);
-
     int64_t timeBaseDen = 90000;
     const std::vector<MettPacket> packets = ReadMettPackets(mp4Path, timeBaseDen);
     if (packets.empty()) {
@@ -172,7 +146,7 @@ void ExtractFrameMeta()
         return;
     }
 
-    const std::vector<FrameMeta> metas = BuildFrameMeta(packets, timeBaseDen, expInfo.timeSeconds, expInfo.iso);
+    const std::vector<FrameMeta> metas = BuildFrameMeta(packets, timeBaseDen);
 
     std::ofstream ofs(outTxt);
     if (!ofs.is_open()) {
@@ -180,20 +154,15 @@ void ExtractFrameMeta()
         return;
     }
 
-    ofs << "# frameIndex pts_seconds exposure_time(sec,speculative) iso(speculative)\n";
+    ofs << "# frameIndex pts_seconds iso(confirmed) expA(+60,speculative) expB(+64,speculative) "
+           "expC(+68,speculative)\n";
     for (const auto& m : metas) {
-        ofs << m.frameIndex << " " << m.ptsSeconds << " " << m.exposureTime << " " << m.iso;
-        if (!m.rawFloats.empty()) {
-            ofs << " raw=";
-            const size_t show = std::min<size_t>(m.rawFloats.size(), 8);
-            for (size_t i = 0; i < show; ++i) {
-                if (i != 0) {
-                    ofs << ",";
-                }
-                ofs << m.rawFloats[i];
-            }
+        if (m.isHeader) {
+            ofs << m.frameIndex << " " << m.ptsSeconds << " header\n";
+            continue;
         }
-        ofs << "\n";
+        ofs << m.frameIndex << " " << m.ptsSeconds << " " << m.iso << " " << m.shutterApexA << " " << m.shutterApexB
+            << " " << m.shutterApexC << "\n";
     }
 
     std::cout << "[ExtractFrameMeta] wrote " << metas.size() << " frames meta -> " << outTxt << std::endl;
