@@ -172,66 +172,89 @@ double Det3(double a00, double a01, double a02, double a10, double a11, double a
 }
 
 // 用 DoG 的三元二次 Taylor 展开把整数极值 (y, x, layer) 精化到亚像素精度。
+// 迭代求解（最多 kMaxInterpSteps 步，对齐 OpenCV SIFT_MAX_INTERP_STEPS=5）：
+// 每步在当前整数采样点重新解 Hessian，偏移超 0.5 则把采样点移动到相邻位置继续迭代。
 // 成功时输出精化坐标 (refinedY, refinedX)、尺度偏移 layerOffset 与精化后的对比度 refinedResponse；
-// 偏移任一维超过 0.5、Hessian 奇异或对比度过低时返回 false（该极值不稳定，剔除）。
+// 无法收敛、偏移越界、Hessian 奇异或对比度过低时返回 false（该极值不稳定，剔除）。
 bool RefineExtremum(const std::vector<std::vector<cv::Mat>>& dog, int octave, int layer, int y, int x,
                     double contrastThreshold, double& refinedY, double& refinedX, double& layerOffset,
                     double& refinedResponse)
 {
-    const cv::Mat& d0 = dog[octave][layer - 1];
-    const cv::Mat& d1 = dog[octave][layer];
-    const cv::Mat& d2 = dog[octave][layer + 1];
+    constexpr int kMaxInterpSteps = 5;
+    const int dogLayerCount = static_cast<int>(dog[octave].size());
 
-    const double v = d1.at<float>(y, x);
+    int cy = y;
+    int cx = x;
+    int cl = layer;
 
-    // 一阶导（中心差分）。
-    const double gx = (static_cast<double>(d1.at<float>(y, x + 1)) - d1.at<float>(y, x - 1)) / 2.0;
-    const double gy = (static_cast<double>(d1.at<float>(y + 1, x)) - d1.at<float>(y - 1, x)) / 2.0;
-    const double gs = (static_cast<double>(d2.at<float>(y, x)) - d0.at<float>(y, x)) / 2.0;
+    for (int step = 0; step < kMaxInterpSteps; ++step) {
+        const cv::Mat& d0 = dog[octave][cl - 1];
+        const cv::Mat& d1 = dog[octave][cl];
+        const cv::Mat& d2 = dog[octave][cl + 1];
 
-    // Hessian（3x3 对称）。
-    const double hxx = static_cast<double>(d1.at<float>(y, x + 1)) - 2.0 * v + d1.at<float>(y, x - 1);
-    const double hyy = static_cast<double>(d1.at<float>(y + 1, x)) - 2.0 * v + d1.at<float>(y - 1, x);
-    const double hss = static_cast<double>(d2.at<float>(y, x)) - 2.0 * v + d0.at<float>(y, x);
-    const double hxy = (static_cast<double>(d1.at<float>(y + 1, x + 1)) - d1.at<float>(y + 1, x - 1) -
-                        d1.at<float>(y - 1, x + 1) + d1.at<float>(y - 1, x - 1)) /
-                       4.0;
-    const double hxs = (static_cast<double>(d2.at<float>(y, x + 1)) - d2.at<float>(y, x - 1) - d0.at<float>(y, x + 1) +
-                        d0.at<float>(y, x - 1)) /
-                       4.0;
-    const double hys = (static_cast<double>(d2.at<float>(y + 1, x)) - d2.at<float>(y - 1, x) - d0.at<float>(y + 1, x) +
-                        d0.at<float>(y - 1, x)) /
-                       4.0;
+        const double v = d1.at<float>(cy, cx);
 
-    // 解 H * offset = -g（克拉默法则）。
-    const double detH = Det3(hxx, hxy, hxs, hxy, hyy, hys, hxs, hys, hss);
-    if (std::abs(detH) < 1e-12) {
-        return false;
+        // 一阶导（中心差分）。
+        const double gx = (static_cast<double>(d1.at<float>(cy, cx + 1)) - d1.at<float>(cy, cx - 1)) / 2.0;
+        const double gy = (static_cast<double>(d1.at<float>(cy + 1, cx)) - d1.at<float>(cy - 1, cx)) / 2.0;
+        const double gs = (static_cast<double>(d2.at<float>(cy, cx)) - d0.at<float>(cy, cx)) / 2.0;
+
+        // Hessian（3x3 对称）。
+        const double hxx = static_cast<double>(d1.at<float>(cy, cx + 1)) - 2.0 * v + d1.at<float>(cy, cx - 1);
+        const double hyy = static_cast<double>(d1.at<float>(cy + 1, cx)) - 2.0 * v + d1.at<float>(cy - 1, cx);
+        const double hss = static_cast<double>(d2.at<float>(cy, cx)) - 2.0 * v + d0.at<float>(cy, cx);
+        const double hxy = (static_cast<double>(d1.at<float>(cy + 1, cx + 1)) - d1.at<float>(cy + 1, cx - 1) -
+                            d1.at<float>(cy - 1, cx + 1) + d1.at<float>(cy - 1, cx - 1)) /
+                           4.0;
+        const double hxs = (static_cast<double>(d2.at<float>(cy, cx + 1)) - d2.at<float>(cy, cx - 1) -
+                            d0.at<float>(cy, cx + 1) + d0.at<float>(cy, cx - 1)) /
+                           4.0;
+        const double hys = (static_cast<double>(d2.at<float>(cy + 1, cx)) - d2.at<float>(cy - 1, cx) -
+                            d0.at<float>(cy + 1, cx) + d0.at<float>(cy - 1, cx)) /
+                           4.0;
+
+        // 解 H * offset = -g（克拉默法则）。
+        const double detH = Det3(hxx, hxy, hxs, hxy, hyy, hys, hxs, hys, hss);
+        if (std::abs(detH) < 1e-12) {
+            return false;
+        }
+        const double detX = Det3(-gx, hxy, hxs, -gy, hyy, hys, -gs, hys, hss);
+        const double detY = Det3(hxx, -gx, hxs, hxy, -gy, hys, hxs, -gs, hss);
+        const double detS = Det3(hxx, hxy, -gx, hxy, hyy, -gy, hxs, hys, -gs);
+
+        const double dx = detX / detH;
+        const double dy = detY / detH;
+        const double ds = detS / detH;
+
+        // 偏移过大：把采样点移动到相邻整数位置继续迭代（对齐 OpenCV adjustLocalExtrema）。
+        if (std::abs(dx) > 0.5 || std::abs(dy) > 0.5 || std::abs(ds) > 0.5) {
+            cx += (dx > 0.0) ? 1 : -1;
+            cy += (dy > 0.0) ? 1 : -1;
+            cl += (ds > 0.0) ? 1 : -1;
+            if (cl < 1 || cl >= dogLayerCount - 1 || cx < 1 || cx >= d1.cols - 1 || cy < 1 || cy >= d1.rows - 1) {
+                return false;
+            }
+            continue;
+        }
+
+        // 收敛：当前采样点 + 本步偏移即精化坐标；
+        // layerOffset 为「相对原始 layer 的累积偏移 + 本步 ds」。
+        refinedY = cy + dy;
+        refinedX = cx + dx;
+        layerOffset = static_cast<double>(cl - layer) + ds;
+
+        // 插值点处的对比度：|D(x̂)| = D + 0.5 * g · offset。
+        const double dHat = v + 0.5 * (gx * dx + gy * dy + gs * ds);
+        if (std::abs(dHat) < contrastThreshold) {
+            return false;
+        }
+
+        refinedResponse = std::abs(dHat);
+        return true;
     }
-    const double detX = Det3(-gx, hxy, hxs, -gy, hyy, hys, -gs, hys, hss);
-    const double detY = Det3(hxx, -gx, hxs, hxy, -gy, hys, hxs, -gs, hss);
-    const double detS = Det3(hxx, hxy, -gx, hxy, hyy, -gy, hxs, hys, -gs);
 
-    const double dx = detX / detH;
-    const double dy = detY / detH;
-    const double ds = detS / detH;
-
-    // 偏移过大说明极值应落在相邻采样点，简化处理直接剔除（不做迭代）。
-    if (std::abs(dx) > 0.5 || std::abs(dy) > 0.5 || std::abs(ds) > 0.5) {
-        return false;
-    }
-
-    // 插值点处的对比度：|D(x̂)| = D + 0.5 * g · offset。
-    const double dHat = v + 0.5 * (gx * dx + gy * dy + gs * ds);
-    if (std::abs(dHat) < contrastThreshold) {
-        return false;
-    }
-
-    refinedY = y + dy;
-    refinedX = x + dx;
-    layerOffset = ds;
-    refinedResponse = std::abs(dHat);
-    return true;
+    // 迭代超过最大步数仍未收敛。
+    return false;
 }
 
 // 用 CV_32F 灰度图按中心差分计算梯度幅值/方向。
@@ -564,13 +587,35 @@ void SiftDetector::DetectAndCompute(const cv::Mat& gray, std::vector<cv::KeyPoin
             const double scale2 = std::pow(2.0, c.octave);
             keypoints.emplace_back(cv::Point2f(static_cast<float>(c.x * scale2), static_cast<float>(c.y * scale2)),
                                    static_cast<float>(c.sigmaLocal * scale2), static_cast<float>(ori * 180.0 / kPi),
-                                   static_cast<float>(c.sigmaLocal * scale2));
+                                   static_cast<float>(c.response));
             descRows.push_back(std::move(desc));
         }
     }
 
     if (keypoints.empty()) {
         return;
+    }
+
+    // nfeatures：按响应降序保留前 N 个最强关键点（0 表示不限制）。
+    if (params_.nfeatures > 0 && static_cast<int>(keypoints.size()) > params_.nfeatures) {
+        std::vector<int> order(keypoints.size());
+        for (int i = 0; i < static_cast<int>(order.size()); ++i) {
+            order[i] = i;
+        }
+        std::sort(order.begin(), order.end(),
+                  [&](int a, int b) { return keypoints[a].response > keypoints[b].response; });
+        order.resize(params_.nfeatures);
+
+        std::vector<cv::KeyPoint> topKp;
+        std::vector<std::vector<float>> topDesc;
+        topKp.reserve(order.size());
+        topDesc.reserve(order.size());
+        for (int idx : order) {
+            topKp.push_back(keypoints[idx]);
+            topDesc.push_back(std::move(descRows[idx]));
+        }
+        keypoints = std::move(topKp);
+        descRows = std::move(topDesc);
     }
 
     descriptors = cv::Mat(static_cast<int>(descRows.size()), kDescriptorSize, CV_32F);
