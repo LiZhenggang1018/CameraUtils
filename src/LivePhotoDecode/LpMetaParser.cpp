@@ -16,14 +16,21 @@ namespace {
 constexpr uint32_t kMettCodecTag = 0x7474656d; // "mett"
 
 // Confirmed field offsets (big-endian, relative to the sample start).
-constexpr size_t kIsoOffset = 42;  // uint16
-constexpr size_t kExpAOffset = 60; // float
-constexpr size_t kExpBOffset = 64; // float
-constexpr size_t kExpCOffset = 68; // float
+constexpr size_t kTimestampNsOffset = 36; // uint32 (nanoseconds)
+constexpr size_t kIsoOffset = 42;         // uint16
+constexpr size_t kGainAOffset = 60;       // float (analog gain = ISO/50)
+constexpr size_t kGainBOffset = 64;       // float (total gain)
+constexpr size_t kGainCOffset = 68;       // float (redundant gain)
 
 uint16_t ReadBigEndianU16(const uint8_t* p)
 {
     return static_cast<uint16_t>((static_cast<uint16_t>(p[0]) << 8) | static_cast<uint16_t>(p[1]));
+}
+
+uint32_t ReadBigEndianU32(const uint8_t* p)
+{
+    return (static_cast<uint32_t>(p[0]) << 24) | (static_cast<uint32_t>(p[1]) << 16) |
+           (static_cast<uint32_t>(p[2]) << 8) | static_cast<uint32_t>(p[3]);
 }
 
 float ReadBigEndianFloat(const uint8_t* p)
@@ -108,15 +115,16 @@ std::vector<FrameMeta> BuildFrameMeta(const std::vector<MettPacket>& packets, in
 
         // The first sample is a "SAT" structure header (data[40..42] == "SAT");
         // it carries stream metadata, not per-frame exposure fields.
-        if (p.data.size() > kExpCOffset + 3) {
+        if (p.data.size() > kGainCOffset + 3) {
             const bool isSatHeader =
                 (p.data.size() > 42) && p.data[40] == 'S' && p.data[41] == 'A' && p.data[42] == 'T';
             m.isHeader = isSatHeader;
             if (!isSatHeader) {
+                m.timestampNs = static_cast<int64_t>(ReadBigEndianU32(p.data.data() + kTimestampNsOffset));
                 m.iso = ReadBigEndianU16(p.data.data() + kIsoOffset);
-                m.shutterApexA = ReadBigEndianFloat(p.data.data() + kExpAOffset);
-                m.shutterApexB = ReadBigEndianFloat(p.data.data() + kExpBOffset);
-                m.shutterApexC = ReadBigEndianFloat(p.data.data() + kExpCOffset);
+                m.gainAnalog = ReadBigEndianFloat(p.data.data() + kGainAOffset);
+                m.gainTotal = ReadBigEndianFloat(p.data.data() + kGainBOffset);
+                m.gainRedundant = ReadBigEndianFloat(p.data.data() + kGainCOffset);
             }
         }
 
@@ -154,15 +162,14 @@ void ExtractFrameMeta()
         return;
     }
 
-    ofs << "# frameIndex pts_seconds iso(confirmed) expA(+60,speculative) expB(+64,speculative) "
-           "expC(+68,speculative)\n";
+    ofs << "# frameIndex pts_seconds iso timestamp_ns gain_analog gain_total gain_redundant\n";
     for (const auto& m : metas) {
         if (m.isHeader) {
             ofs << m.frameIndex << " " << m.ptsSeconds << " header\n";
             continue;
         }
-        ofs << m.frameIndex << " " << m.ptsSeconds << " " << m.iso << " " << m.shutterApexA << " " << m.shutterApexB
-            << " " << m.shutterApexC << "\n";
+        ofs << m.frameIndex << " " << m.ptsSeconds << " " << m.iso << " " << m.timestampNs << " " << m.gainAnalog << " "
+            << m.gainTotal << " " << m.gainRedundant << "\n";
     }
 
     std::cout << "[ExtractFrameMeta] wrote " << metas.size() << " frames meta -> " << outTxt << std::endl;
