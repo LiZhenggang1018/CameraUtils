@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -11,6 +12,8 @@
 #include "Exiv2Common.h"
 #include "FFmpegDefine.h"
 #include "LivePhotoDecode/LpDecodeDefine.h"
+
+namespace fs = std::filesystem;
 
 namespace {
 
@@ -48,37 +51,37 @@ std::vector<float> ParseBigEndianFloats(const std::vector<uint8_t>& data)
     return result;
 }
 
-std::vector<MettPacket> ReadMettPackets(const std::string& mp4Path)
+std::vector<MettPacket> ReadMettPackets(const std::string& mp4Path, int64_t& timeBaseDen)
 {
     std::vector<MettPacket> packets;
+    timeBaseDen = 90000;
 
     AVFormatContext* rawFmtCtx = nullptr;
     if (avformat_open_input(&rawFmtCtx, mp4Path.c_str(), nullptr, nullptr) < 0) {
-        std::cerr << "[ReadMettPackets] 无法打开: " << mp4Path << std::endl;
+        std::cerr << "[ReadMettPackets] cannot open: " << mp4Path << std::endl;
         return packets;
     }
     AVFormatContextPtr fmtCtx(rawFmtCtx);
 
     if (avformat_find_stream_info(fmtCtx.get(), nullptr) < 0) {
-        std::cerr << "[ReadMettPackets] 无法读取流信息" << std::endl;
+        std::cerr << "[ReadMettPackets] cannot read stream info" << std::endl;
         return packets;
     }
 
     int mettIndex = -1;
-    int64_t timeBaseDen = 90000;
     for (unsigned i = 0; i < fmtCtx->nb_streams; ++i) {
         AVCodecParameters* par = fmtCtx->streams[i]->codecpar;
         if (par->codec_type == AVMEDIA_TYPE_DATA && par->codec_tag == kMettCodecTag) {
             mettIndex = static_cast<int>(i);
-            timeBaseDen = fmtCtx->streams[i]->time_base.den;
-            if (timeBaseDen <= 0) {
-                timeBaseDen = 90000;
+            const int64_t den = fmtCtx->streams[i]->time_base.den;
+            if (den > 0) {
+                timeBaseDen = den;
             }
             break;
         }
     }
     if (mettIndex < 0) {
-        std::cerr << "[ReadMettPackets] 未找到 mett 数据轨道 (codec_tag 0x7474656d)" << std::endl;
+        std::cerr << "[ReadMettPackets] no mett data track (codec_tag 0x7474656d)" << std::endl;
         return packets;
     }
 
@@ -98,7 +101,7 @@ std::vector<MettPacket> ReadMettPackets(const std::string& mp4Path)
         av_packet_unref(pkt.get());
     }
 
-    std::cout << "[ReadMettPackets] 读取 " << packets.size() << " 个 mett 样本 (time_base.den=" << timeBaseDen << ")"
+    std::cout << "[ReadMettPackets] read " << packets.size() << " mett samples (time_base.den=" << timeBaseDen << ")"
               << std::endl;
     return packets;
 }
@@ -116,7 +119,7 @@ std::vector<FrameMeta> BuildFrameMeta(const std::vector<MettPacket>& packets, in
         m.ptsSeconds = (timeBaseDen > 0) ? (static_cast<double>(p.pts) / static_cast<double>(timeBaseDen)) : 0.0;
         m.rawFloats = ParseBigEndianFloats(p.data);
 
-        // 锚定：在样本 float 里找与封面真值最接近的值（±2% 相对容差）。
+        // Anchor: find the value in the sample floats closest to the cover truth (±2% relative tolerance).
         const double expTol = (coverExposure > 0.0) ? coverExposure * 0.02 : 0.0;
         const double isoTol = (coverIso > 0.0) ? coverIso * 0.02 : 0.0;
         double bestExpDiff = std::numeric_limits<double>::max();
@@ -151,11 +154,18 @@ void ExtractFrameMeta()
 {
     const std::string& mp4Path = LpInputMp4Path();
     const std::string& jpgPath = LpInputJpgPath();
-    const std::string outTxt = LpOutputDir() + "/frame_meta.txt";
+    const std::string& outDir = LpOutputDir();
+    const std::string outTxt = outDir + "/frame_meta.txt";
+
+    std::error_code ec;
+    if (!fs::exists(outDir) && !fs::create_directories(outDir, ec)) {
+        std::cerr << "[ExtractFrameMeta] cannot create output dir: " << outDir << std::endl;
+        return;
+    }
 
     const CameraUtils::ExposureInfo expInfo = CameraUtils::ReadExposureInfo(jpgPath);
-    // ISO 与封面 EXIF 同源：ReadExposureInfo 对 vivo 的 PhotographicSensitivity 失效，
-    // 这里与 ExtractCoverExif 一样回退读 ISOSpeedRatings。
+    // ISO comes from the cover EXIF directly (ReadExposureInfo returns -1 for vivo's
+    // PhotographicSensitivity on this exiv2 build, so fall back to ISOSpeedRatings).
     double coverIso = -1.0;
     try {
         auto image = Exiv2::ImageFactory::open(jpgPath);
@@ -171,20 +181,21 @@ void ExtractFrameMeta()
             }
         }
     } catch (const Exiv2::Error& e) {
-        std::cerr << "[ExtractFrameMeta] 读取封面 ISO 失败: " << e.what() << std::endl;
+        std::cerr << "[ExtractFrameMeta] read cover ISO failed: " << e.what() << std::endl;
     }
 
-    const std::vector<MettPacket> packets = ReadMettPackets(mp4Path);
+    int64_t timeBaseDen = 90000;
+    const std::vector<MettPacket> packets = ReadMettPackets(mp4Path, timeBaseDen);
     if (packets.empty()) {
-        std::cerr << "[ExtractFrameMeta] 无 mett 样本，跳过" << std::endl;
+        std::cerr << "[ExtractFrameMeta] no mett samples, skip" << std::endl;
         return;
     }
 
-    const std::vector<FrameMeta> metas = BuildFrameMeta(packets, 90000, expInfo.timeSeconds, coverIso);
+    const std::vector<FrameMeta> metas = BuildFrameMeta(packets, timeBaseDen, expInfo.timeSeconds, coverIso);
 
     std::ofstream ofs(outTxt);
     if (!ofs.is_open()) {
-        std::cerr << "[ExtractFrameMeta] 无法写文件: " << outTxt << std::endl;
+        std::cerr << "[ExtractFrameMeta] cannot write file: " << outTxt << std::endl;
         return;
     }
 
@@ -204,5 +215,5 @@ void ExtractFrameMeta()
         ofs << "\n";
     }
 
-    std::cout << "[ExtractFrameMeta] 写出 " << metas.size() << " 帧 meta -> " << outTxt << std::endl;
+    std::cout << "[ExtractFrameMeta] wrote " << metas.size() << " frames meta -> " << outTxt << std::endl;
 }
