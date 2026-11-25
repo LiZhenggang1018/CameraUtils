@@ -11,19 +11,30 @@
 
 ## 构建
 
-Ninja + MSVC 需要在能识别 `cl.exe` 的环境中运行，先加载 `vcvars64.bat`：
+**日常增量构建统一走 `scripts\build-debug.bat`**（它内部先 `chcp 65001` 再 `vcvars64` 再 `cmake --build`）：
+
+```bat
+scripts\build-debug.bat                          :: 构建默认目标
+scripts\build-debug.bat camera_utils_tests       :: 构建指定目标
+```
+
+**为什么必须 `chcp 65001`（重要）**：Ninja 在中文 Windows 下的头文件依赖追踪 bug。
+`cl /showIncludes` 输出本地化的「注意: 包含文件:」按控制台代码页编码，而 `rules.ninja` 的
+`msvc_deps_prefix` 存的是 UTF-8。控制台代码页为 GBK(936) 时字节不匹配，ninja 解析出
+`#deps 0`，导致**改了任何 `.h` 都不会触发重编译**（ninja 报 `no work to do`）。
+`chcp 65001` 后 cl 输出 UTF-8，依赖追踪恢复（`ninja -C out\build\x64-debug -t deps` 里
+TestMain.cpp.obj 显示 `#deps 651` 而非 0）。实测：GBK 下 touch 头文件报 `no work to do`，
+chcp 65001 后正确重编 TestMain.cpp.obj + 重新链接。
+
+> 若不走脚本手动构建，务必先 `chcp 65001`。Ninja 1.12.1 有此 bug（ninja#1726），
+> 1.13+ 才修复；当前 VS 自带的是 1.12.1，故用 chcp 规避。
+
+完整配置（首次或改了 CMakeLists/CMakePresets 时）：
 
 ```bat
 call "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 cmake --preset x64-debug
-cmake --build --preset x64-debug
-```
-
-已配置过之后，日常增量构建可直接：
-
-```bat
-call "...\vcvars64.bat"
-ninja -C out\build\x64-debug
+scripts\build-debug.bat
 ```
 
 注意：PowerShell 中直接写含空格的路径必须用调用运算符并正确加引号，复杂命令建议写成 `.bat` 脚本再执行。
