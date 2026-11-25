@@ -139,6 +139,13 @@ ctest --test-dir out/build/x64-debug -L unit --output-on-failure
 ctest --test-dir out/build/x64-debug -L media --output-on-failure
 ```
 
+也可用 testPresets（`CMakePresets.json` 已定义 `x64-debug-unit` / `x64-debug-media`）：
+
+```bat
+ctest --preset x64-debug-unit
+ctest --preset x64-debug-media
+```
+
 单元测试聚合在 `camera_utils_tests` 中：
 
 ```bat
@@ -215,7 +222,21 @@ CI 的 `ci-windows.yml` 只跑 `ctest -L unit`。因此 **unit 组只应放真�
 - 提交信息使用中文，沿用仓库既有的 Conventional Commits 前缀风格：
   `feat(scope):` / `fix(scope):` / `refactor(scope):` / `build:` / `ci:` / `docs:`。
 - 提交信息中不要包含密钥、令牌或内网地址等敏感内容。
-- 不要在未明确要求时改动 `.git/config`、hooks 或使用 `--force`。
+- 不要在未明确要求时改动 `.git/config` 或使用 `--force`。
+
+### pre-commit hook（自动格式 + 编码检查）
+
+入库存的 `githooks/pre-commit` 在每次提交前自动检查：staged 的 C++ 文件是否
+`clang-format --dry-run --Werror` 合规、以及全仓无乱码（`check-encoding.ps1`）。
+
+启用方式（本地执行一次，配置不入库）：
+
+```bat
+git config core.hooksPath githooks
+```
+
+> hook 仅拦截格式/编码违规并提示修复命令，不自动改代码；`git commit --no-verify` 可跳过
+> （仅在确有必要时使用）。
 
 ### 推送
 
