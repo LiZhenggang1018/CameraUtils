@@ -243,8 +243,10 @@ void ComputeGradientOrientation(const cv::Mat& grayF, int y, int x, double& magn
     const int ym = std::max(y - 1, 0);
     const int xp = std::min(x + 1, cols - 1);
     const int xm = std::max(x - 1, 0);
+    // 注意 dy 取「上减下」（对齐 OpenCV：dy = img[y-1] - img[y+1]），
+    // 保证描述子的方向 bin 与 cv::SIFT 一致。
     const double dx = static_cast<double>(grayF.at<float>(y, xp)) - grayF.at<float>(y, xm);
-    const double dy = static_cast<double>(grayF.at<float>(yp, x)) - grayF.at<float>(ym, x);
+    const double dy = static_cast<double>(grayF.at<float>(ym, x)) - grayF.at<float>(yp, x);
     magnitude = std::sqrt(dx * dx + dy * dy);
     orientation = std::atan2(dy, dx);
 }
@@ -326,28 +328,35 @@ void ComputeDescriptor(const cv::Mat& grayF, double x, double y, double sigma, d
 {
     descriptor.assign(kDescriptorSize, 0.0f);
 
-    // 描述子窗口：4x4 子块，每子块宽 4*sigma，覆盖半径约 8*sigma。
-    const double windowRadius = 8.0 * sigma;
-    const double cosT = std::cos(orientation);
-    const double sinT = std::sin(orientation);
+    // 对齐 OpenCV calcSIFTDescriptor 的参数：
+    //   hist_width = 3 * sigma（描述子尺度因子 SIFT_DESCR_SCL_FCTR = 3）
+    //   窗口半径 = round(hist_width * 1.414 * (d+1) * 0.5)
+    //   高斯窗 exp_scale = -1/(d*d*0.5)，即固定高斯 sigma = d/2 = 2（不随尺度变化）
+    constexpr int d = kDescriptorHistWidth;
+    constexpr int n = kDescriptorHistBins;
+    const double histWidth = 3.0 * sigma;
+    const int radius = static_cast<int>(std::round(histWidth * 1.4142135623730951 * (d + 1) * 0.5));
+
+    // 旋转矩阵（预除以 histWidth，与 cv 一致）。
+    const double cosT = std::cos(orientation) / histWidth;
+    const double sinT = std::sin(orientation) / histWidth;
 
     const int kx = static_cast<int>(std::round(x));
     const int ky = static_cast<int>(std::round(y));
 
-    // 采样步长 = sigma，采样范围为 windowRadius。
-    const int samples = static_cast<int>(std::ceil(windowRadius / sigma));
-    for (int sy = -samples; sy <= samples; ++sy) {
-        for (int sx = -samples; sx <= samples; ++sx) {
-            const double ox = sx * sigma;
-            const double oy = sy * sigma;
+    for (int dy = -radius; dy <= radius; ++dy) {
+        for (int dx = -radius; dx <= radius; ++dx) {
+            // 采样点相对主方向旋转后的子块坐标（含 -0.5 偏移，与 cv 一致）。
+            const double cRot = dx * cosT - dy * sinT;
+            const double rRot = dx * sinT + dy * cosT;
+            const double cbin = cRot + d / 2.0 - 0.5;
+            const double rbin = rRot + d / 2.0 - 0.5;
+            if (rbin <= -1.0 || rbin >= d || cbin <= -1.0 || cbin >= d) {
+                continue;
+            }
 
-            // 旋转到主方向坐标系（R(-θ)：把采样点偏移转到主方向对齐的坐标系）。
-            const double rx = cosT * ox + sinT * oy;
-            const double ry = -sinT * ox + cosT * oy;
-
-            // 采样像素位置用未旋转的图像坐标偏移（ox/oy 即图像坐标系的偏移）。
-            const int px = kx + static_cast<int>(std::round(ox));
-            const int py = ky + static_cast<int>(std::round(oy));
+            const int px = kx + dx;
+            const int py = ky + dy;
             if (px <= 0 || px >= grayF.cols - 1 || py <= 0 || py >= grayF.rows - 1) {
                 continue;
             }
@@ -355,50 +364,46 @@ void ComputeDescriptor(const cv::Mat& grayF, double x, double y, double sigma, d
             double mag = 0.0;
             double ori = 0.0;
             ComputeGradientOrientation(grayF, py, px, mag, ori);
-            // 相对主方向。
+            // 相对主方向（弧度）。
             const double relOri = NormalizeAngle(ori - orientation);
 
-            // 高斯加权（按旋转后的半径，sigma = windowRadius/2）。
-            const double gaussSigma = windowRadius / 2.0;
-            const double w = std::exp(-(rx * rx + ry * ry) / (2.0 * gaussSigma * gaussSigma)) * mag;
+            // 高斯加权（固定 sigma = d/2）。
+            const double expScale = -1.0 / (d * d * 0.5);
+            const double w = std::exp((cRot * cRot + rRot * rRot) * expScale) * mag;
             if (w <= 0.0) {
                 continue;
             }
 
-            // ---- 三线性插值：把梯度分配到相邻 2x2x2 个 bin，避免 bin 边界突变。 ----
+            // ---- 三线性插值：分配到相邻 2x2x2 个 bin。 ----
+            const int ix = static_cast<int>(std::floor(cbin));
+            const int iy = static_cast<int>(std::floor(rbin));
+            const double fx = cbin - ix;
+            const double fy = rbin - iy;
 
-            // 空间子块连续坐标（4x4 子块，每块宽 4*sigma，中心偏移 +2）。
-            const double bx = rx / (4.0 * sigma) + 2.0;
-            const double by = ry / (4.0 * sigma) + 2.0;
-            if (bx < -0.5 || bx >= 3.5 || by < -0.5 || by >= 3.5) {
-                continue;
+            // 方向 bin（相对主方向的弧度 -> 8 bin）。
+            const double bo = relOri / (2.0 * kPi) * n;
+            int io = static_cast<int>(std::floor(bo)) % n;
+            if (io < 0) {
+                io += n;
             }
-            const int ix = static_cast<int>(std::floor(bx));
-            const int iy = static_cast<int>(std::floor(by));
-            const double fx = bx - ix;
-            const double fy = by - iy;
-
-            // 方向连续坐标（8 bin，循环）。
-            const double bo = relOri / (2.0 * kPi) * kDescriptorHistBins;
-            const int io = static_cast<int>(std::floor(bo)) % kDescriptorHistBins;
             const double fo = bo - std::floor(bo);
 
-            for (int dy = 0; dy <= 1; ++dy) {
-                const int yy = iy + dy;
-                if (yy < 0 || yy >= kDescriptorHistWidth) {
+            for (int dy2 = 0; dy2 <= 1; ++dy2) {
+                const int yy = iy + dy2;
+                if (yy < 0 || yy >= d) {
                     continue;
                 }
-                const double wy = (dy == 0) ? (1.0 - fy) : fy;
-                for (int dx = 0; dx <= 1; ++dx) {
-                    const int xx = ix + dx;
-                    if (xx < 0 || xx >= kDescriptorHistWidth) {
+                const double wy = (dy2 == 0) ? (1.0 - fy) : fy;
+                for (int dx2 = 0; dx2 <= 1; ++dx2) {
+                    const int xx = ix + dx2;
+                    if (xx < 0 || xx >= d) {
                         continue;
                     }
-                    const double wx = (dx == 0) ? (1.0 - fx) : fx;
+                    const double wx = (dx2 == 0) ? (1.0 - fx) : fx;
                     for (int do_ = 0; do_ <= 1; ++do_) {
-                        const int oo = (io + do_) % kDescriptorHistBins;
+                        const int oo = (io + do_) % n;
                         const double wo = (do_ == 0) ? (1.0 - fo) : fo;
-                        const int base = (yy * kDescriptorHistWidth + xx) * kDescriptorHistBins;
+                        const int base = (yy * d + xx) * n;
                         descriptor[base + oo] += static_cast<float>(w * wx * wy * wo);
                     }
                 }
@@ -406,31 +411,20 @@ void ComputeDescriptor(const cv::Mat& grayF, double x, double y, double sigma, d
         }
     }
 
-    // L2 归一化 -> 截断 0.2 -> 再 L2 归一化（光照不变 + 抗非线性光照）。
+    // 归一化：L2 截断到 0.2 后缩放到 512（对齐 cv SIFT_DESCR_MAG_THR / SIFT_INT_DESCR_FCTR）。
     double norm = 0.0;
     for (float v : descriptor) {
         norm += static_cast<double>(v) * v;
     }
-    norm = std::sqrt(norm);
-    if (norm < 1e-12) {
-        return;
-    }
-    for (float& v : descriptor) {
-        v = static_cast<float>(v / norm);
-        if (v > kDescriptorClip) {
-            v = kDescriptorClip;
-        }
-    }
+    const double thr = std::sqrt(norm) * kDescriptorClip;
     norm = 0.0;
-    for (float v : descriptor) {
+    for (float& v : descriptor) {
+        v = std::min(v, static_cast<float>(thr));
         norm += static_cast<double>(v) * v;
     }
-    norm = std::sqrt(norm);
-    if (norm < 1e-12) {
-        return;
-    }
+    const double scale = 512.0 / std::max(std::sqrt(norm), 1e-12);
     for (float& v : descriptor) {
-        v = static_cast<float>(v / norm);
+        v = static_cast<float>(std::min(255.0, std::max(0.0, v * scale)));
     }
 }
 
