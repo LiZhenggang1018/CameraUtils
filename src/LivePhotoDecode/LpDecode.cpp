@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "Exiv2Common.h"
+#include "LivePhotoSmoothPlay/DecAndEnc.h"
 #include "LivePhotoSmoothPlay/YUVImageReader.h"
 #include "OpenCVCommon.h"
 
@@ -111,4 +112,24 @@ void ExtractCoverExif()
 
     std::cout << "[ExtractCoverExif] exposure=" << expInfo.timeSeconds << "s, iso=" << iso
               << ", datetime=" << dateTimeOriginal << std::endl;
+}
+
+void ExtractLiveStream()
+{
+    const std::string& mp4Path = LpInputMp4Path();
+    const std::string outDir = LpOutputDir() + "/video";
+
+    std::error_code ec;
+    if (!fs::exists(outDir) && !fs::create_directories(outDir, ec)) {
+        std::cerr << "[ExtractLiveStream] 无法创建输出目录: " << outDir << std::endl;
+        return;
+    }
+
+    const int rc = DecodeMp4ToYuvFrames(mp4Path.c_str(), outDir);
+    if (rc != 0) {
+        std::cerr << "[ExtractLiveStream] 解码失败，返回码 " << rc << std::endl;
+        return;
+    }
+
+    std::cout << "[ExtractLiveStream] 解码完成 -> " << outDir << std::endl;
 }
