@@ -6,6 +6,7 @@
 
 #include "LivePhotoDecode/LpDecode.h"
 #include "LivePhotoDecode/LpDecodeDefine.h"
+#include "LivePhotoDecode/LpMetaParser.h"
 
 inline void RunLivePhotoDecodeTest()
 {
@@ -25,6 +26,7 @@ inline void RunLivePhotoDecodeTest()
     ExtractCoverFrame();
     ExtractCoverExif();
     ExtractLiveStream();
+    ExtractFrameMeta();
 }
 
 #endif // TESTS_LIVEPHOTODECODE_LIVEPHOTODECODETEST_H
