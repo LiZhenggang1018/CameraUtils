@@ -21,10 +21,11 @@ class SiftDetector {
 public:
     // SIFT 可调参数（对齐 Lowe 论文默认值）。
     struct Params {
-        int nOctaveLayers = 3;           // 每个 octave 的间隔数（interval），影响尺度采样密度
-        double contrastThreshold = 0.04; // 低对比度关键点剔除阈值（DoG 响应绝对值）
-        double edgeThreshold = 10.0;     // 边缘响应剔除的曲率比阈值 r
-        double sigma = 1.6;              // 初始尺度（尺度空间基础高斯 sigma）
+        int nOctaveLayers = 3;          // 每个 octave 的间隔数（interval），影响尺度采样密度
+        double contrastThreshold = 1.0; // 低对比度关键点剔除阈值（DoG 响应绝对值；本实现未归一化，故高于 Lowe 的 0.04）
+        double edgeThreshold = 10.0;    // 边缘响应剔除的曲率比阈值 r
+        double sigma = 1.6;             // 初始尺度（尺度空间基础高斯 sigma）
+        int nmsWindowSize = 5;          // 空间非极大值抑制窗口边长（奇数），值越大保留越少
     };
 
     SiftDetector()
