@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <iostream>
 
+#include "LivePhotoDecode/LpDecode.h"
 #include "LivePhotoDecode/LpDecodeDefine.h"
 
 inline void RunLivePhotoDecodeTest()
@@ -20,6 +21,9 @@ inline void RunLivePhotoDecodeTest()
         std::cerr << "[LivePhotoDecode] 视频 MP4 不存在: " << LpInputMp4Path() << std::endl;
         return;
     }
+
+    ExtractCoverFrame();
+    ExtractCoverExif();
 }
 
 #endif // TESTS_LIVEPHOTODECODE_LIVEPHOTODECODETEST_H
