@@ -26,6 +26,7 @@ public:
         double edgeThreshold = 10.0;    // 边缘响应剔除的曲率比阈值 r
         double sigma = 1.6;             // 初始尺度（尺度空间基础高斯 sigma）
         int nmsWindowSize = 5;          // 空间非极大值抑制窗口边长（奇数），值越大保留越少
+        int nfeatures = 0;              // 保留的最强关键点数上限（按响应排序取前 N；0 表示不限制）
     };
 
     SiftDetector()
