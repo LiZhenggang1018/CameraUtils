@@ -148,6 +148,7 @@ camera_utils_tests.exe magic-enum
 | 跑单个测试 | `out\build\x64-debug\tests\camera_utils_tests.exe magic-enum` |
 | 运行 GUI demo | `out\build\x64-debug\src\CameraUtils.exe sift-handwritten-demo` |
 | 数值报告 demo | `out\build\x64-debug\src\CameraUtils.exe sift-handwritten-report` |
+| 解析 LivePhoto | `out\build\x64-debug\tests\camera_utils_tests.exe livephoto-decode` |
 | clang-format 格式化 | `D:\Program Files\visual_studio\VC\Tools\Llvm\x64\bin\clang-format.exe -i --style=file <文件>` |
 | 乱码检测 | `powershell -ExecutionPolicy Bypass -File scripts/check-encoding.ps1` |
 | 静态扫描 | `powershell -ExecutionPolicy Bypass -File scripts/scan-bugs.ps1 -Step all` |
