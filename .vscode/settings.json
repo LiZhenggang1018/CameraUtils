@@ -4,5 +4,10 @@
         "--background-index",
         "--clang-tidy",
         "--header-insertion=never"
-    ]
+    ],
+    "clangd.path": "D:/Program Files/visual_studio/VC/Tools/Llvm/x64/bin/clangd.exe",
+    "C_Cpp.clang_format_path": "D:/Program Files/visual_studio/VC/Tools/Llvm/x64/bin/clang-format.exe",
+    "C_Cpp.clang_format_style": "file",
+    "C_Cpp.formatting": "clangFormat",
+    "editor.formatOnSave": true
 }
