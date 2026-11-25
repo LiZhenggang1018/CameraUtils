@@ -24,6 +24,7 @@ inline void RunLivePhotoDecodeTest()
 
     ExtractCoverFrame();
     ExtractCoverExif();
+    ExtractLiveStream();
 }
 
 #endif // TESTS_LIVEPHOTODECODE_LIVEPHOTODECODETEST_H
