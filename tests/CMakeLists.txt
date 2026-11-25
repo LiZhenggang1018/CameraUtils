@@ -101,6 +101,7 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/data")
         hdr-merge-ghost
         livephoto
         livephoto-reg
+        livephoto-decode
         exif
     )
     foreach(_t IN LISTS _media_tests)
