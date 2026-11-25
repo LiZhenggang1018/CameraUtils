@@ -74,6 +74,7 @@ set(_unit_tests
     rectification
     stereo-matching
     bokeh
+    livephoto-meta-unit
 )
 
 # The vas-concurrency case only exists when the option is enabled
