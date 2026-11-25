@@ -180,5 +180,33 @@
             "displayName": "macOS Debug Build",
             "configurePreset": "macos-debug"
         }
+    ],
+    "testPresets": [
+        {
+            "name": "x64-debug-unit",
+            "displayName": "x64 Debug Unit Tests",
+            "configurePreset": "x64-debug",
+            "output": {
+                "outputOnFailure": true
+            },
+            "filter": {
+                "include": {
+                    "label": "unit"
+                }
+            }
+        },
+        {
+            "name": "x64-debug-media",
+            "displayName": "x64 Debug Media Tests",
+            "configurePreset": "x64-debug",
+            "output": {
+                "outputOnFailure": true
+            },
+            "filter": {
+                "include": {
+                    "label": "media"
+                }
+            }
+        }
     ]
 }
