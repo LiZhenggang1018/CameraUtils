@@ -6,8 +6,9 @@
 #include "CommonEnv.h"
 
 // ============================================================
-// 路径常量：函数内 static，避免跨文件静态初始化顺序问题。
-// 输入素材为 vivo X200S 拍摄的 LivePhoto：封面 JPEG + 配套 MP4。
+// Path constants: function-local static to avoid cross-file static
+// initialization order problems. Input is a vivo X200S LivePhoto:
+// cover JPEG + companion MP4.
 // ============================================================
 inline const std::string& LivePhotoDecodeDataPath()
 {
