@@ -51,6 +51,7 @@
 #include "ImageProcessing/PyramidTest.h"
 #include "ImageProcessing/SobelTest.h"
 #include "LivePhotoDecode/LivePhotoDecodeTest.h"
+#include "LivePhotoDecode/LpMetaParserTest.h"
 #include "LivePhotoSmoothPlay/LivePhotoSmoothPlayTest.h"
 #include "MagicEnumTest.h"
 #include "OpenCVTest.h"
@@ -535,6 +536,14 @@ inline const std::vector<Command>& AllCommands()
          .description = "解析 vivo LivePhoto（封面+视频帧+EXIF+随帧meta）",
          .label = Label::MEDIA,
          .run = [] { return RunLivePhotoDecodeTest(); }},
+        {.name = "livephoto-meta-unit",
+         .description = "LivePhoto mett 解析纯函数断言（big-endian float / 字段锚定）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 LpMetaParserUnitTest();
+                 return 0;
+             }},
         {.name = "livephoto-reg",
          .description = "LivePhoto 图像配准",
          .label = Label::MEDIA,
