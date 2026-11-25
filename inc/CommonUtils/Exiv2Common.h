@@ -4,6 +4,7 @@
 #include <exiv2/exiv2.hpp>
 #include <string>
 #include <unordered_map>
+#include <vector>
 #include "CommonEnv.h"
 
 // ============================================================
@@ -28,10 +29,36 @@ struct ExposureInfo {
 };
 
 // ============================================================
+// 从 EXIF 读取 ISO。
+//   - 依次尝试 PhotographicSensitivity / ISOSpeedRatings /
+//     RecommendedExposureIndex；逐个 key 独立 try，避免任一 key
+//     在该 exiv2 版本下抛异常导致后续回退被跳过。
+//   - 全部失败 → -1
+// ============================================================
+inline double ReadIso(const Exiv2::ExifData& exif)
+{
+    static const char* const kIsoKeys[] = {
+        "Exif.Photo.PhotographicSensitivity",
+        "Exif.Photo.ISOSpeedRatings",
+        "Exif.Photo.RecommendedExposureIndex",
+    };
+    for (const char* key : kIsoKeys) {
+        try {
+            auto it = exif.findKey(Exiv2::ExifKey(key));
+            if (it != exif.end()) {
+                return static_cast<double>(it->toFloat());
+            }
+        } catch (const Exiv2::Error&) {
+            // 该 key 在此 exiv2 版本不可用，继续尝试下一个
+        }
+    }
+    return -1.0;
+}
+
+// ============================================================
 // 从 EXIF 读取曝光时间与 ISO
 //   - ExposureTime: Exif.Photo.ExposureTime (Rational，如 1/500 → 0.002)
-//   - ISO:          Exif.Photo.PhotographicSensitivity (tag 34855)
-//                   回退 Exif.Photo.ISOSpeedRatings
+//   - ISO:          ReadIso()（多 key 回退）
 //   - 任一读取失败 → 保持 -1，valid() == false
 // ============================================================
 inline ExposureInfo ReadExposureInfo(const std::string& filePath)
@@ -53,13 +80,7 @@ inline ExposureInfo ReadExposureInfo(const std::string& filePath)
             info.timeSeconds = static_cast<double>(itTime->toFloat());
         }
 
-        auto itIso = exif.findKey(Exiv2::ExifKey("Exif.Photo.PhotographicSensitivity"));
-        if (itIso == exif.end()) {
-            itIso = exif.findKey(Exiv2::ExifKey("Exif.Photo.ISOSpeedRatings"));
-        }
-        if (itIso != exif.end()) {
-            info.iso = static_cast<double>(itIso->toFloat());
-        }
+        info.iso = ReadIso(exif);
     } catch (const Exiv2::Error& e) {
         // 保持无效状态，由调用方决定回退策略
         (void)e;
