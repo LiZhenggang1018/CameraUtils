@@ -4,6 +4,9 @@
 file(GLOB LIVE_PHOTO_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/LivePhotoSmoothPlay/*.cpp"
 )
+file(GLOB LIVE_PHOTO_DECODE_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/LivePhotoDecode/*.cpp"
+)
 file(GLOB OPTICAL_FLOW_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/OpticalFlow/*.cpp"
 )
@@ -25,6 +28,7 @@ file(GLOB DEPTH_SOURCES CONFIGURE_DEPENDS
 
 add_library(camera_utils_core STATIC
     ${LIVE_PHOTO_SOURCES}
+    ${LIVE_PHOTO_DECODE_SOURCES}
     ${OPTICAL_FLOW_SOURCES}
     ${IMAGE_PROCESSING_SOURCES}
     ${FEATURE_MATCHING_SOURCES}
@@ -38,6 +42,7 @@ target_include_directories(camera_utils_core PUBLIC
     ${CMAKE_SOURCE_DIR}/inc
     ${CMAKE_SOURCE_DIR}/inc/CommonUtils
     ${CMAKE_SOURCE_DIR}/inc/LivePhotoSmoothPlay
+    ${CMAKE_SOURCE_DIR}/inc/LivePhotoDecode
     ${CMAKE_SOURCE_DIR}/inc/OpticalFlow
     ${CMAKE_SOURCE_DIR}/inc/ComputationalPhotography
     ${CMAKE_SOURCE_DIR}/inc/ImageProcessing
