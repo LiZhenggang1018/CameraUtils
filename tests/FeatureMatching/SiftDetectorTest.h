@@ -111,8 +111,7 @@ inline void SiftDetectorTest()
         std::cout << "  cv::SIFT cross-check OK (mine=" << mine.size() << ", cv=" << refKp.size() << ")" << std::endl;
     }
 
-    // 3) 旋转不变性：同一图旋转 30°后仍能匹配到少量关键点。
-    //    当前手写版未做描述子三线性插值，旋转鲁棒性弱于 cv::SIFT，故只断言「存在匹配」。
+    // 3) 旋转不变性：同一图旋转 30°后仍能稳健匹配（描述子参数已对齐 cv::SIFT）。
     {
         const cv::Mat img = MakeSiftTexture(256);
         cv::Mat rotated;
@@ -127,7 +126,7 @@ inline void SiftDetectorTest()
         detector.DetectAndCompute(rotated, kp2, desc2);
 
         const int good = CountGoodMatches(desc1, desc2, 0.8f);
-        CU_CHECK(good > 0);
+        CU_CHECK(good > 10);
         std::cout << "  rotation invariance OK (kp1=" << kp1.size() << ", kp2=" << kp2.size() << ", good=" << good
                   << ")" << std::endl;
     }
@@ -146,7 +145,7 @@ inline void SiftDetectorTest()
         detector.DetectAndCompute(scaled, kp2, desc2);
 
         const int good = CountGoodMatches(desc1, desc2, 0.8f);
-        CU_CHECK(good > 5);
+        CU_CHECK(good > 10);
         std::cout << "  scale invariance OK (good matches=" << good << ")" << std::endl;
     }
 
