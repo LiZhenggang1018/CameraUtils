@@ -50,6 +50,7 @@
 #include "ImageProcessing/PyramidDemo.h"
 #include "ImageProcessing/PyramidTest.h"
 #include "ImageProcessing/SobelTest.h"
+#include "LivePhotoDecode/LivePhotoDecodeTest.h"
 #include "LivePhotoSmoothPlay/LivePhotoSmoothPlayTest.h"
 #include "MagicEnumTest.h"
 #include "OpenCVTest.h"
@@ -528,6 +529,14 @@ inline const std::vector<Command>& AllCommands()
          .run =
              [] {
                  RunLivePhotoSmoothPlayTest();
+                 return 0;
+             }},
+        {.name = "livephoto-decode",
+         .description = "解析 vivo LivePhoto（封面+视频帧+EXIF+随帧meta）",
+         .label = Label::MEDIA,
+         .run =
+             [] {
+                 RunLivePhotoDecodeTest();
                  return 0;
              }},
         {.name = "livephoto-reg",
