@@ -25,7 +25,7 @@ ctest --preset x64-debug-media
 | `output/cover.yuv` | 大小 = 3072×4096×3/2 |
 | `output/cover_exif.txt` | 曝光时间 0.002、ISO 1912、DateTimeOriginal 2026:11:25 11:28:49 |
 | `output/video/` | 77 个 `.yuv` + 77 个 `.jpg`（= `ffprobe nb_frames`） |
-| `output/frame_meta.txt` | 77 帧，每帧含 pts_seconds 与 raw float 列 |
+| `output/frame_meta.txt` | 77 帧，每帧含 `pts_seconds` / `iso` / `timestamp_ns` / `gain_*` 列 |
 
 ## 归类
 
