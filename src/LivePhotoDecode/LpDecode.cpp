@@ -17,13 +17,13 @@ void ExtractCoverFrame()
 
     std::error_code ec;
     if (!fs::exists(outDir) && !fs::create_directories(outDir, ec)) {
-        std::cerr << "[ExtractCoverFrame] 无法创建输出目录: " << outDir << std::endl;
+        std::cerr << "[ExtractCoverFrame] cannot create output dir: " << outDir << std::endl;
         return;
     }
 
     cv::Mat img = cv::imread(jpgPath, cv::IMREAD_COLOR);
     if (img.empty()) {
-        std::cerr << "[ExtractCoverFrame] 无法读取封面: " << jpgPath << std::endl;
+        std::cerr << "[ExtractCoverFrame] cannot read cover: " << jpgPath << std::endl;
         return;
     }
 
@@ -31,7 +31,7 @@ void ExtractCoverFrame()
     const std::string outYuv = outDir + "/cover.yuv";
 
     if (!cv::imwrite(outJpg, img)) {
-        std::cerr << "[ExtractCoverFrame] 写 JPG 失败: " << outJpg << std::endl;
+        std::cerr << "[ExtractCoverFrame] write JPG failed: " << outJpg << std::endl;
         return;
     }
 
@@ -39,7 +39,7 @@ void ExtractCoverFrame()
         YUVImageReader reader(img.cols, img.rows);
         reader.SaveAsYuv420P(img, outYuv);
     } catch (const std::exception& e) {
-        std::cerr << "[ExtractCoverFrame] 写 YUV 失败: " << e.what() << std::endl;
+        std::cerr << "[ExtractCoverFrame] write YUV failed: " << e.what() << std::endl;
         return;
     }
 
@@ -54,14 +54,15 @@ void ExtractCoverExif()
 
     std::error_code ec;
     if (!fs::exists(outDir) && !fs::create_directories(outDir, ec)) {
-        std::cerr << "[ExtractCoverExif] 无法创建输出目录: " << outDir << std::endl;
+        std::cerr << "[ExtractCoverExif] cannot create output dir: " << outDir << std::endl;
         return;
     }
 
     const CameraUtils::ExposureInfo expInfo = CameraUtils::ReadExposureInfo(jpgPath);
 
-    // ISO 直接读：vivo 把 ISO 放在 ISOSpeedRatings（ReadExposureInfo 因
-    // PhotographicSensitivity 在该 exiv2 版本中抛异常而被 catch 吞掉，返回 -1）。
+    // Read ISO directly: vivo stores ISO in ISOSpeedRatings (ReadExposureInfo
+    // returns -1 because PhotographicSensitivity throws on this exiv2 build and
+    // the exception is swallowed by its catch).
     double iso = -1.0;
     std::string dateTimeOriginal;
     try {
@@ -84,12 +85,12 @@ void ExtractCoverExif()
             }
         }
     } catch (const Exiv2::Error& e) {
-        std::cerr << "[ExtractCoverExif] 读取 EXIF 失败: " << e.what() << std::endl;
+        std::cerr << "[ExtractCoverExif] read EXIF failed: " << e.what() << std::endl;
     }
 
     std::ofstream ofs(outTxt);
     if (!ofs.is_open()) {
-        std::cerr << "[ExtractCoverExif] 无法写文件: " << outTxt << std::endl;
+        std::cerr << "[ExtractCoverExif] cannot write file: " << outTxt << std::endl;
         return;
     }
 
@@ -107,7 +108,7 @@ void ExtractCoverExif()
             }
         }
     } catch (const Exiv2::Error& e) {
-        std::cerr << "[ExtractCoverExif] dump 全部 EXIF 失败: " << e.what() << std::endl;
+        std::cerr << "[ExtractCoverExif] dump all EXIF failed: " << e.what() << std::endl;
     }
 
     std::cout << "[ExtractCoverExif] exposure=" << expInfo.timeSeconds << "s, iso=" << iso
@@ -121,15 +122,15 @@ void ExtractLiveStream()
 
     std::error_code ec;
     if (!fs::exists(outDir) && !fs::create_directories(outDir, ec)) {
-        std::cerr << "[ExtractLiveStream] 无法创建输出目录: " << outDir << std::endl;
+        std::cerr << "[ExtractLiveStream] cannot create output dir: " << outDir << std::endl;
         return;
     }
 
     const int rc = DecodeMp4ToYuvFrames(mp4Path.c_str(), outDir);
     if (rc != 0) {
-        std::cerr << "[ExtractLiveStream] 解码失败，返回码 " << rc << std::endl;
+        std::cerr << "[ExtractLiveStream] decode failed, rc " << rc << std::endl;
         return;
     }
 
-    std::cout << "[ExtractLiveStream] 解码完成 -> " << outDir << std::endl;
+    std::cout << "[ExtractLiveStream] decode done -> " << outDir << std::endl;
 }
