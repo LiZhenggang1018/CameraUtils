@@ -1,0 +1,43 @@
+#!/bin/sh
+# Pre-commit hook: check clang-format and encoding on staged C++ files.
+#
+# Enabled via: git config core.hooksPath githooks
+# (run once in the repo; see AGENTS.md "Git 提交与推送策略").
+#
+# Rules enforced:
+#   - staged .h/.hpp/.cpp files must pass clang-format --dry-run --Werror
+#   - no garbled text (U+FFFD / private-use) via scripts/check-encoding.ps1
+
+set -e
+
+# Locate clang-format (VS 2022 bundled LLVM 19.1.5).
+CLANG_FORMAT="D:/Program Files/visual_studio/VC/Tools/Llvm/x64/bin/clang-format.exe"
+
+# Collect staged C++ files.
+files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(h|hpp|cpp|cc|cxx)$' || true)
+
+if [ -n "$files" ]; then
+    echo "[pre-commit] clang-format check..."
+    fail=0
+    for f in $files; do
+        if [ -f "$f" ]; then
+            "$CLANG_FORMAT" --dry-run --Werror "$f" >/dev/null 2>&1 || {
+                echo "  clang-format violation: $f"
+                echo "  Run: \"$CLANG_FORMAT\" -i --style=file $f"
+                fail=1
+            }
+        fi
+    done
+    if [ "$fail" -ne 0 ]; then
+        echo "[pre-commit] clang-format failed. Aborting commit."
+        exit 1
+    fi
+fi
+
+echo "[pre-commit] encoding check..."
+if ! powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-encoding.ps1 >/dev/null 2>&1; then
+    echo "[pre-commit] garbled text detected. Aborting commit."
+    exit 1
+fi
+
+echo "[pre-commit] OK"
