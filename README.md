@@ -33,6 +33,15 @@ C++20
 
 ## 构建
 
+**日常增量构建统一走 `scripts\build-debug.bat`**（内部先 `chcp 65001` 规避 Ninja 中文头文件依赖追踪 bug，再 `vcvars64` 再 `cmake --build`）：
+
+```bat
+scripts\build-debug.bat                          :: 构建默认目标
+scripts\build-debug.bat camera_utils_tests       :: 构建指定目标
+```
+
+完整配置（首次或改了 CMakeLists/CMakePresets 时）：
+
 ```powershell
 # Debug（Ninja + MSVC 18 BuildTools）
 cmake --preset x64-debug
@@ -44,6 +53,7 @@ cmake --build --preset x64-release
 ```
 
 > Ninja 与 MSVC 需在环境中可用：先执行对应的 `vcvars64.bat`，或直接从 Visual Studio 开发者命令行启动。
+> 若不走 `build-debug.bat`，务必先 `chcp 65001`（否则改了 `.h` 不触发重编译，详见 AGENTS.md）。
 > OpenCVConfig.cmake 不识别 MSVC 19.5x 时，`CMakeLists.txt` 已自动兜底设置 `OpenCV_RUNTIME=vc17`。
 
 ### CMake Presets
@@ -101,9 +111,16 @@ CameraUtils.exe
 
 ```powershell
 # 只跑单元测试（无需素材）
-ctest --test-dir out/build/x64-debug -L unit --output-on-failure
+ctest --preset x64-debug-unit
 
 # 跑依赖素材的测试（data/ 存在时才会被注册）
+ctest --preset x64-debug-media
+```
+
+等价的长命令（无 testPresets 时）：
+
+```powershell
+ctest --test-dir out/build/x64-debug -L unit --output-on-failure
 ctest --test-dir out/build/x64-debug -L media --output-on-failure
 ```
 
@@ -117,6 +134,24 @@ camera_utils_tests.exe magic-enum
 退出码约定：`0` 通过、`非 0` 失败、`77` 跳过（素材缺失）。
 
 > `gui` 类命令不注册进 ctest，用 `CameraUtils.exe <command>` 手动运行。
+
+## 常用命令速查
+
+| 场景 | 命令 |
+|---|---|
+| 增量构建 | `scripts\build-debug.bat` |
+| 构建指定目标 | `scripts\build-debug.bat camera_utils_tests` |
+| 首次配置（Debug） | `cmake --preset x64-debug` |
+| 跑单元测试 | `ctest --preset x64-debug-unit` |
+| 跑素材测试 | `ctest --preset x64-debug-media` |
+| 列出全部测试/命令 | `out\build\x64-debug\tests\camera_utils_tests.exe --list` |
+| 跑单个测试 | `out\build\x64-debug\tests\camera_utils_tests.exe magic-enum` |
+| 运行 GUI demo | `out\build\x64-debug\src\CameraUtils.exe sift-handwritten-demo` |
+| 数值报告 demo | `out\build\x64-debug\src\CameraUtils.exe sift-handwritten-report` |
+| clang-format 格式化 | `D:\Program Files\visual_studio\VC\Tools\Llvm\x64\bin\clang-format.exe -i --style=file <文件>` |
+| 乱码检测 | `powershell -ExecutionPolicy Bypass -File scripts/check-encoding.ps1` |
+| 静态扫描 | `powershell -ExecutionPolicy Bypass -File scripts/scan-bugs.ps1 -Step all` |
+| 启用 pre-commit hook | `git config core.hooksPath githooks` |
 
 ## 目录结构
 
