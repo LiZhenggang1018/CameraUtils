@@ -534,11 +534,7 @@ inline const std::vector<Command>& AllCommands()
         {.name = "livephoto-decode",
          .description = "解析 vivo LivePhoto（封面+视频帧+EXIF+随帧meta）",
          .label = Label::MEDIA,
-         .run =
-             [] {
-                 RunLivePhotoDecodeTest();
-                 return 0;
-             }},
+         .run = [] { return RunLivePhotoDecodeTest(); }},
         {.name = "livephoto-reg",
          .description = "LivePhoto 图像配准",
          .label = Label::MEDIA,
