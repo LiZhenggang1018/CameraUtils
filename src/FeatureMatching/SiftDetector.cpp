@@ -345,15 +345,7 @@ void ComputeDescriptor(const cv::Mat& grayF, double x, double y, double sigma, d
             const double rx = cosT * ox + sinT * oy;
             const double ry = -sinT * ox + cosT * oy;
 
-            // 映射到 4x4 子块索引（每个子块宽 4*sigma）。
-            const double bx = rx / (4.0 * sigma) + 2.0;
-            const double by = ry / (4.0 * sigma) + 2.0;
-            if (bx < -0.5 || bx >= 3.5 || by < -0.5 || by >= 3.5) {
-                continue;
-            }
-            const int binX = std::min(3, std::max(0, static_cast<int>(std::floor(bx))));
-            const int binY = std::min(3, std::max(0, static_cast<int>(std::floor(by))));
-
+            // 采样像素位置用未旋转的图像坐标偏移（ox/oy 即图像坐标系的偏移）。
             const int px = kx + static_cast<int>(std::round(ox));
             const int py = ky + static_cast<int>(std::round(oy));
             if (px <= 0 || px >= grayF.cols - 1 || py <= 0 || py >= grayF.rows - 1) {
@@ -368,14 +360,49 @@ void ComputeDescriptor(const cv::Mat& grayF, double x, double y, double sigma, d
 
             // 高斯加权（按旋转后的半径，sigma = windowRadius/2）。
             const double gaussSigma = windowRadius / 2.0;
-            const double w = std::exp(-(rx * rx + ry * ry) / (2.0 * gaussSigma * gaussSigma));
+            const double w = std::exp(-(rx * rx + ry * ry) / (2.0 * gaussSigma * gaussSigma)) * mag;
+            if (w <= 0.0) {
+                continue;
+            }
 
-            const int obin =
-                static_cast<int>(std::floor(relOri / (2.0 * kPi) * kDescriptorHistBins)) % kDescriptorHistBins;
+            // ---- 三线性插值：把梯度分配到相邻 2x2x2 个 bin，避免 bin 边界突变。 ----
 
-            // 写入（OpenCV 描述子排列：每子块连续 8 个方向 bin）。
-            const int base = (binY * kDescriptorHistWidth + binX) * kDescriptorHistBins;
-            descriptor[base + obin] += static_cast<float>(w * mag);
+            // 空间子块连续坐标（4x4 子块，每块宽 4*sigma，中心偏移 +2）。
+            const double bx = rx / (4.0 * sigma) + 2.0;
+            const double by = ry / (4.0 * sigma) + 2.0;
+            if (bx < -0.5 || bx >= 3.5 || by < -0.5 || by >= 3.5) {
+                continue;
+            }
+            const int ix = static_cast<int>(std::floor(bx));
+            const int iy = static_cast<int>(std::floor(by));
+            const double fx = bx - ix;
+            const double fy = by - iy;
+
+            // 方向连续坐标（8 bin，循环）。
+            const double bo = relOri / (2.0 * kPi) * kDescriptorHistBins;
+            const int io = static_cast<int>(std::floor(bo)) % kDescriptorHistBins;
+            const double fo = bo - std::floor(bo);
+
+            for (int dy = 0; dy <= 1; ++dy) {
+                const int yy = iy + dy;
+                if (yy < 0 || yy >= kDescriptorHistWidth) {
+                    continue;
+                }
+                const double wy = (dy == 0) ? (1.0 - fy) : fy;
+                for (int dx = 0; dx <= 1; ++dx) {
+                    const int xx = ix + dx;
+                    if (xx < 0 || xx >= kDescriptorHistWidth) {
+                        continue;
+                    }
+                    const double wx = (dx == 0) ? (1.0 - fx) : fx;
+                    for (int do_ = 0; do_ <= 1; ++do_) {
+                        const int oo = (io + do_) % kDescriptorHistBins;
+                        const double wo = (do_ == 0) ? (1.0 - fo) : fo;
+                        const int base = (yy * kDescriptorHistWidth + xx) * kDescriptorHistBins;
+                        descriptor[base + oo] += static_cast<float>(w * wx * wy * wo);
+                    }
+                }
+            }
         }
     }
 
