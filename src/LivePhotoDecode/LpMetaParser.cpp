@@ -164,25 +164,6 @@ void ExtractFrameMeta()
     }
 
     const CameraUtils::ExposureInfo expInfo = CameraUtils::ReadExposureInfo(jpgPath);
-    // ISO comes from the cover EXIF directly (ReadExposureInfo returns -1 for vivo's
-    // PhotographicSensitivity on this exiv2 build, so fall back to ISOSpeedRatings).
-    double coverIso = -1.0;
-    try {
-        auto image = Exiv2::ImageFactory::open(jpgPath);
-        if (image.get()) {
-            image->readMetadata();
-            const auto& exif = image->exifData();
-            auto it = exif.findKey(Exiv2::ExifKey("Exif.Photo.ISOSpeedRatings"));
-            if (it == exif.end()) {
-                it = exif.findKey(Exiv2::ExifKey("Exif.Photo.RecommendedExposureIndex"));
-            }
-            if (it != exif.end()) {
-                coverIso = static_cast<double>(it->toFloat());
-            }
-        }
-    } catch (const Exiv2::Error& e) {
-        std::cerr << "[ExtractFrameMeta] read cover ISO failed: " << e.what() << std::endl;
-    }
 
     int64_t timeBaseDen = 90000;
     const std::vector<MettPacket> packets = ReadMettPackets(mp4Path, timeBaseDen);
@@ -191,7 +172,7 @@ void ExtractFrameMeta()
         return;
     }
 
-    const std::vector<FrameMeta> metas = BuildFrameMeta(packets, timeBaseDen, expInfo.timeSeconds, coverIso);
+    const std::vector<FrameMeta> metas = BuildFrameMeta(packets, timeBaseDen, expInfo.timeSeconds, expInfo.iso);
 
     std::ofstream ofs(outTxt);
     if (!ofs.is_open()) {
