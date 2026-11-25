@@ -355,6 +355,7 @@ void SiftDetector::DetectAndCompute(const cv::Mat& gray, std::vector<cv::KeyPoin
         int y;
         int x;
         double sigmaLocal; // octave-local 尺度 = sigma * k^layer
+        double response;   // |DoG| 响应值，用于空间非极大值抑制排序
     };
     std::vector<Candidate> candidates;
 
@@ -390,10 +391,58 @@ void SiftDetector::DetectAndCompute(const cv::Mat& gray, std::vector<cv::KeyPoin
                     }
 
                     const double sigmaLocal = params_.sigma * std::pow(k, l);
-                    candidates.push_back(Candidate{o, l, y, x, sigmaLocal});
+                    candidates.push_back(Candidate{o, l, y, x, sigmaLocal, val});
                 }
             }
         }
+    }
+
+    // 空间非极大值抑制：同一 (octave, layer) 内按响应从强到弱贪心保留，
+    // 抑制落在已保留关键点 nmsWindowSize 邻域内的弱响应候选（解决大图关键点过多问题）。
+    if (params_.nmsWindowSize > 1) {
+        std::sort(candidates.begin(), candidates.end(), [](const Candidate& a, const Candidate& b) {
+            if (a.octave != b.octave) {
+                return a.octave < b.octave;
+            }
+            if (a.layer != b.layer) {
+                return a.layer < b.layer;
+            }
+            return a.response > b.response;
+        });
+
+        const int half = params_.nmsWindowSize / 2;
+        std::vector<Candidate> kept;
+        kept.reserve(candidates.size());
+
+        int curOctave = -1;
+        int curLayer = -1;
+        std::vector<std::vector<bool>> suppressed;
+        int layerRows = 0;
+        int layerCols = 0;
+
+        for (const Candidate& c : candidates) {
+            if (c.octave != curOctave || c.layer != curLayer) {
+                curOctave = c.octave;
+                curLayer = c.layer;
+                layerRows = ss.gaussian[c.octave][c.layer].rows;
+                layerCols = ss.gaussian[c.octave][c.layer].cols;
+                suppressed.assign(layerRows, std::vector<bool>(layerCols, false));
+            }
+            if (suppressed[c.y][c.x]) {
+                continue;
+            }
+            kept.push_back(c);
+            for (int dy = -half; dy <= half; ++dy) {
+                for (int dx = -half; dx <= half; ++dx) {
+                    const int ny = c.y + dy;
+                    const int nx = c.x + dx;
+                    if (ny >= 0 && ny < layerRows && nx >= 0 && nx < layerCols) {
+                        suppressed[ny][nx] = true;
+                    }
+                }
+            }
+        }
+        candidates = std::move(kept);
     }
 
     // 阶段 3+4：方向 + 描述子，全部在 octave-local 坐标系下计算。
