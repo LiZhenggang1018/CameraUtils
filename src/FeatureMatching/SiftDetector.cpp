@@ -161,6 +161,79 @@ bool IsExtremum(const std::vector<std::vector<cv::Mat>>& dog, int octave, int la
     return true;
 }
 
+// ---------------------------------------------------------------------------
+// 阶段 2.5：亚像素关键点定位（Taylor 展开）
+// ---------------------------------------------------------------------------
+
+// 3x3 行列式。
+double Det3(double a00, double a01, double a02, double a10, double a11, double a12, double a20, double a21, double a22)
+{
+    return a00 * (a11 * a22 - a12 * a21) - a01 * (a10 * a22 - a12 * a20) + a02 * (a10 * a21 - a11 * a20);
+}
+
+// 用 DoG 的三元二次 Taylor 展开把整数极值 (y, x, layer) 精化到亚像素精度。
+// 成功时输出精化坐标 (refinedY, refinedX)、尺度偏移 layerOffset 与精化后的对比度 refinedResponse；
+// 偏移任一维超过 0.5、Hessian 奇异或对比度过低时返回 false（该极值不稳定，剔除）。
+bool RefineExtremum(const std::vector<std::vector<cv::Mat>>& dog, int octave, int layer, int y, int x,
+                    double contrastThreshold, double& refinedY, double& refinedX, double& layerOffset,
+                    double& refinedResponse)
+{
+    const cv::Mat& d0 = dog[octave][layer - 1];
+    const cv::Mat& d1 = dog[octave][layer];
+    const cv::Mat& d2 = dog[octave][layer + 1];
+
+    const double v = d1.at<float>(y, x);
+
+    // 一阶导（中心差分）。
+    const double gx = (static_cast<double>(d1.at<float>(y, x + 1)) - d1.at<float>(y, x - 1)) / 2.0;
+    const double gy = (static_cast<double>(d1.at<float>(y + 1, x)) - d1.at<float>(y - 1, x)) / 2.0;
+    const double gs = (static_cast<double>(d2.at<float>(y, x)) - d0.at<float>(y, x)) / 2.0;
+
+    // Hessian（3x3 对称）。
+    const double hxx = static_cast<double>(d1.at<float>(y, x + 1)) - 2.0 * v + d1.at<float>(y, x - 1);
+    const double hyy = static_cast<double>(d1.at<float>(y + 1, x)) - 2.0 * v + d1.at<float>(y - 1, x);
+    const double hss = static_cast<double>(d2.at<float>(y, x)) - 2.0 * v + d0.at<float>(y, x);
+    const double hxy = (static_cast<double>(d1.at<float>(y + 1, x + 1)) - d1.at<float>(y + 1, x - 1) -
+                        d1.at<float>(y - 1, x + 1) + d1.at<float>(y - 1, x - 1)) /
+                       4.0;
+    const double hxs = (static_cast<double>(d2.at<float>(y, x + 1)) - d2.at<float>(y, x - 1) - d0.at<float>(y, x + 1) +
+                        d0.at<float>(y, x - 1)) /
+                       4.0;
+    const double hys = (static_cast<double>(d2.at<float>(y + 1, x)) - d2.at<float>(y - 1, x) - d0.at<float>(y + 1, x) +
+                        d0.at<float>(y - 1, x)) /
+                       4.0;
+
+    // 解 H * offset = -g（克拉默法则）。
+    const double detH = Det3(hxx, hxy, hxs, hxy, hyy, hys, hxs, hys, hss);
+    if (std::abs(detH) < 1e-12) {
+        return false;
+    }
+    const double detX = Det3(-gx, hxy, hxs, -gy, hyy, hys, -gs, hys, hss);
+    const double detY = Det3(hxx, -gx, hxs, hxy, -gy, hys, hxs, -gs, hss);
+    const double detS = Det3(hxx, hxy, -gx, hxy, hyy, -gy, hxs, hys, -gs);
+
+    const double dx = detX / detH;
+    const double dy = detY / detH;
+    const double ds = detS / detH;
+
+    // 偏移过大说明极值应落在相邻采样点，简化处理直接剔除（不做迭代）。
+    if (std::abs(dx) > 0.5 || std::abs(dy) > 0.5 || std::abs(ds) > 0.5) {
+        return false;
+    }
+
+    // 插值点处的对比度：|D(x̂)| = D + 0.5 * g · offset。
+    const double dHat = v + 0.5 * (gx * dx + gy * dy + gs * ds);
+    if (std::abs(dHat) < contrastThreshold) {
+        return false;
+    }
+
+    refinedY = y + dy;
+    refinedX = x + dx;
+    layerOffset = ds;
+    refinedResponse = std::abs(dHat);
+    return true;
+}
+
 // 用 CV_32F 灰度图按中心差分计算梯度幅值/方向。
 void ComputeGradientOrientation(const cv::Mat& grayF, int y, int x, double& magnitude, double& orientation)
 {
@@ -268,9 +341,9 @@ void ComputeDescriptor(const cv::Mat& grayF, double x, double y, double sigma, d
             const double ox = sx * sigma;
             const double oy = sy * sigma;
 
-            // 旋转到主方向坐标系。
-            const double rx = cosT * ox - sinT * oy;
-            const double ry = sinT * ox + cosT * oy;
+            // 旋转到主方向坐标系（R(-θ)：把采样点偏移转到主方向对齐的坐标系）。
+            const double rx = cosT * ox + sinT * oy;
+            const double ry = -sinT * ox + cosT * oy;
 
             // 映射到 4x4 子块索引（每个子块宽 4*sigma）。
             const double bx = rx / (4.0 * sigma) + 2.0;
@@ -351,10 +424,12 @@ void SiftDetector::DetectAndCompute(const cv::Mat& gray, std::vector<cv::KeyPoin
     // 关键点记录为 (octave, layer, y, x)，坐标与 sigma 均为 octave-local。
     struct Candidate {
         int octave;
-        int layer;
-        int y;
-        int x;
-        double sigmaLocal; // octave-local 尺度 = sigma * k^layer
+        int layer; // 整数尺度层（亚像素尺度偏移 layerOffset 单独记）
+        int gridY; // 检测时的整数网格坐标（用于 NMS 邻域标记）
+        int gridX;
+        double y; // 亚像素精化后的坐标（octave-local）
+        double x;
+        double sigmaLocal; // octave-local 尺度 = sigma * k^(layer + layerOffset)
         double response;   // |DoG| 响应值，用于空间非极大值抑制排序
     };
     std::vector<Candidate> candidates;
@@ -363,24 +438,30 @@ void SiftDetector::DetectAndCompute(const cv::Mat& gray, std::vector<cv::KeyPoin
     for (int o = 0; o < static_cast<int>(ss.dog.size()); ++o) {
         for (int l = 1; l < static_cast<int>(ss.dog[o].size()) - 1; ++l) {
             const cv::Mat& layer = ss.dog[o][l];
-            for (int y = 1; y < layer.rows - 1; ++y) {
-                for (int x = 1; x < layer.cols - 1; ++x) {
-                    if (!IsExtremum(ss.dog, o, l, y, x)) {
+            for (int gy = 1; gy < layer.rows - 1; ++gy) {
+                for (int gx = 1; gx < layer.cols - 1; ++gx) {
+                    if (!IsExtremum(ss.dog, o, l, gy, gx)) {
                         continue;
                     }
-                    const double val = std::abs(layer.at<float>(y, x));
-                    if (val < params_.contrastThreshold) {
+
+                    // 亚像素定位（Taylor 展开）+ 精化对比度剔除。
+                    double refinedY = 0.0;
+                    double refinedX = 0.0;
+                    double layerOffset = 0.0;
+                    double refinedResponse = 0.0;
+                    if (!RefineExtremum(ss.dog, o, l, gy, gx, params_.contrastThreshold, refinedY, refinedX,
+                                        layerOffset, refinedResponse)) {
                         continue;
                     }
 
                     // 边缘响应剔除：2x2 Hessian 迹/行列式比（曲率比）。
-                    const double dxx = static_cast<double>(layer.at<float>(y, x + 1)) + layer.at<float>(y, x - 1) -
-                                       2.0 * layer.at<float>(y, x);
-                    const double dyy = static_cast<double>(layer.at<float>(y + 1, x)) + layer.at<float>(y - 1, x) -
-                                       2.0 * layer.at<float>(y, x);
+                    const double dxx = static_cast<double>(layer.at<float>(gy, gx + 1)) + layer.at<float>(gy, gx - 1) -
+                                       2.0 * layer.at<float>(gy, gx);
+                    const double dyy = static_cast<double>(layer.at<float>(gy + 1, gx)) + layer.at<float>(gy - 1, gx) -
+                                       2.0 * layer.at<float>(gy, gx);
                     const double dxy =
-                        (static_cast<double>(layer.at<float>(y + 1, x + 1)) - layer.at<float>(y + 1, x - 1) -
-                         layer.at<float>(y - 1, x + 1) + layer.at<float>(y - 1, x - 1)) /
+                        (static_cast<double>(layer.at<float>(gy + 1, gx + 1)) - layer.at<float>(gy + 1, gx - 1) -
+                         layer.at<float>(gy - 1, gx + 1) + layer.at<float>(gy - 1, gx - 1)) /
                         4.0;
                     const double trace = dxx + dyy;
                     const double det = dxx * dyy - dxy * dxy;
@@ -390,8 +471,8 @@ void SiftDetector::DetectAndCompute(const cv::Mat& gray, std::vector<cv::KeyPoin
                         continue;
                     }
 
-                    const double sigmaLocal = params_.sigma * std::pow(k, l);
-                    candidates.push_back(Candidate{o, l, y, x, sigmaLocal, val});
+                    const double sigmaLocal = params_.sigma * std::pow(k, l + layerOffset);
+                    candidates.push_back(Candidate{o, l, gy, gx, refinedY, refinedX, sigmaLocal, refinedResponse});
                 }
             }
         }
@@ -428,14 +509,14 @@ void SiftDetector::DetectAndCompute(const cv::Mat& gray, std::vector<cv::KeyPoin
                 layerCols = ss.gaussian[c.octave][c.layer].cols;
                 suppressed.assign(layerRows, std::vector<bool>(layerCols, false));
             }
-            if (suppressed[c.y][c.x]) {
+            if (suppressed[c.gridY][c.gridX]) {
                 continue;
             }
             kept.push_back(c);
             for (int dy = -half; dy <= half; ++dy) {
                 for (int dx = -half; dx <= half; ++dx) {
-                    const int ny = c.y + dy;
-                    const int nx = c.x + dx;
+                    const int ny = c.gridY + dy;
+                    const int nx = c.gridX + dx;
                     if (ny >= 0 && ny < layerRows && nx >= 0 && nx < layerCols) {
                         suppressed[ny][nx] = true;
                     }
