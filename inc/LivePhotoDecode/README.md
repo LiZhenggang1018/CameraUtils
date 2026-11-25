@@ -19,7 +19,7 @@
 | `cover.jpg` / `cover.yuv` | 封面 JPG 与 YUV420P |
 | `cover_exif.txt` | 封面 EXIF：曝光时间 / ISO / DateTimeOriginal + 全部 EXIF 条目 |
 | `video/{1..77}.yuv` / `{1..77}.jpg` | live 流逐帧 |
-| `frame_meta.txt` | 逐帧 meta：帧号 / PTS 秒 / 曝光(推测) / ISO(推测) / 原始 float |
+| `frame_meta.txt` | 逐帧 meta：帧号 / PTS 秒 / ISO / 纳秒时间戳 / 增益 |
 
 ## 文件结构
 
@@ -29,17 +29,25 @@
 | `LpDecode.h` | 编排接口：封面 / EXIF / live 流 |
 | `LpMetaParser.h` | mett 随帧 meta 解析接口与数据结构 |
 
-## mett 轨道逆向（重要边界）
+## mett 轨道逆向（已确证字段）
 
-vivo 的 `mett` 数据轨道（codec_tag `0x7474656d`）承载随帧 meta，结构为 77 个样本，
-每个样本以 4 字节 tag `00 0F A0 0A` 开头 + 4 字节 big-endian 长度 + payload（嵌套 TLV + IEEE754 float）。
+vivo 的 `mett` 数据轨道（codec_tag `0x7474656d`）承载随帧 meta，结构为 1 个 `SAT` 头样本
++ N 个数据样本，每个样本以 4 字节 tag `00 0F A0 0A` 开头 + 4 字节 big-endian 长度 + payload。
 
-**字段语义未公开**，本模块只可靠输出：
+经两次真实拍摄 + 毫秒秒表校准，已确证的逐帧字段（偏移相对样本起点）：
 
-- 每帧时间戳 `pts_seconds`（由 mett 流 time_base 1/90000 换算，确凿可得）；
-- 每帧样本内解析出的原始 float 值（`raw=` 列，保留待后续逆向）。
+| 偏移 | 类型 | 含义 |
+| :--- | :--- | :--- |
+| `+36` | uint32 | 纳秒时间戳（帧间隔 33 333 300 ns = 1/30 s） |
+| `+42` | uint16 | ISO |
+| `+60` | float | 模拟增益 = ISO / 50（50 = 传感器 base ISO） |
+| `+64` | float | 总增益 = 模拟增益 × 数字增益 |
+| `+68` | float | 增益的冗余表达 |
 
-封面 EXIF 的曝光时间（0.002s）与 ISO（1912）**并不以普通 float 出现在 mett 流中**
-（实测全文件无 ISO 命中、0.002 仅两处无关偏移），故 `exposure_time` / `iso` 列输出 -1
-并标注 `(speculative)`，表示「未能从 mett 流中锚定到对应字段」，而非确证缺失。
-后续若发现 mett 里曝光信息以非线性/定点形式存储，可在此补充解码。
+确证依据（APEX 交叉验证，两次拍摄数据对齐）：
+
+- `+60 / ISO == 0.02`（= 1/50）在 ISO 251 / 382 / 1912 三处严格成立；
+- `+64 / +60 == 数字增益`（本次 1.0，另一次 1.0397）；
+- 秒表校准确认封面照片 = 视频第 51 帧（误差 5 ms 内）。
+
+快门速度不在上述字段中（两次拍摄快门均恒定，未暴露其字段位置）。
