@@ -157,6 +157,14 @@ inline const std::vector<Command>& AllCommands()
                  TimeoutMonitorArgTest();
                  return 0;
              }},
+        {.name = "timeout-monitor-timeout",
+         .description = "TimeoutMonitor 超时路径（及时返回 + detach 安全完成）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 TimeoutMonitorTimeoutTest();
+                 return 0;
+             }},
         {.name = "misc",
          .description = "Misc：Enum2Str / Scoped / InstanceCounter",
          .label = Label::UNIT,
