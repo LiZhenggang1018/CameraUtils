@@ -37,6 +37,7 @@ set(_unit_tests
     overload-ref
     timeout-monitor
     timeout-monitor-args
+    timeout-monitor-timeout
     misc
     circular-queue
     overwrite-function
