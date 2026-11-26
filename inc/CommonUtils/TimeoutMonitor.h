@@ -66,6 +66,15 @@ decltype(auto) TimeoutImpl(const std::string& fName, int32_t timeMs, Fn&& fn, Ti
 // fn: function to be monitored;
 // timeoutCb: timeout callback function when timeout happens;
 // args: parameter of the function fn.
+//
+// Argument semantics: args are captured by value (lvalues are copied, rvalues are
+// moved) so the detached worker thread owns its own copies and never references the
+// caller's stack after TimeoutImpl returns. To keep reference semantics (have fn
+// mutate a caller-owned object), wrap the argument in std::ref, e.g.
+//   TimeoutMonitor("Foo", 3000, Foo, cb, std::ref(g_i));
+// std::invoke unwraps the reference_wrapper back to a reference. The caller MUST
+// guarantee the referenced object outlives the background thread (a global/static or
+// heap object), otherwise the detached task dereferences freed memory.
 template <class Fn, class TimeoutCb, class... Args>
 decltype(auto) TimeoutMonitor(const std::string& fName, int32_t timeMs, Fn&& fn, TimeoutCb&& timeoutCb, Args&&... args)
 {
