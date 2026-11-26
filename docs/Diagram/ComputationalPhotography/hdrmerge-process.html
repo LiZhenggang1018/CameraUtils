@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HdrMerge · Process</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-soft:    #5a6580;
+      --color-accent:  #bf4520;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body { font-family: var(--font-sans); background: var(--color-paper); color: var(--color-ink);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+    .frame { max-width: 1200px; width: 100%; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    .eyebrow { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--color-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: var(--font-serif); font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem); font-weight: 400;
+      letter-spacing: -0.02em; line-height: 1.15; color: var(--color-ink); margin-bottom: 1.5rem; }
+    svg { width: 100%; min-width: 728px; display: block; }
+    @media print { .diagram-container { overflow-x: visible; } svg { min-width: 0; } }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Process · Diagram Design</p>
+    <h1>HDR merge workflow (dual pipeline)</h1>
+    <div class="diagram-container">
+      <svg viewBox="0 0 728 356" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="hdr-process-title hdr-process-desc">
+        <title id="hdr-process-title">HDR merge workflow (dual pipeline)</title>
+        <desc id="hdr-process-desc">Process diagram of the HDR merge pipeline: read three bracketed images, align to the normal reference, crop a common ROI, then branch into Mertens fusion or physical Debevec HDR with optional ghost suppression, sharpen, and write output.</desc>
+        <defs>
+          <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="0.8" fill="rgba(45,49,66,0.10)"/></pattern>
+          <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+          <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#bf4520"/></marker>
+        </defs>
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+        <rect width="100%" height="100%" fill="url(#dots)" opacity="0.55"/>
+
+        <rect x="140" y="116" width="588" height="80" fill="rgba(45,49,66,0.018)"/>
+        <line x1="140" y1="36" x2="728" y2="36" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <line x1="140" y1="116" x2="728" y2="116" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <line x1="140" y1="196" x2="728" y2="196" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <line x1="140" y1="276" x2="728" y2="276" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <line x1="140" y1="36" x2="140" y2="276" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+
+        <rect x="190" y="8" width="16" height="16" rx="8" fill="rgba(45,49,66,0.12)"/>
+        <text x="198" y="19" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">1</text>
+        <text x="198" y="32" fill="#4f5d75" font-size="6" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">ALIGN</text>
+        <rect x="302" y="8" width="16" height="16" rx="8" fill="rgba(45,49,66,0.12)"/>
+        <text x="310" y="19" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">2</text>
+        <text x="310" y="32" fill="#4f5d75" font-size="6" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">CROP</text>
+        <rect x="414" y="8" width="16" height="16" rx="8" fill="rgba(191,69,32,0.20)"/>
+        <text x="422" y="19" fill="#bf4520" font-size="9" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">3</text>
+        <text x="422" y="32" fill="#bf4520" font-size="6" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">FUSE</text>
+        <rect x="526" y="8" width="16" height="16" rx="8" fill="rgba(45,49,66,0.12)"/>
+        <text x="534" y="19" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">4</text>
+        <text x="534" y="32" fill="#4f5d75" font-size="6" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">ENHANCE</text>
+        <rect x="638" y="8" width="16" height="16" rx="8" fill="rgba(45,49,66,0.12)"/>
+        <text x="646" y="19" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">5</text>
+        <text x="646" y="32" fill="#4f5d75" font-size="6" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">WRITE</text>
+
+        <text x="70" y="80" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ALIGN</text>
+        <text x="70" y="160" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">FUSION</text>
+        <text x="70" y="240" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">OUTPUT</text>
+
+        <!-- arrows -->
+        <path d="M 248,76 H 302 Q 310,76 310,84 V 124" fill="none" stroke="#4f5d75" stroke-width="1.0" marker-end="url(#arrow)"/>
+        <path d="M 360,156 H 414 Q 422,156 422,164 V 204" fill="none" stroke="#bf4520" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+        <path d="M 472,236 H 526 Q 534,236 534,228 V 108" fill="none" stroke="#4f5d75" stroke-width="1.0" marker-end="url(#arrow)"/>
+        <line x1="584" y1="76" x2="596" y2="76" stroke="#4f5d75" stroke-width="1.0" marker-end="url(#arrow)"/>
+
+        <!-- Node 1 Align (ALIGN) -->
+        <rect x="148" y="44" width="100" height="64" rx="6" fill="#ffffff" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="152" y="48" width="14" height="10" rx="2" fill="rgba(45,49,66,0.12)"/>
+        <text x="159" y="56" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">ALN</text>
+        <text x="198" y="70" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">AlignToRef</text>
+        <text x="198" y="84" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">low/high → normal</text>
+        <text x="198" y="96" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">ORB · HOMOGRAPHY</text>
+        <rect x="228" y="98" width="16" height="8" rx="2" fill="#9c6b50"/>
+        <text x="236" y="104" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+
+        <!-- Node 2 Crop (ALIGN) -->
+        <rect x="260" y="124" width="100" height="64" rx="6" fill="#ffffff" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="264" y="128" width="14" height="10" rx="2" fill="rgba(45,49,66,0.12)"/>
+        <text x="271" y="136" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">ALN</text>
+        <text x="310" y="150" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">CommonROI</text>
+        <text x="310" y="164" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">black-border crop</text>
+        <text x="310" y="176" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">DetectContentRoi</text>
+        <rect x="264" y="178" width="16" height="8" rx="2" fill="#9c6b50"/>
+        <text x="272" y="184" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+        <rect x="340" y="178" width="16" height="8" rx="2" fill="#9c6b50"/>
+        <text x="348" y="184" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+
+        <!-- Node 3 Fusion (FUSION) focal -->
+        <rect x="372" y="204" width="100" height="64" rx="6" fill="rgba(191,69,32,0.08)" stroke="#bf4520" stroke-width="1"/>
+        <rect x="376" y="208" width="14" height="10" rx="2" fill="rgba(191,69,32,0.18)"/>
+        <text x="383" y="216" fill="#bf4520" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">FUS</text>
+        <text x="422" y="230" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Merge</text>
+        <text x="422" y="244" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">Mertens / Debevec</text>
+        <text x="422" y="256" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">ghost backfill</text>
+        <rect x="376" y="258" width="16" height="8" rx="2" fill="#9c6b50"/>
+        <text x="384" y="264" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+        <rect x="452" y="258" width="16" height="8" rx="2" fill="#5e7a9b"/>
+        <text x="460" y="264" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">DB</text>
+
+        <!-- Node 4 Enhance (OUTPUT) -->
+        <rect x="484" y="44" width="100" height="64" rx="6" fill="#ffffff" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="488" y="48" width="14" height="10" rx="2" fill="rgba(45,49,66,0.12)"/>
+        <text x="495" y="56" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">OUT</text>
+        <text x="534" y="70" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Enhance</text>
+        <text x="534" y="84" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">tonemap · sharpen</text>
+        <text x="534" y="96" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">Drago · UnsharpMask</text>
+        <rect x="488" y="98" width="16" height="8" rx="2" fill="#5e7a9b"/>
+        <text x="496" y="104" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">DB</text>
+        <rect x="564" y="98" width="16" height="8" rx="2" fill="#9c6b50"/>
+        <text x="572" y="104" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+
+        <!-- Node 5 Write (OUTPUT) -->
+        <rect x="596" y="44" width="100" height="64" rx="6" fill="#ffffff" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="600" y="48" width="14" height="10" rx="2" fill="rgba(45,49,66,0.12)"/>
+        <text x="607" y="56" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">OUT</text>
+        <text x="646" y="70" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Write</text>
+        <text x="646" y="84" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">hdr_merged.jpg</text>
+        <text x="646" y="96" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">+ optional .hdr</text>
+        <rect x="600" y="98" width="16" height="8" rx="2" fill="#9c6b50"/>
+        <text x="608" y="104" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+
+        <!-- legend -->
+        <text x="144" y="292" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">STEPS</text>
+        <rect x="200" y="284" width="16" height="16" rx="8" fill="rgba(191,69,32,0.20)"/>
+        <text x="208" y="295" fill="#bf4520" font-size="9" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">3</text>
+        <text x="220" y="296" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">Merge (focal)</text>
+        <text x="400" y="292" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">DATA</text>
+        <rect x="452" y="286" width="16" height="8" rx="2" fill="#9c6b50"/>
+        <text x="460" y="292" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+        <text x="472" y="293" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">Image</text>
+        <rect x="524" y="286" width="16" height="8" rx="2" fill="#5e7a9b"/>
+        <text x="532" y="292" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">DB</text>
+        <text x="544" y="293" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">Radiance map</text>
+        <text x="144" y="313" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">FLOW</text>
+        <line x1="200" y1="309" x2="224" y2="309" stroke="#bf4520" stroke-width="1.2" marker-end="url(#arrow-accent)"/>
+        <text x="232" y="312" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">Focal path</text>
+        <line x1="320" y1="309" x2="344" y2="309" stroke="#4f5d75" stroke-width="1.0" marker-end="url(#arrow)"/>
+        <text x="352" y="312" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">Hand-off</text>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>
