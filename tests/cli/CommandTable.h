@@ -149,6 +149,14 @@ inline const std::vector<Command>& AllCommands()
                  TimeoutMonitorTest();
                  return 0;
              }},
+        {.name = "timeout-monitor-args",
+         .description = "TimeoutMonitor 参数传递语义（值/引用/移动）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 TimeoutMonitorArgTest();
+                 return 0;
+             }},
         {.name = "misc",
          .description = "Misc：Enum2Str / Scoped / InstanceCounter",
          .label = Label::UNIT,
