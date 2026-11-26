@@ -10,6 +10,7 @@
 #include <condition_variable>
 #include <functional>
 #include <future>
+#include <thread>
 #include <type_traits>
 
 #include "ScopedUtils.h"
@@ -18,21 +19,31 @@ template <class Fn, class TimeoutCb, class... Args>
 decltype(auto) TimeoutImpl(const std::string& fName, int32_t timeMs, Fn&& fn, TimeoutCb&& timeoutCb, Args&&... args)
 {
     using R = std::invoke_result_t<Fn, Args...>;
-    // always capture by reference [&] and forward arguments to avoid template args' cvr(const
-    // reference volitile) attribute is decayed
-    std::future<R> fu =
-        std::async(std::launch::async, [&] { return std::forward<Fn>(fn)(std::forward<Args>(args)...); });
+    // Capture fn and args by value (moved) into a packaged_task that lives on the heap via
+    // std::thread, so the worker thread owns its own copies and can safely outlive this call
+    // after detach. This also avoids std::async's future-destructor blocking semantics: the
+    // future returned by packaged_task has no such blocking destructor, so on timeout the caller
+    // returns promptly instead of blocking until the monitored function finishes.
+    std::packaged_task<R()> task([fn = std::forward<Fn>(fn), ... args = std::forward<Args>(args)]() mutable -> R {
+        return std::invoke(fn, std::forward<Args>(args)...);
+    });
+    std::future<R> fu = task.get_future();
+    std::thread worker(std::move(task));
+
     std::future_status status = fu.wait_for(std::chrono::milliseconds(timeMs));
 
     switch (status) {
     case std::future_status::ready:
+        worker.join();
         return fu.get(); // get the result of the function in time
     case std::future_status::timeout:
         PV(fName, "timeout: ", timeMs);
-        timeoutCb(); // call timeout callback
+        timeoutCb();     // call timeout callback
+        worker.detach(); // background task keeps running on its own copies; this call returns now
         break;
     default:
         PV(fName, "unknown status"); // should never happen
+        worker.detach();
         break;
     }
 
