@@ -90,7 +90,7 @@ public:
         std::unique_lock<std::mutex> lock(mutex_);
         auto notifier = std::make_shared<SyncNotifier>(syncId);
         notifiers_.insert({syncId, notifier});
-        PrintNotifiers();
+        PrintNotifiersLocked();
         return notifier;
     }
 
@@ -111,19 +111,26 @@ public:
 
     void WaitSync(SyncId syncId, int64_t timeout = 0)
     {
-        std::unique_lock<std::mutex> lock(mutex_);
-        CAR(!notifiers_.contains(syncId));
-        auto timeLeft = timeout;
-        auto range = notifiers_.equal_range(syncId);
-        lock.unlock();
+        // 在锁内把 equal_range 区间的 shared_ptr 拷贝成快照后再解锁遍历。
+        // 快照持有引用计数，即使并发 UnRegister() 在锁内 erase 掉 map 节点并
+        // reset() 自己的引用，快照中的 SyncNotifier 对象仍存活，遍历解引用安全。
+        std::vector<std::shared_ptr<SyncNotifier>> snapshot;
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            CAR(!notifiers_.contains(syncId));
+            auto range = notifiers_.equal_range(syncId);
+            for (auto i = range.first; i != range.second; ++i) {
+                snapshot.push_back(i->second);
+            }
+        }
 
-        // 遍历multimap中所有key为syncId的value/syncNotifier项,依次调用每个syncNotifier的Wait()接口
-        for (auto&& i = range.first; i != range.second; ++i) {
+        // 遍历快照中所有key为syncId的value/syncNotifier项,依次调用每个syncNotifier的Wait()接口
+        auto timeLeft = timeout;
+        for (auto&& syncNotifier : snapshot) {
             if (timeLeft <= 0) {
                 PV("timeLeft <= 0");
                 continue;
             }
-            auto&& syncNotifier = i->second;
             if (!syncNotifier) {
                 PV("!syncNotifier");
                 continue;
@@ -139,6 +146,14 @@ public:
 
     void PrintNotifiers() const
     {
+        std::unique_lock<std::mutex> lock(mutex_);
+        PrintNotifiersLocked();
+    }
+
+private:
+    // 须在持锁状态下调用；遍历共享 map 本身不做加锁
+    void PrintNotifiersLocked() const
+    {
         if (notifiers_.empty()) {
             PV("notifiers.empty()");
         }
@@ -147,7 +162,6 @@ public:
         }
     }
 
-private:
     // 同一个SyncId可以对应多个SyncNotifier实例，即有多个Receiver在等待同一个SyncId
     std::multimap<SyncId, std::shared_ptr<SyncNotifier>> notifiers_;
     mutable std::mutex mutex_;
