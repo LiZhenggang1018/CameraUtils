@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpticalFlow · Data Flow</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-soft:    #5a6580;
+      --color-accent:  #bf4520;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+    body { font-family: var(--font-sans); background: var(--color-paper); color: var(--color-ink);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+    .frame { max-width: 1200px; width: 100%; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+    .eyebrow { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--color-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: var(--font-serif); font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem); font-weight: 400;
+      letter-spacing: -0.02em; line-height: 1.15; color: var(--color-ink); margin-bottom: 1.5rem; }
+    svg { width: 100%; min-width: 728px; display: block; }
+    @media print { .diagram-container { overflow-x: visible; } svg { min-width: 0; } }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Data Flow · Diagram Design</p>
+    <h1>OpticalFlow interpolation data pipeline</h1>
+    <div class="diagram-container">
+      <svg viewBox="0 0 728 436" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="of-df-title of-df-desc">
+        <title id="of-df-title">OpticalFlow interpolation data pipeline</title>
+        <desc id="of-df-desc">Data-flow diagram tracing video frames through grayscale conversion, bidirectional optical flow computation, intermediate frame blending, and H.264 encoding into an upsampled video.</desc>
+        <defs>
+          <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="0.8" fill="rgba(45,49,66,0.10)"/></pattern>
+          <marker id="arr-muted" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4f5d75"/></marker>
+          <marker id="arr-accent" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#bf4520"/></marker>
+          <marker id="arr-link" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2e5aa8"/></marker>
+        </defs>
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+        <rect width="100%" height="100%" fill="url(#dots)" opacity="0.55"/>
+
+        <rect x="140" y="116" width="588" height="80" fill="rgba(45,49,66,0.018)"/>
+        <line x1="140" y1="36" x2="728" y2="36" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <line x1="140" y1="116" x2="728" y2="116" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <line x1="140" y1="196" x2="728" y2="196" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <line x1="140" y1="276" x2="728" y2="276" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <line x1="140" y1="356" x2="728" y2="356" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <line x1="140" y1="36" x2="140" y2="356" stroke="rgba(45,49,66,0.20)" stroke-width="1"/>
+
+        <rect x="182" y="6" width="32" height="16" rx="8" fill="rgba(45,49,66,0.12)"/>
+        <text x="198" y="18" fill="#2d3142" font-size="8" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">01</text>
+        <text x="198" y="29" fill="#4f5d75" font-size="6" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">SOURCE</text>
+        <rect x="294" y="6" width="32" height="16" rx="8" fill="rgba(45,49,66,0.12)"/>
+        <text x="310" y="18" fill="#2d3142" font-size="8" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">02</text>
+        <text x="310" y="29" fill="#4f5d75" font-size="6" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">GRAY</text>
+        <rect x="406" y="6" width="32" height="16" rx="8" fill="rgba(191,69,32,0.20)"/>
+        <text x="422" y="18" fill="#bf4520" font-size="8" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">03</text>
+        <text x="422" y="29" fill="#bf4520" font-size="6" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">FLOW</text>
+        <rect x="518" y="6" width="32" height="16" rx="8" fill="rgba(45,49,66,0.12)"/>
+        <text x="534" y="18" fill="#2d3142" font-size="8" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">04</text>
+        <text x="534" y="29" fill="#4f5d75" font-size="6" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">BLEND</text>
+        <rect x="630" y="6" width="32" height="16" rx="8" fill="rgba(45,49,66,0.12)"/>
+        <text x="646" y="18" fill="#2d3142" font-size="8" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">05</text>
+        <text x="646" y="29" fill="#4f5d75" font-size="6" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.12em">PUBLISH</text>
+
+        <text x="70" y="72" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">FRAME</text>
+        <text x="70" y="84" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">INPUT</text>
+        <text x="70" y="152" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">GRAY</text>
+        <text x="70" y="164" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">LAYER</text>
+        <text x="70" y="232" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">FLOW</text>
+        <text x="70" y="244" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">FIELD</text>
+        <text x="70" y="312" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ENCODE</text>
+        <text x="70" y="324" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">LAYER</text>
+
+        <!-- arrows -->
+        <path d="M 248,76 H 302 Q 310,76 310,84 V 124" fill="none" stroke="#4f5d75" stroke-width="1.0" marker-end="url(#arr-muted)"/>
+        <path d="M 360,156 H 414 Q 422,156 422,164 V 204" fill="none" stroke="#bf4520" stroke-width="1.2" marker-end="url(#arr-accent)"/>
+        <path d="M 472,236 H 526 Q 534,236 534,228 V 108" fill="none" stroke="#4f5d75" stroke-width="1.0" marker-end="url(#arr-muted)"/>
+        <path d="M 584,76 H 596" fill="none" stroke="#2e5aa8" stroke-width="1.0" marker-end="url(#arr-link)"/>
+
+        <!-- Node 1 -->
+        <rect x="148" y="44" width="100" height="64" rx="6" fill="#ffffff" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="152" y="48" width="18" height="10" rx="3" fill="rgba(45,49,66,0.12)"/>
+        <text x="161" y="57" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">FRM</text>
+        <text x="198" y="67" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">prev / curr</text>
+        <text x="198" y="79" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">BGR CV_8UC3</text>
+        <text x="198" y="91" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">VideoCapture</text>
+        <rect x="228" y="98" width="16" height="8" rx="3" fill="#9c6b50"/>
+        <text x="236" y="104" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+
+        <!-- Node 2 -->
+        <rect x="260" y="124" width="100" height="64" rx="6" fill="#ffffff" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="264" y="128" width="18" height="10" rx="3" fill="rgba(45,49,66,0.12)"/>
+        <text x="273" y="137" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">GRY</text>
+        <text x="310" y="147" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">cvtColor</text>
+        <text x="310" y="159" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">BGR → GRAY</text>
+        <text x="310" y="171" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">bilateralFilter</text>
+        <rect x="264" y="178" width="16" height="8" rx="3" fill="#9c6b50"/>
+        <text x="272" y="184" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+        <rect x="340" y="178" width="16" height="8" rx="3" fill="#5e7a9b"/>
+        <text x="348" y="184" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">DB</text>
+
+        <!-- Node 3 focal -->
+        <rect x="372" y="204" width="100" height="64" rx="6" fill="rgba(191,69,32,0.07)" stroke="#bf4520" stroke-width="1"/>
+        <rect x="376" y="208" width="18" height="10" rx="3" fill="rgba(191,69,32,0.18)"/>
+        <text x="385" y="217" fill="#bf4520" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">FLW</text>
+        <text x="422" y="227" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">ComputeFlows</text>
+        <text x="422" y="239" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">fwd + bwd</text>
+        <text x="422" y="251" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">Farneback/DIS/TV-L1</text>
+        <rect x="376" y="258" width="16" height="8" rx="3" fill="#5e7a9b"/>
+        <text x="384" y="264" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">DB</text>
+        <rect x="452" y="258" width="16" height="8" rx="3" fill="#9c6b50"/>
+        <text x="460" y="264" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+
+        <!-- Node 4 -->
+        <rect x="484" y="44" width="100" height="64" rx="6" fill="#ffffff" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="488" y="48" width="18" height="10" rx="3" fill="rgba(45,49,66,0.12)"/>
+        <text x="497" y="57" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">BLD</text>
+        <text x="534" y="67" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">BlendFromFlows</text>
+        <text x="534" y="79" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">warp → mid frame</text>
+        <text x="534" y="91" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">3-candidate · lap</text>
+        <rect x="488" y="98" width="16" height="8" rx="3" fill="#9c6b50"/>
+        <text x="496" y="104" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+        <rect x="564" y="98" width="16" height="8" rx="3" fill="#9c6b50"/>
+        <text x="572" y="104" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+
+        <!-- Node 5 -->
+        <rect x="596" y="44" width="100" height="64" rx="6" fill="#ffffff" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="600" y="48" width="18" height="10" rx="3" fill="rgba(45,49,66,0.12)"/>
+        <text x="609" y="57" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">ENC</text>
+        <text x="646" y="67" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">WriteFrame</text>
+        <text x="646" y="79" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">60fps mp4</text>
+        <text x="646" y="91" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">H.264 · libx264</text>
+        <rect x="600" y="98" width="16" height="8" rx="3" fill="#9c6b50"/>
+        <text x="608" y="104" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+
+        <!-- legend -->
+        <text x="144" y="372" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">STEPS</text>
+        <rect x="200" y="364" width="32" height="16" rx="8" fill="rgba(191,69,32,0.20)"/>
+        <text x="216" y="376" fill="#bf4520" font-size="8" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">03</text>
+        <text x="240" y="376" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">Flow (focal)</text>
+        <text x="384" y="372" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">DATA</text>
+        <rect x="444" y="366" width="16" height="8" rx="2" fill="#9c6b50"/>
+        <text x="452" y="372" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+        <text x="464" y="373" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">Frame</text>
+        <rect x="516" y="366" width="16" height="8" rx="2" fill="#5e7a9b"/>
+        <text x="524" y="372" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">DB</text>
+        <text x="536" y="373" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">Flow field</text>
+        <text x="144" y="393" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">FLOW</text>
+        <line x1="200" y1="389" x2="224" y2="389" stroke="#bf4520" stroke-width="1.2" marker-end="url(#arr-accent)"/>
+        <text x="232" y="392" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">Focal hand-off</text>
+        <line x1="320" y1="389" x2="344" y2="389" stroke="#4f5d75" stroke-width="1.0" marker-end="url(#arr-muted)"/>
+        <text x="352" y="392" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">Data flow</text>
+        <line x1="432" y1="389" x2="456" y2="389" stroke="#2e5aa8" stroke-width="1.0" marker-end="url(#arr-link)"/>
+        <text x="464" y="392" fill="#4f5d75" font-size="8" font-family="'Geist', sans-serif">Published output</text>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>
