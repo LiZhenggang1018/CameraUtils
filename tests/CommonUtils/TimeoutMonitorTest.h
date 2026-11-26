@@ -31,6 +31,10 @@ constexpr int kShortTimeoutMs = 50; // 超时用例：阈值（小于 sleep，�
 static std::atomic<int> g_timeoutHit{0}; // timeoutCb 被触发的次数
 static int g_timeoutVal{0};              // 后台任务最终写入的值（FooSlow(int&) 写它）
 
+// 引用语义 + 超时用例：被引用的 shared_ptr 必须是全局/static，
+// 否则 detach 后后台访问已析构的局部变量会 UAF。
+static std::shared_ptr<int> g_refSp = std::make_shared<int>(0);
+
 // 1. by-value shared_ptr：替换局部副本，不影响调用者持有的原 shared_ptr
 void FooByValueSharedPtr(std::shared_ptr<int> sp)
 {
@@ -64,6 +68,13 @@ void FooSlow(int& i)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(kSlowSleepMs));
     i = 88;
+}
+
+// 引用语义 + 超时用例：慢函数替换传入的 shared_ptr 引用
+void FooSlowByRefSharedPtr(std::shared_ptr<int>& spref)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(kSlowSleepMs));
+    spref = std::make_shared<int>(66); // 替换原 shared_ptr 的指向
 }
 
 } // namespace
@@ -124,6 +135,29 @@ inline void TimeoutMonitorTimeoutTest()
     // 等后台真正跑完，验证 detach 后引用语义仍正确（改的是全局对象）
     std::this_thread::sleep_for(std::chrono::milliseconds(kSlowSleepMs + 100));
     CU_CHECK_EQ(g_timeoutVal, 88);
+}
+
+inline void TimeoutMonitorRefTimeoutTest()
+{
+    // 引用语义 + 超时：验证「超时及时返回，但后台线程仍会在之后改写全局对象」。
+    // 被引用对象 g_refSp 是全局/static，detach 后后台访问它不会悬垂。
+    g_refSp = std::make_shared<int>(0);
+    g_timeoutHit = 0;
+    auto cb = [] { ++g_timeoutHit; };
+
+    auto t0 = std::chrono::steady_clock::now();
+    TimeoutMonitor("FooSlowByRefSharedPtr", kShortTimeoutMs, FooSlowByRefSharedPtr, cb, std::ref(g_refSp));
+    auto t1 = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+
+    CU_CHECK_EQ(static_cast<int>(g_timeoutHit.load()), 1); // 超时回调触发一次
+    CU_CHECK(elapsed < kSlowSleepMs);                      // 及时返回，未阻塞到后台结束
+    // 刚返回时后台还没跑完，g_refSp 仍指向 0（尚未被替换）
+    CU_CHECK_EQ(*g_refSp, 0);
+
+    // 等后台跑完：g_refSp 已被替换为 66（引用语义成立，改的是全局对象本身）
+    std::this_thread::sleep_for(std::chrono::milliseconds(kSlowSleepMs + 100));
+    CU_CHECK_EQ(*g_refSp, 66);
 }
 
 #endif // TESTS_TIMEOUTMONITORTEST_H
