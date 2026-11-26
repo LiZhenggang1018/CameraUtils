@@ -308,6 +308,14 @@ git config core.hooksPath githooks
   （如 `TESTS_IMAGEPROCESSING_SOBELTEST_H`），`CommandTable.h` 里用
   `#include "<章节目录>/<文件名>.h"` 引用。
 
+### 图表归档约定（diagram-design）
+
+- 用 `diagram-design` skill 生成的 HTML 图统一归档到 `docs/Diagram/` 下。
+- **具体特性生成的图**（如某章节的流程/时序/数据流图）归档到 `docs/Diagram/<特性名>/`
+  子目录（如 `docs/Diagram/LivePhotoSmoothPlay/`），不散落在 `docs/Diagram/` 根目录。
+- **项目级/跨特性的图**（如整体架构图）可放在 `docs/Diagram/` 根目录。
+- 新图生成时按此规则落目录，避免事后移动。
+
 ### data 素材占位符约定
 
 - `data/` 整体已 `.gitignore`（不入库），但**目录结构与占位符文件本身保留在本地工作区**，
