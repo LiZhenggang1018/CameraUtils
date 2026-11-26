@@ -75,6 +75,33 @@ decltype(auto) TimeoutImpl(const std::string& fName, int32_t timeMs, Fn&& fn, Ti
 // std::invoke unwraps the reference_wrapper back to a reference. The caller MUST
 // guarantee the referenced object outlives the background thread (a global/static or
 // heap object), otherwise the detached task dereferences freed memory.
+//
+// ============================================================
+// 当 args 为「引用类型」时的注意事项（重要）
+// ============================================================
+// args 一律按值/移动捕获（左值拷贝、右值移动），后台线程持有独立副本。若希望
+// fn 修改调用者持有的对象（即保留引用语义），必须显式用 std::ref 包裹参数，
+// 例如 TimeoutMonitor("Foo", 3000, Foo, cb, std::ref(g_i))。
+//
+// 引用语义与「超时 detach」存在生命周期冲突，需区分两种路径：
+//
+// 1. 不超时路径（fn 在 timeMs 内完成）：
+//    worker.join() 同步等待后台结束，被引用对象在后台执行期间仍存活，安全。
+//    此时 std::ref 传局部变量也没问题（局部变量尚未析构）。
+//
+// 2. 超时路径（fn 超过 timeMs）：
+//    worker.detach() 后本函数立即返回、调用者栈帧随之销毁。若 std::ref 包裹的是
+//    「局部变量」，后台线程随后再访问它就是 use-after-free（悬垂引用）。
+//    因此超时场景下，被引用对象必须是全局/static/堆对象（生命周期覆盖后台线程），
+//    例如用 static 变量，否则会崩溃或内存破坏。
+//
+// 典型安全写法（引用语义 + 可能超时）：被引用对象放全局/static：
+//   static int g_i = 0;
+//   TimeoutMonitor("Foo", 3000, Foo, cb, std::ref(g_i));  // g_i 全局，detach 后不悬垂
+//
+// 反面例子（超时会 UAF，禁止）：
+//   int i = 0;  // 局部变量
+//   TimeoutMonitor("Foo", 3000, Foo, cb, std::ref(i));    // 若超时，后台写已析构的 i
 template <class Fn, class TimeoutCb, class... Args>
 decltype(auto) TimeoutMonitor(const std::string& fName, int32_t timeMs, Fn&& fn, TimeoutCb&& timeoutCb, Args&&... args)
 {
