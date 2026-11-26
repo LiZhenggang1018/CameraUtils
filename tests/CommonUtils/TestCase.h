@@ -15,6 +15,7 @@
 #include "OpenCVTest.h"
 #include "SyncAgencyTest.h"
 #include "ThreadPoolTest.h"
+#include "TimeoutMonitorTest.h"
 #include "VasConcurrencyDemo.h"
 
 #include "LivePhotoSmoothPlay\LivePhotoSmoothPlayTest.h"
