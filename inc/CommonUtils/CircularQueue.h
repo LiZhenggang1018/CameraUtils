@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <iostream>
 #include <mutex>
+#include <stdexcept>
 #include <thread>
 
 #include "CustomLog.h"
@@ -18,8 +19,15 @@ class CircularQueue {
 public:
     explicit CircularQueue(size_t capacity)
         : capacity_(capacity),
-          buffer_(new T[capacity])
-    {}
+          buffer_(nullptr)
+    {
+        // A zero-capacity queue would later write buffer_[0] on an empty array and
+        // divide by zero in (head_/tail_ + 1) % capacity_; reject it up front.
+        if (capacity == 0) {
+            throw std::invalid_argument("CircularQueue capacity must be greater than 0");
+        }
+        buffer_ = new T[capacity];
+    }
 
     ~CircularQueue() { delete[] buffer_; }
 
