@@ -36,6 +36,7 @@ set(_unit_tests
     find-then-or-else
     overload-ref
     timeout-monitor
+    timeout-monitor-args
     misc
     circular-queue
     overwrite-function
