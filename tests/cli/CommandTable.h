@@ -165,6 +165,14 @@ inline const std::vector<Command>& AllCommands()
                  TimeoutMonitorTimeoutTest();
                  return 0;
              }},
+        {.name = "timeout-monitor-ref-timeout",
+         .description = "TimeoutMonitor 引用语义 + 超时（detach 后改写全局对象）",
+         .label = Label::UNIT,
+         .run =
+             [] {
+                 TimeoutMonitorRefTimeoutTest();
+                 return 0;
+             }},
         {.name = "misc",
          .description = "Misc：Enum2Str / Scoped / InstanceCounter",
          .label = Label::UNIT,
