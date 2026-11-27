@@ -370,6 +370,14 @@ UTF-8 文件后写回，会把中文永久破坏（曾因此损坏 `tests/ImageP
 本工程是「按章节归档、十几个算法模块」的大工程（`inc/<章>/` + `src/<章>/` + `tests/<章>/`，
 外加 CommonUtils / LivePhotoSmoothPlay 等）。为省上下文、提效率，遵循以下习惯：
 
+- **较大需求的开发模式（固定流程）**：开发「新的较大需求」（新特性、新章节、需求未定死的中大型
+  改动）时，按以下顺序推进，并**主动提醒用户**走这条模式：
+  1. `grill-with-docs` —— 需求压测 + 落盘 ADR（`docs/adr/`）/ GLOSSARY（术语表）
+  2. `superpowers:brainstorming` —— 把共识落成设计文档
+  3. `superpowers:writing-plans` —— 拆成逐任务执行计划
+  4. `superpowers:executing-plans`（或 subagent-driven-development）—— TDD 逐任务实现
+  5. `requesting-code-review` + `verification-before-completion` —— 收尾复核
+  简单单点修改（改一个函数、加一行日志）不走此流程，直接 `read`/`edit` 即可。
 - **代码检索优先派 `explore` 代理**：问「某函数/模块在哪」「某章怎么实现的」时，不要自己
   逐文件 `grep`/`read`，派 `explore` 代理一次查清并返回结论（标注返回文件路径+行号）。
 - **独立模块改动并行派发**：改两个互不依赖的章节（如 `SfM` 与 `ComputationalPhotography`、
